@@ -882,7 +882,7 @@ export async function POST(request: NextRequest) {
     const headline = formData.get('headline') as string | null;
     const headlineStyle = (formData.get('headline_style') as 'normal' | 'news') || 'normal';
     const visibility = (formData.get('visibility') as 'public' | 'followers' | 'private') || 'public';
-    const provenance = formData.get('provenance') as string | null;
+    const provenance = formData.get('provenance') as 'original' | 'ai_assisted' | 'ai_generated' | 'composite' | null;
     const media = formData.get('media') as File | null;
     const thumbnail = formData.get('thumbnail') as File | null;
     const videoJobId = formData.get('video_job_id') as string | null; // For pre-uploaded videos
