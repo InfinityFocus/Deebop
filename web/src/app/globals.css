@@ -135,6 +135,14 @@ body {
   padding-bottom: max(env(safe-area-inset-bottom, 0), 0.5rem);
 }
 
+/* Mobile viewport height fallback for browsers that don't support dvh */
+@supports not (height: 100dvh) {
+  .h-dvh {
+    height: 100vh;
+    height: -webkit-fill-available;
+  }
+}
+
 /* Improve touch target accessibility */
 .touch-manipulation {
   touch-action: manipulation;
