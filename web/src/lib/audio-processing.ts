@@ -70,8 +70,8 @@ export async function getAudioMetadata(inputPath: string): Promise<AudioMetadata
 
       const duration = metadata.format.duration || 0;
       const codec = audioStream.codec_name || 'unknown';
-      const bitrate = metadata.format.bit_rate ? parseInt(metadata.format.bit_rate) : 0;
-      const sampleRate = audioStream.sample_rate ? parseInt(audioStream.sample_rate) : 44100;
+      const bitrate = metadata.format.bit_rate ? Number(metadata.format.bit_rate) : 0;
+      const sampleRate = audioStream.sample_rate ? Number(audioStream.sample_rate) : 44100;
       const channels = audioStream.channels || 2;
 
       resolve({

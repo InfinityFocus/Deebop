@@ -94,7 +94,7 @@ async function getAudioMetadataCli(inputPath: string): Promise<{ duration: numbe
   });
 }
 
-async function transcodeVideoCli(inputPath: string, outputPath: string, settings: typeof TRANSCODE_SETTINGS["free"]): Promise<void> {
+async function transcodeVideoCli(inputPath: string, outputPath: string, settings: { maxDuration: number; scale: string | null; bitrate: string }): Promise<void> {
   return new Promise((resolve, reject) => {
     const args = ["-i", inputPath, "-c:v", "libx264", "-preset", "fast", "-b:v", settings.bitrate, "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", "-pix_fmt", "yuv420p"];
     if (settings.scale) args.push("-vf", "scale=-2:" + settings.scale);

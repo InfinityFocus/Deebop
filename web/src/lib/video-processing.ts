@@ -73,7 +73,7 @@ export async function getVideoMetadata(inputPath: string): Promise<VideoMetadata
       const width = videoStream.width || 0;
       const height = videoStream.height || 0;
       const codec = videoStream.codec_name || 'unknown';
-      const bitrate = metadata.format.bit_rate ? parseInt(metadata.format.bit_rate) : 0;
+      const bitrate = metadata.format.bit_rate ? Number(metadata.format.bit_rate) : 0;
 
       // Parse fps from r_frame_rate (e.g., "30/1" or "30000/1001")
       let fps = 30;

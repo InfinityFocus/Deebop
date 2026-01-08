@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
 // Saved Feed: Posts the user has saved
 async function fetchSavedFeed(
   user: { id: string } | null,
-  contentTypeFilter: Record<string, string>,
+  contentTypeFilter: { contentType?: string },
   sensitiveContentFilter: Record<string, boolean>,
   cursor: string | null,
   limit: number
@@ -181,7 +181,7 @@ async function fetchSavedFeed(
 // Following Feed: Posts from followed accounts only, chronological with diversity
 async function fetchFollowingFeed(
   user: { id: string } | null,
-  contentTypeFilter: Record<string, string>,
+  contentTypeFilter: { contentType?: string },
   sensitiveContentFilter: Record<string, boolean>,
   cursor: string | null,
   limit: number,
@@ -386,7 +386,7 @@ async function fetchFollowingFeed(
 // Also includes reposts from followed users
 async function fetchDiscoveryFeed(
   user: { id: string } | null,
-  contentTypeFilter: Record<string, string>,
+  contentTypeFilter: { contentType?: string },
   sensitiveContentFilter: Record<string, boolean>,
   cursor: string | null,
   limit: number,
@@ -650,7 +650,7 @@ async function fetchDiscoveryFeed(
 async function fetchProfileFeed(
   user: { id: string } | null,
   profileUserId: string,
-  contentTypeFilter: Record<string, string>,
+  contentTypeFilter: { contentType?: string },
   sensitiveContentFilter: Record<string, boolean>,
   cursor: string | null,
   limit: number,
