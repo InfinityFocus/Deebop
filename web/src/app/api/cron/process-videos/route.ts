@@ -70,7 +70,7 @@ async function getVideoMetadata(inputPath: string): Promise<{ duration: number; 
 async function transcodeVideo(
   inputPath: string,
   outputPath: string,
-  settings: typeof TIER_SETTINGS['free']
+  settings: { maxDuration: number; scale: string | null; bitrate: string }
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const args = [
