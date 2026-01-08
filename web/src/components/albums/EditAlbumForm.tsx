@@ -66,9 +66,9 @@ export function EditAlbumForm({ albumId, onSuccess, onCancel }: EditAlbumFormPro
     try {
       await updateAlbum.mutateAsync({
         title: title.trim(),
-        description: description.trim() || null,
+        description: description.trim() || undefined,
         visibility,
-        location: location.trim() || null,
+        location: location.trim() || undefined,
         hashtags: hashtags.length > 0 ? hashtags : [],
       });
 

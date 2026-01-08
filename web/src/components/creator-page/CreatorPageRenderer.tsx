@@ -113,7 +113,7 @@ export function CreatorPageRenderer({ user, page }: CreatorPageRendererProps) {
 
   // Render block by type
   const renderBlock = (block: CreatorPageBlock) => {
-    const data = block.data as BlockData;
+    const data = block.data as any;
 
     switch (block.type as BlockType) {
       case 'hero':

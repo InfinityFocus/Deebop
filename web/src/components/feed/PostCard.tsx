@@ -395,7 +395,7 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
               <AudioPlayer
                 track={{
                   postId: post.id,
-                  url: post.media_url,
+                  url: post.media_url || '',
                   title: localHeadline || undefined,
                   author: post.author.display_name || post.author.username,
                   authorAvatar: post.author.avatar_url || undefined,

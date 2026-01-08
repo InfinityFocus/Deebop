@@ -154,7 +154,7 @@ export function AlbumMemberList({
     setProcessingId(memberId);
     setOpenMenuId(null);
     try {
-      await updateMember.mutateAsync({ memberId, role: newRole });
+      await updateMember.mutateAsync({ memberId, role: newRole as 'co_owner' | 'contributor' });
     } catch (err) {
       console.error('Failed to update role:', err);
     } finally {

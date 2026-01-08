@@ -62,7 +62,7 @@ export function AlbumItemGrid({
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
       {items.map((item, index) => {
         const isVideo = item.content_type === 'video';
-        const isPanorama = item.content_type === 'panorama';
+        const isPanorama = item.content_type === 'panorama360';
         const isSelected = selectedId === item.id;
         const isDeleting = deletingId === item.id;
 

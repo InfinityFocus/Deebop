@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
-import type { ContentType, HeadlineStyle, Visibility } from '@/types/database';
-import { VisibilitySelector } from './VisibilitySelector';
+import type { ContentType, HeadlineStyle } from '@/types/database';
+import { VisibilitySelector, type Visibility } from './VisibilitySelector';
 import { AudiencePickerModal } from './AudiencePickerModal';
 
 interface EditPostModalProps {

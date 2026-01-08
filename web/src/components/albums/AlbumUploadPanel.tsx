@@ -236,7 +236,7 @@ export function AlbumUploadPanel({ albumId, onSuccess }: AlbumUploadPanelProps) 
                   <div className="absolute top-1 left-1 bg-black/70 px-1.5 py-0.5 rounded text-xs text-white flex items-center gap-1">
                     {upload.contentType === 'video' ? (
                       <Video size={10} />
-                    ) : upload.contentType === 'panorama' ? (
+                    ) : upload.contentType === 'panorama360' ? (
                       <Maximize2 size={10} />
                     ) : (
                       <Image size={10} />
