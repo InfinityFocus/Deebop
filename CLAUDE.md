@@ -214,6 +214,45 @@ netstat -aon | grep :3001
 taskkill /F /PID <PID>
 ```
 
+## Stripe Payments (Optional)
+
+Stripe is **optional** - the app runs without it for beta testing. Payment features return 503 when Stripe is not configured.
+
+### Enabling Stripe
+
+1. Add these environment variables in Vercel:
+   ```bash
+   STRIPE_SECRET_KEY="sk_live_..."          # From Stripe Dashboard > API Keys
+   STRIPE_WEBHOOK_SECRET="whsec_..."        # From Stripe Dashboard > Webhooks
+   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_live_..."
+   STRIPE_STANDARD_PRICE_ID="price_..."     # Create in Stripe > Products
+   STRIPE_PRO_PRICE_ID="price_..."          # Create in Stripe > Products
+   ```
+
+2. Create products in Stripe Dashboard:
+   - **Standard** - £5.99/month subscription
+   - **Pro** - £14.99/month subscription
+
+3. Set up webhook endpoint in Stripe Dashboard:
+   - URL: `https://your-domain.com/api/subscriptions/webhook`
+   - Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `lib/stripe.ts` | Stripe initialization, tier configs, `getStripe()`, `isStripeEnabled()` |
+| `app/api/subscriptions/checkout/route.ts` | Create checkout session |
+| `app/api/subscriptions/portal/route.ts` | Billing portal redirect |
+| `app/api/subscriptions/status/route.ts` | Get user's subscription status |
+| `app/api/subscriptions/webhook/route.ts` | Handle Stripe webhooks |
+| `app/api/boosts/route.ts` | Create boost with payment |
+
+### How It Works
+- `isStripeEnabled()` checks if `STRIPE_SECRET_KEY` is set
+- `getStripe()` lazily initializes Stripe only when called
+- Routes return 503 "Payments disabled in beta mode" when Stripe is not configured
+- Subscription status endpoint still works (returns user tier without Stripe details)
+
 ## Environment Variables (.env)
 ```bash
 DATABASE_URL="postgresql://deebop:deebop@localhost:5433/deebop"
@@ -225,4 +264,11 @@ S3_BUCKET="deebop-media"
 REDIS_URL="redis://localhost:6379"
 NEXT_PUBLIC_APP_URL="http://localhost:3001"
 ADMIN_EMAILS="admin@deebop.com,john@example.com,test@example.com"
+
+# Optional - Stripe (for payments)
+STRIPE_SECRET_KEY="sk_test_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
+STRIPE_STANDARD_PRICE_ID="price_..."
+STRIPE_PRO_PRICE_ID="price_..."
 ```
