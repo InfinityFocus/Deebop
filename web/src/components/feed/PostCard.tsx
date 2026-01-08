@@ -396,7 +396,7 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
                 track={{
                   postId: post.id,
                   url: post.media_url || '',
-                  title: localHeadline || undefined,
+                  title: localHeadline || 'Audio',
                   author: post.author.display_name || post.author.username,
                   authorAvatar: post.author.avatar_url || undefined,
                   duration: post.media_duration_seconds || 0,
