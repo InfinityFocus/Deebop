@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
         post: {
           id: b.post.id,
           content_type: b.post.contentType,
-          text_content: b.post.textContent,
+          text_content: b.post.description,
           media_url: b.post.mediaUrl,
           media_thumbnail_url: b.post.mediaThumbnailUrl,
         },

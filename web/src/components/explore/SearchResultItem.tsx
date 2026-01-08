@@ -183,7 +183,7 @@ export default function SearchResultItem({ type, data }: SearchResultItemProps) 
               </span>
               <span className="text-sm text-zinc-500">@{shout.user.username}</span>
             </div>
-            <p className="text-zinc-300 mt-1 line-clamp-2">{shout.textContent}</p>
+            <p className="text-zinc-300 mt-1 line-clamp-2">{shout.description}</p>
             <div className="flex items-center gap-1 mt-2 text-sm text-zinc-500">
               <Heart className="w-4 h-4" />
               {shout.likeCount}

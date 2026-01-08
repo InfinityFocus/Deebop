@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
         post: {
           id: r.post.id,
           content_type: r.post.contentType,
-          text_content: r.post.textContent,
+          text_content: r.post.description,
           media_url: r.post.mediaUrl,
           author: {
             id: r.post.user.id,

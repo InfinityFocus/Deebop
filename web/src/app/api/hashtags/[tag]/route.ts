@@ -78,7 +78,7 @@ export async function GET(
       id: post.id,
       user_id: post.userId,
       content_type: post.contentType,
-      text_content: post.textContent,
+      text_content: post.description,
       media_url: post.mediaUrl,
       media_thumbnail_url: post.mediaThumbnailUrl,
       media_width: post.mediaWidth,

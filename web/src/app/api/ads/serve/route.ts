@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
           post: {
             id: boost.post.id,
             content_type: boost.post.contentType,
-            text_content: boost.post.textContent,
+            text_content: boost.post.description,
             media_url: boost.post.mediaUrl,
             media_thumbnail_url: boost.post.mediaThumbnailUrl,
             likes_count: boost.post.likesCount,

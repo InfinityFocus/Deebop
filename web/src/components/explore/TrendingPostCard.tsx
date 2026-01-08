@@ -37,7 +37,7 @@ export default function TrendingPostCard({ post }: TrendingPostCardProps) {
         ) : (
           <div className="absolute inset-0 flex items-center justify-center p-3">
             <p className="text-sm text-zinc-400 line-clamp-4 text-center">
-              {post.textContent}
+              {post.description}
             </p>
           </div>
         )}
