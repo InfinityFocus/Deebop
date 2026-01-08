@@ -34,7 +34,7 @@ async function main() {
     data: {
       userId: adminUser.id,
       contentType: 'shout',
-      textContent: 'Hello from the admin! This is a test post to verify the admin panel works correctly. #deebop #test',
+      description: 'Hello from the admin! This is a test post to verify the admin panel works correctly. #deebop #test',
       provenance: 'original',
       visibility: 'public',
     },
@@ -42,7 +42,7 @@ async function main() {
 
   console.log('\nTest post created:');
   console.log(`  ID: ${testPost.id}`);
-  console.log(`  Content: ${testPost.textContent}`);
+  console.log(`  Content: ${testPost.description}`);
 
   // Create another test user with some posts
   const testEmail = 'testuser@deebop.com';
@@ -67,14 +67,14 @@ async function main() {
       {
         userId: testUser.id,
         contentType: 'shout',
-        textContent: 'Just joined Deebop! Excited to share my thoughts here. #newbie',
+        description: 'Just joined Deebop! Excited to share my thoughts here. #newbie',
         provenance: 'original',
         visibility: 'public',
       },
       {
         userId: testUser.id,
         contentType: 'shout',
-        textContent: 'What a beautiful day! #sunshine #happy',
+        description: 'What a beautiful day! #sunshine #happy',
         provenance: 'original',
         visibility: 'public',
       },
