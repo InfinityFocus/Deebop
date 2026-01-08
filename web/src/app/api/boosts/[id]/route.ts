@@ -29,7 +29,7 @@ export async function GET(
           select: {
             id: true,
             contentType: true,
-            textContent: true,
+            description: true,
             mediaUrl: true,
             mediaThumbnailUrl: true,
             likesCount: true,

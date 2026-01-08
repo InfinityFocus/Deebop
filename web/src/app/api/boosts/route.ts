@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             contentType: true,
-            textContent: true,
+            description: true,
             mediaUrl: true,
             mediaThumbnailUrl: true,
           },
