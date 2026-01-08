@@ -19,7 +19,7 @@ const SUPABASE_PROJECT_URL = isSupabase
 // Create S3 client configured for MinIO/Supabase
 const s3Client = new S3Client({
   endpoint: S3_ENDPOINT,
-  region: 'us-east-1', // Required but value doesn't matter for MinIO/Supabase
+  region: isSupabase ? 'eu-west-1' : 'us-east-1', // Supabase uses actual region
   credentials: {
     accessKeyId: S3_ACCESS_KEY,
     secretAccessKey: S3_SECRET_KEY,
@@ -81,7 +81,7 @@ export function getUploadCredentials() {
 }
 
 /**
- * Upload a file to MinIO from the server side
+ * Upload a file to MinIO/Supabase from the server side
  * Uses AWS SDK with proper AWS4-HMAC-SHA256 signing
  */
 export async function uploadToMinio(
@@ -89,15 +89,26 @@ export async function uploadToMinio(
   body: Buffer | ArrayBuffer | Uint8Array,
   contentType: string
 ): Promise<string> {
-  const command = new PutObjectCommand({
-    Bucket: S3_BUCKET,
-    Key: key,
-    Body: body instanceof ArrayBuffer ? Buffer.from(body) : body,
-    ContentType: contentType,
-  });
+  try {
+    const command = new PutObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: key,
+      Body: body instanceof ArrayBuffer ? Buffer.from(body) : body,
+      ContentType: contentType,
+    });
 
-  await s3Client.send(command);
-  return getPublicUrl(key);
+    await s3Client.send(command);
+    return getPublicUrl(key);
+  } catch (error) {
+    console.error('S3 Upload Error:', {
+      error,
+      endpoint: S3_ENDPOINT,
+      bucket: S3_BUCKET,
+      key,
+      isSupabase,
+    });
+    throw error;
+  }
 }
 
 /**
