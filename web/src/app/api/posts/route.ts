@@ -4,8 +4,11 @@ import prisma from '@/lib/db';
 import { uploadToMinio, generateFileKey } from '@/lib/minio';
 import { calculateTrendingScore, applyDiversityPass, applyFollowedPenalty } from '@/lib/feed-scoring';
 import { matchPostToInterests } from '@/lib/post-interest-matcher';
+import type { ContentType } from '@prisma/client';
 
 type FeedMode = 'discovery' | 'following';
+type ContentTypeFilter = { contentType?: ContentType };
+type SensitiveContentFilter = { isSensitiveContent?: boolean };
 
 // Auto-publish overdue scheduled posts (fallback for when cron doesn't run)
 async function publishOverdueDrops() {
@@ -49,12 +52,12 @@ export async function GET(request: NextRequest) {
     const isUnder16 = userAge !== null && userAge < 16;
 
     // Build content type filter
-    const contentTypeFilter = contentType
-      ? { contentType: contentType as 'shout' | 'image' | 'video' | 'audio' | 'panorama360' }
+    const contentTypeFilter: ContentTypeFilter = contentType
+      ? { contentType: contentType as ContentType }
       : {};
 
     // Build sensitive content filter (hide sensitive posts from users under 16)
-    const sensitiveContentFilter = isUnder16 ? { isSensitiveContent: false } : {};
+    const sensitiveContentFilter: SensitiveContentFilter = isUnder16 ? { isSensitiveContent: false } : {};
 
     // Build user filter (for profile pages)
     const userFilter = userId ? { userId } : {};
@@ -98,8 +101,8 @@ export async function GET(request: NextRequest) {
 // Saved Feed: Posts the user has saved
 async function fetchSavedFeed(
   user: { id: string } | null,
-  contentTypeFilter: { contentType?: string },
-  sensitiveContentFilter: { isSensitiveContent?: boolean },
+  contentTypeFilter: ContentTypeFilter,
+  sensitiveContentFilter: SensitiveContentFilter,
   cursor: string | null,
   limit: number
 ) {
@@ -181,8 +184,8 @@ async function fetchSavedFeed(
 // Following Feed: Posts from followed accounts only, chronological with diversity
 async function fetchFollowingFeed(
   user: { id: string } | null,
-  contentTypeFilter: { contentType?: string },
-  sensitiveContentFilter: { isSensitiveContent?: boolean },
+  contentTypeFilter: ContentTypeFilter,
+  sensitiveContentFilter: SensitiveContentFilter,
   cursor: string | null,
   limit: number,
   followingIds: string[],
@@ -386,8 +389,8 @@ async function fetchFollowingFeed(
 // Also includes reposts from followed users
 async function fetchDiscoveryFeed(
   user: { id: string } | null,
-  contentTypeFilter: { contentType?: string },
-  sensitiveContentFilter: { isSensitiveContent?: boolean },
+  contentTypeFilter: ContentTypeFilter,
+  sensitiveContentFilter: SensitiveContentFilter,
   cursor: string | null,
   limit: number,
   followingIds: string[],
@@ -650,8 +653,8 @@ async function fetchDiscoveryFeed(
 async function fetchProfileFeed(
   user: { id: string } | null,
   profileUserId: string,
-  contentTypeFilter: { contentType?: string },
-  sensitiveContentFilter: { isSensitiveContent?: boolean },
+  contentTypeFilter: ContentTypeFilter,
+  sensitiveContentFilter: SensitiveContentFilter,
   cursor: string | null,
   limit: number,
   followingIds: string[]
