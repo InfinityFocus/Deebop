@@ -14,8 +14,8 @@ type Tab = 'feed' | 'owned' | 'shared' | 'saved' | 'invites';
 export default function AlbumsPage() {
   const { user, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('feed');
-  const { invites, isLoading: invitesLoading } = useAlbumInvites();
-  const { count: inviteCount } = usePendingInviteCount();
+  const { data: invites, isLoading: invitesLoading } = useAlbumInvites();
+  const inviteCount = usePendingInviteCount();
 
   const tabs: { value: Tab; label: string; authRequired?: boolean }[] = [
     { value: 'feed', label: 'Discover' },
