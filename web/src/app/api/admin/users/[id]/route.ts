@@ -133,10 +133,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Prevent modifying admin accounts
-    if (ADMIN_EMAILS.includes(user.email)) {
+    // Prevent suspending/unsuspending admin accounts (but allow tier changes)
+    const isTargetAdmin = ADMIN_EMAILS.includes(user.email);
+    if (isTargetAdmin && action !== 'change_tier') {
       return NextResponse.json(
-        { error: 'Cannot modify admin accounts' },
+        { error: 'Cannot suspend/unsuspend admin accounts' },
         { status: 403 }
       );
     }
