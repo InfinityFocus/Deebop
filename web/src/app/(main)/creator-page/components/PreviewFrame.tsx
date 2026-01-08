@@ -134,7 +134,7 @@ function BlockPreview({
   block: CreatorPageBlock;
   user: PreviewFrameProps['user'];
 }) {
-  const data = block.data as Record<string, unknown>;
+  const data = block.data as Record<string, any>;
 
   switch (block.type) {
     case 'hero':
