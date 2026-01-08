@@ -1,0 +1,996 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                       String                @id @default(cuid())
+  email                    String                @unique
+  passwordHash             String                @map("password_hash")
+  username                 String                @unique
+  displayName              String?               @map("display_name")
+  bio                      String?
+  avatarUrl                String?               @map("avatar_url")
+  coverImageUrl            String?               @map("cover_image_url")
+  profileLink              String?               @map("profile_link")
+  tier                     AccountTier           @default(free)
+  isPrivate                Boolean               @default(false) @map("is_private")
+  stripeCustomerId         String?               @map("stripe_customer_id")
+  followersCount           Int                   @default(0) @map("followers_count")
+  followingCount           Int                   @default(0) @map("following_count")
+  postsCount               Int                   @default(0) @map("posts_count")
+  createdAt                DateTime              @default(now()) @map("created_at")
+  updatedAt                DateTime              @updatedAt @map("updated_at")
+  isSuspended              Boolean               @default(false) @map("is_suspended")
+  suspendedAt              DateTime?             @map("suspended_at")
+  suspendedReason          String?               @map("suspended_reason")
+  albumsCount              Int                   @default(0) @map("albums_count")
+  birthYear                Int?                  @map("birth_year")
+  allowedToViewAlbums      AlbumAudienceUser[]   @relation("AllowedAlbumViewer")
+  albumInvitesReceived     AlbumInvite[]         @relation("AlbumInviteReceived")
+  albumInvitesSent         AlbumInvite[]         @relation("AlbumInviteSent")
+  albumItems               AlbumItem[]
+  albumLikes               AlbumLike[]
+  albumMemberships         AlbumMember[]
+  albumSaves               AlbumSave[]
+  ownedAlbums              Album[]               @relation("AlbumOwner")
+  audienceGroupMemberships AudienceGroupMember[] @relation("AudienceGroupMemberships")
+  audienceGroups           AudienceGroup[]       @relation("UserAudienceGroups")
+  blockedBy                Block[]               @relation("Blocked")
+  blocks                   Block[]               @relation("Blocker")
+  blogPosts                BlogPost[]
+  boosts                   Boost[]
+  followRequestsSent       FollowRequest[]       @relation("Requester")
+  followRequestsReceived   FollowRequest[]       @relation("Target")
+  following                Follow[]              @relation("Follower")
+  followers                Follow[]              @relation("Following")
+  likes                    Like[]
+  actorNotifications       Notification[]        @relation("NotificationActor")
+  notifications            Notification[]        @relation("NotificationUser")
+  allowedToViewPosts       PostAudienceUser[]    @relation("AllowedPostViewer")
+  posts                    Post[]
+  reports                  Report[]              @relation("Reporter")
+  saves                    Save[]
+  shares                   Share[]
+  videoJobs                VideoJob[]
+  views                    View[]
+  // Event relations
+  hostedEvents             Event[]                     @relation("EventHost")
+  eventRsvps               EventRsvp[]
+  eventInvitesSent         EventInvite[]               @relation("EventInviteSent")
+  eventInvitesReceived     EventInvite[]               @relation("EventInviteReceived")
+  eventInviteLinksCreated  EventInviteLink[]           @relation("EventInviteLinkCreator")
+  eventLinkRedemptions     EventInviteLinkRedemption[]
+  eventInvitesClaimed      EventInvite[]               @relation("EventInviteClaimed")
+  // Creator Page relation
+  creatorPage              CreatorPage?
+  // Wellbeing preferences
+  doomScrollPreference     String                @default("on") @map("doom_scroll_preference")
+
+  // Appearance preferences
+  theme                    String                @default("dark") @map("theme")
+  fontSize                 String                @default("medium") @map("font_size")
+  reducedMotion            Boolean               @default(false) @map("reduced_motion")
+  highContrast             Boolean               @default(false) @map("high_contrast")
+
+  // Notification preferences
+  notifyLikes              Boolean               @default(true) @map("notify_likes")
+  notifyFollowers          Boolean               @default(true) @map("notify_followers")
+  notifyShares             Boolean               @default(true) @map("notify_shares")
+  notifyMentions           Boolean               @default(true) @map("notify_mentions")
+  emailWeeklyDigest        Boolean               @default(false) @map("email_weekly_digest")
+  emailProductUpdates      Boolean               @default(true) @map("email_product_updates")
+
+  // Privacy preferences
+  showActivityStatus       Boolean               @default(true) @map("show_activity_status")
+  allowTagging             Boolean               @default(true) @map("allow_tagging")
+  showLikedPosts           Boolean               @default(false) @map("show_liked_posts")
+
+  // Repost preferences
+  allowReposts             Boolean               @default(true) @map("allow_reposts")
+  requireRepostApproval    Boolean               @default(false) @map("require_repost_approval")
+  reposts                  Repost[]              @relation("UserReposts")
+
+  @@map("users")
+}
+
+model Post {
+  id                   String              @id @default(cuid())
+  userId               String              @map("user_id")
+  contentType          ContentType         @map("content_type")
+  description          String?             @map("text_content")
+  mediaUrl             String?             @map("media_url")
+  mediaThumbnailUrl    String?             @map("media_thumbnail_url")
+  mediaWidth           Int?                @map("media_width")
+  mediaHeight          Int?                @map("media_height")
+  mediaDurationSeconds Float?              @map("media_duration_seconds")
+  provenance           ProvenanceLabel     @default(original)
+  visibility           Visibility          @default(public)
+  likesCount           Int                 @default(0) @map("likes_count")
+  savesCount           Int                 @default(0) @map("saves_count")
+  sharesCount          Int                 @default(0) @map("shares_count")
+  repostsCount         Int                 @default(0) @map("reposts_count")
+  viewsCount           Int                 @default(0) @map("views_count")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+  headline             String?             @db.VarChar(80)
+  headlineStyle        HeadlineStyle       @default(normal) @map("headline_style")
+  droppedAt            DateTime?           @map("dropped_at")
+  hideTeaser           Boolean             @default(false) @map("hide_teaser")
+  scheduledFor         DateTime?           @map("scheduled_for")
+  status               ContentStatus       @default(published)
+  isSponsoredContent   Boolean             @default(false) @map("is_sponsored_content")
+  isSensitiveContent   Boolean             @default(false) @map("is_sensitive_content")
+  boosts               Boost[]
+  likes                Like[]
+  notifications        Notification[]
+  audienceGroups       PostAudienceGroup[]
+  audienceUsers        PostAudienceUser[]
+  hashtags             PostHashtag[]
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reports              Report[]
+  saves                Save[]
+  shares               Share[]
+  reposts              Repost[]
+  videoJob             VideoJob?
+  views                View[]
+
+  @@index([userId])
+  @@index([contentType])
+  @@index([createdAt])
+  @@index([status])
+  @@index([status, scheduledFor])
+  @@map("posts")
+}
+
+model Hashtag {
+  id            String         @id @default(cuid())
+  name          String         @unique
+  postsCount    Int            @default(0) @map("posts_count")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  albumHashtags AlbumHashtag[]
+  posts         PostHashtag[]
+
+  @@map("hashtags")
+}
+
+model PostHashtag {
+  postId    String  @map("post_id")
+  hashtagId String  @map("hashtag_id")
+  hashtag   Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([postId, hashtagId])
+  @@map("post_hashtags")
+}
+
+model Follow {
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  follower    User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@map("follows")
+}
+
+model FollowRequest {
+  id          String   @id @default(cuid())
+  requesterId String   @map("requester_id")
+  targetId    String   @map("target_id")
+  status      String   @default("pending")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  requester   User     @relation("Requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  target      User     @relation("Target", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, targetId])
+  @@map("follow_requests")
+}
+
+model Like {
+  userId    String   @map("user_id")
+  postId    String   @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@map("likes")
+}
+
+model Save {
+  userId    String   @map("user_id")
+  postId    String   @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@map("saves")
+}
+
+model Share {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  postId    String   @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("shares")
+}
+
+model Repost {
+  id         String       @id @default(cuid())
+  userId     String       @map("user_id")
+  postId     String       @map("post_id")
+  status     RepostStatus @default(approved)
+  createdAt  DateTime     @default(now()) @map("created_at")
+  approvedAt DateTime?    @map("approved_at")
+
+  user       User         @relation("UserReposts", fields: [userId], references: [id], onDelete: Cascade)
+  post       Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
+  @@index([status])
+  @@map("reposts")
+}
+
+model View {
+  id                  String   @id @default(cuid())
+  userId              String?  @map("user_id")
+  postId              String   @map("post_id")
+  viewDurationSeconds Float?   @map("view_duration_seconds")
+  createdAt           DateTime @default(now()) @map("created_at")
+  post                Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user                User?    @relation(fields: [userId], references: [id])
+
+  @@map("views")
+}
+
+model Block {
+  blockerId String   @map("blocker_id")
+  blockedId String   @map("blocked_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+
+  @@id([blockerId, blockedId])
+  @@map("blocks")
+}
+
+model Report {
+  id             String       @id @default(cuid())
+  reporterId     String       @map("reporter_id")
+  postId         String       @map("post_id")
+  reason         String
+  status         ReportStatus @default(pending)
+  moderatorNotes String?      @map("moderator_notes")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  post           Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporter       User         @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+model Boost {
+  id              String    @id @default(cuid())
+  postId          String    @map("post_id")
+  userId          String    @map("user_id")
+  budgetCents     Int       @map("budget_cents")
+  spentCents      Int       @default(0) @map("spent_cents")
+  targetCountries String[]  @map("target_countries")
+  status          String    @default("active")
+  impressions     Int       @default(0)
+  clicks          Int       @default(0)
+  startDate       DateTime  @default(now()) @map("start_date")
+  endDate         DateTime? @map("end_date")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  post            Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("boosts")
+}
+
+model Ad {
+  id                String   @id @default(cuid())
+  imageUrl          String   @map("image_url")
+  headline          String
+  destinationUrl    String   @map("destination_url")
+  isActive          Boolean  @default(true) @map("is_active")
+  impressions       Int      @default(0)
+  clicks            Int      @default(0)
+  frequencyFree     Int      @default(5) @map("frequency_free")
+  frequencyStandard Int      @default(10) @map("frequency_standard")
+  feedTarget        String   @default("both") @map("feed_target")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("ads")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String           @map("user_id")
+  type      NotificationType
+  actorId   String?          @map("actor_id")
+  postId    String?          @map("post_id")
+  isRead    Boolean          @default(false) @map("is_read")
+  createdAt DateTime         @default(now()) @map("created_at")
+  actor     User?            @relation("NotificationActor", fields: [actorId], references: [id])
+  post      Post?            @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User             @relation("NotificationUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model BlogPost {
+  id              String             @id @default(cuid())
+  title           String
+  slug            String             @unique
+  content         String
+  excerpt         String?
+  featuredImage   String?            @map("featured_image")
+  authorId        String             @map("author_id")
+  status          BlogPostStatus     @default(draft)
+  publishedAt     DateTime?          @map("published_at")
+  scheduledFor    DateTime?          @map("scheduled_for")
+  metaTitle       String?            @map("meta_title")
+  metaDescription String?            @map("meta_description")
+  ogImage         String?            @map("og_image")
+  viewsCount      Int                @default(0) @map("views_count")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  categories      BlogPostCategory[]
+  tags            BlogPostTag[]
+  author          User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([slug])
+  @@map("blog_posts")
+}
+
+model BlogCategory {
+  id          String             @id @default(cuid())
+  name        String             @unique
+  slug        String             @unique
+  description String?
+  postsCount  Int                @default(0) @map("posts_count")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  posts       BlogPostCategory[]
+
+  @@map("blog_categories")
+}
+
+model BlogTag {
+  id         String        @id @default(cuid())
+  name       String        @unique
+  slug       String        @unique
+  postsCount Int           @default(0) @map("posts_count")
+  createdAt  DateTime      @default(now()) @map("created_at")
+  posts      BlogPostTag[]
+
+  @@map("blog_tags")
+}
+
+model BlogPostCategory {
+  postId     String       @map("post_id")
+  categoryId String       @map("category_id")
+  category   BlogCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  post       BlogPost     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([postId, categoryId])
+  @@map("blog_post_categories")
+}
+
+model BlogPostTag {
+  postId String   @map("post_id")
+  tagId  String   @map("tag_id")
+  post   BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("blog_post_tags")
+}
+
+model AudienceGroup {
+  id           String                @id @default(cuid())
+  name         String
+  ownerId      String                @map("owner_id")
+  createdAt    DateTime              @default(now()) @map("created_at")
+  updatedAt    DateTime              @updatedAt @map("updated_at")
+  albumTargets AlbumAudienceGroup[]
+  members      AudienceGroupMember[]
+  owner        User                  @relation("UserAudienceGroups", fields: [ownerId], references: [id], onDelete: Cascade)
+  postTargets  PostAudienceGroup[]
+
+  @@unique([ownerId, name])
+  @@index([ownerId])
+  @@map("audience_groups")
+}
+
+model AudienceGroupMember {
+  id      String        @id @default(cuid())
+  groupId String        @map("group_id")
+  userId  String        @map("user_id")
+  addedAt DateTime      @default(now()) @map("added_at")
+  group   AudienceGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user    User          @relation("AudienceGroupMemberships", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+  @@map("audience_group_members")
+}
+
+model PostAudienceGroup {
+  id      String        @id @default(cuid())
+  postId  String        @map("post_id")
+  groupId String        @map("group_id")
+  group   AudienceGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  post    Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, groupId])
+  @@index([postId])
+  @@index([groupId])
+  @@map("post_audience_groups")
+}
+
+model PostAudienceUser {
+  id     String @id @default(cuid())
+  postId String @map("post_id")
+  userId String @map("user_id")
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user   User   @relation("AllowedPostViewer", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("post_audience_users")
+}
+
+model Album {
+  id             String               @id @default(cuid())
+  title          String
+  description    String?
+  coverImageUrl  String?              @map("cover_image_url")
+  visibility     Visibility           @default(public)
+  location       String?
+  ownerId        String               @map("owner_id")
+  albumType      AlbumType            @default(standard) @map("album_type")
+  itemsCount     Int                  @default(0) @map("items_count")
+  membersCount   Int                  @default(1) @map("members_count")
+  likesCount     Int                  @default(0) @map("likes_count")
+  savesCount     Int                  @default(0) @map("saves_count")
+  viewsCount     Int                  @default(0) @map("views_count")
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+  droppedAt      DateTime?            @map("dropped_at")
+  hideTeaser     Boolean              @default(false) @map("hide_teaser")
+  scheduledFor   DateTime?            @map("scheduled_for")
+  status         ContentStatus        @default(published)
+  audienceGroups AlbumAudienceGroup[]
+  audienceUsers  AlbumAudienceUser[]
+  hashtags       AlbumHashtag[]
+  invites        AlbumInvite[]
+  items          AlbumItem[]
+  likes          AlbumLike[]
+  members        AlbumMember[]
+  saves          AlbumSave[]
+  owner          User                 @relation("AlbumOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  linkedEvent    Event?
+
+  @@index([ownerId])
+  @@index([visibility])
+  @@index([createdAt])
+  @@index([status])
+  @@index([status, scheduledFor])
+  @@map("albums")
+}
+
+model AlbumMember {
+  id       String    @id @default(cuid())
+  albumId  String    @map("album_id")
+  userId   String    @map("user_id")
+  role     AlbumRole @default(contributor)
+  joinedAt DateTime  @default(now()) @map("joined_at")
+  album    Album     @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([albumId, userId])
+  @@index([albumId])
+  @@index([userId])
+  @@map("album_members")
+}
+
+model AlbumItem {
+  id           String          @id @default(cuid())
+  albumId      String          @map("album_id")
+  uploaderId   String          @map("uploader_id")
+  contentType  ContentType     @map("content_type")
+  mediaUrl     String          @map("media_url")
+  thumbnailUrl String?         @map("thumbnail_url")
+  mediaWidth   Int?            @map("media_width")
+  mediaHeight  Int?            @map("media_height")
+  caption      String?
+  provenance   ProvenanceLabel @default(original)
+  sortOrder    Int             @default(0) @map("sort_order")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  album        Album           @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  uploader     User            @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@index([albumId])
+  @@index([uploaderId])
+  @@index([sortOrder])
+  @@map("album_items")
+}
+
+model AlbumInvite {
+  id          String            @id @default(cuid())
+  albumId     String            @map("album_id")
+  inviterId   String            @map("inviter_id")
+  inviteeId   String            @map("invitee_id")
+  role        AlbumRole         @default(contributor)
+  status      AlbumInviteStatus @default(pending)
+  message     String?
+  createdAt   DateTime          @default(now()) @map("created_at")
+  respondedAt DateTime?         @map("responded_at")
+  album       Album             @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  invitee     User              @relation("AlbumInviteReceived", fields: [inviteeId], references: [id], onDelete: Cascade)
+  inviter     User              @relation("AlbumInviteSent", fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@unique([albumId, inviteeId])
+  @@index([inviteeId, status])
+  @@map("album_invites")
+}
+
+model AlbumHashtag {
+  albumId   String  @map("album_id")
+  hashtagId String  @map("hashtag_id")
+  album     Album   @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  hashtag   Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+
+  @@id([albumId, hashtagId])
+  @@map("album_hashtags")
+}
+
+model AlbumLike {
+  userId    String   @map("user_id")
+  albumId   String   @map("album_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  album     Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, albumId])
+  @@map("album_likes")
+}
+
+model AlbumSave {
+  userId    String   @map("user_id")
+  albumId   String   @map("album_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  album     Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, albumId])
+  @@map("album_saves")
+}
+
+model AlbumAudienceGroup {
+  id      String        @id @default(cuid())
+  albumId String        @map("album_id")
+  groupId String        @map("group_id")
+  album   Album         @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  group   AudienceGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([albumId, groupId])
+  @@index([albumId])
+  @@map("album_audience_groups")
+}
+
+model AlbumAudienceUser {
+  id      String @id @default(cuid())
+  albumId String @map("album_id")
+  userId  String @map("user_id")
+  album   Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  user    User   @relation("AllowedAlbumViewer", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([albumId, userId])
+  @@index([albumId])
+  @@map("album_audience_users")
+}
+
+model VideoJob {
+  id              String         @id @default(cuid())
+  postId          String?        @unique @map("post_id")
+  albumItemId     String?        @map("album_item_id")
+  rawFileUrl      String         @map("raw_file_url")
+  rawFileSize     Int            @map("raw_file_size")
+  mediaType       MediaType      @default(video) @map("media_type")
+  status          VideoJobStatus @default(pending)
+  progress        Int            @default(0)
+  errorMessage    String?        @map("error_message")
+  userId          String         @map("user_id")
+  userTier        String         @map("user_tier")
+  outputUrl       String?        @map("output_url")
+  thumbnailUrl    String?        @map("thumbnail_url")
+  waveformUrl     String?        @map("waveform_url")
+  durationSeconds Float?         @map("duration_seconds")
+  width           Int?
+  height          Int?
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  processedAt     DateTime?      @map("processed_at")
+  post            Post?          @relation(fields: [postId], references: [id])
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([mediaType])
+  @@map("video_jobs")
+}
+
+// ============================================
+// Event Models
+// ============================================
+
+model Event {
+  id              String        @id @default(cuid())
+  title           String
+  description     String?
+  coverImageUrl   String?       @map("cover_image_url")
+  startAt         DateTime      @map("start_at")
+  endAt           DateTime      @map("end_at")
+  rsvpDeadlineAt  DateTime?     @map("rsvp_deadline_at")
+  locationName    String?       @map("location_name")
+  locationMode    LocationMode  @default(exact) @map("location_mode")
+  visibility      Visibility    @default(unlisted)
+  rsvpLocked      Boolean       @default(false) @map("rsvp_locked")
+  showAttendeeList Boolean      @default(true) @map("show_attendee_list")
+  allowMaybeUploads Boolean     @default(false) @map("allow_maybe_uploads")
+  uploadWindow    UploadWindow  @default(during_and_after) @map("upload_window")
+  status          EventStatus   @default(scheduled)
+  hostId          String        @map("host_id")
+  albumId         String?       @unique @map("album_id")
+  attendingCount  Int           @default(0) @map("attending_count")
+  maybeCount      Int           @default(0) @map("maybe_count")
+  invitedCount    Int           @default(0) @map("invited_count")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  host            User          @relation("EventHost", fields: [hostId], references: [id], onDelete: Cascade)
+  album           Album?        @relation(fields: [albumId], references: [id])
+  rsvps           EventRsvp[]
+  invites         EventInvite[]
+  inviteLinks     EventInviteLink[]
+
+  @@index([hostId])
+  @@index([startAt])
+  @@index([status])
+  @@map("events")
+}
+
+model EventRsvp {
+  id          String     @id @default(cuid())
+  eventId     String     @map("event_id")
+  userId      String     @map("user_id")
+  status      RsvpStatus @default(no_response)
+  respondedAt DateTime?  @map("responded_at")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  event       Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+  @@map("event_rsvps")
+}
+
+model EventInvite {
+  id           String    @id @default(cuid())
+  eventId      String    @map("event_id")
+  inviterId    String    @map("inviter_id")
+  inviteeId    String?   @map("invitee_id")
+  inviteeEmail String?   @map("invitee_email")
+  message      String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  claimedAt    DateTime? @map("claimed_at")
+  claimedById  String?   @map("claimed_by_id")
+
+  event     Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  inviter   User  @relation("EventInviteSent", fields: [inviterId], references: [id], onDelete: Cascade)
+  invitee   User? @relation("EventInviteReceived", fields: [inviteeId], references: [id], onDelete: Cascade)
+  claimedBy User? @relation("EventInviteClaimed", fields: [claimedById], references: [id], onDelete: SetNull)
+
+  @@unique([eventId, inviteeId])
+  @@unique([eventId, inviteeEmail])
+  @@index([inviteeId])
+  @@index([inviteeEmail])
+  @@map("event_invites")
+}
+
+model EventInviteLink {
+  id           String    @id @default(cuid())
+  eventId      String    @map("event_id")
+  token        String    @unique @default(cuid())
+  createdById  String    @map("created_by_id")
+  maxUses      Int       @default(50) @map("max_uses")
+  usedCount    Int       @default(0) @map("used_count")
+  expiresAt    DateTime? @map("expires_at")
+  isRevoked    Boolean   @default(false) @map("is_revoked")
+  isRestricted Boolean   @default(false) @map("is_restricted")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  event       Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdBy   User      @relation("EventInviteLinkCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  redemptions EventInviteLinkRedemption[]
+
+  @@index([eventId])
+  @@index([token])
+  @@map("event_invite_links")
+}
+
+model EventInviteLinkRedemption {
+  id           String   @id @default(cuid())
+  inviteLinkId String   @map("invite_link_id")
+  userId       String   @map("user_id")
+  redeemedAt   DateTime @default(now()) @map("redeemed_at")
+
+  inviteLink   EventInviteLink @relation(fields: [inviteLinkId], references: [id], onDelete: Cascade)
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([inviteLinkId, userId])
+  @@map("event_invite_link_redemptions")
+}
+
+
+// ============================================
+// Creator Page Models (Bio Link Landing Page)
+// ============================================
+
+model CreatorPage {
+  id            String   @id @default(cuid())
+  userId        String   @unique @map("user_id")
+  status        String   @default("draft") // draft | published
+  themeId       String?  @map("theme_id")
+  hideBranding  Boolean  @default(false) @map("hide_branding")
+  publishedAt   DateTime? @map("published_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blocks        CreatorPageBlock[]
+  pageViews     CreatorPageView[]
+  linkClicks    CreatorPageClick[]
+  emailSignups  CreatorPageEmail[]
+
+  @@map("creator_pages")
+}
+
+model CreatorPageBlock {
+  id          String   @id @default(cuid())
+  pageId      String   @map("page_id")
+  type        String   // hero | featured_content | card | links | social_links | affiliate_card | email_capture | divider
+  sortOrder   Int      @default(0) @map("sort_order")
+  data        Json     // Block-specific fields stored as JSON
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  page        CreatorPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  clicks      CreatorPageClick[]
+
+  @@index([pageId, sortOrder])
+  @@map("creator_page_blocks")
+}
+
+model CreatorPageView {
+  id          String   @id @default(cuid())
+  pageId      String   @map("page_id")
+  sessionId   String?  @map("session_id")
+  referrer    String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  page        CreatorPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId, createdAt])
+  @@map("creator_page_views")
+}
+
+model CreatorPageClick {
+  id          String   @id @default(cuid())
+  pageId      String   @map("page_id")
+  blockId     String   @map("block_id")
+  linkIndex   Int?     @map("link_index")
+  referrer    String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  page        CreatorPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  block       CreatorPageBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  @@index([pageId, createdAt])
+  @@index([blockId])
+  @@map("creator_page_clicks")
+}
+
+model CreatorPageEmail {
+  id          String   @id @default(cuid())
+  pageId      String   @map("page_id")
+  email       String
+  consentText String   @map("consent_text")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  page        CreatorPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, email])
+  @@index([pageId])
+  @@map("creator_page_emails")
+}
+
+// ============================================
+// Wellbeing Settings (Doom Scroll Prevention)
+// ============================================
+
+model DoomScrollSettings {
+  id                   String   @id @default(cuid())
+  isEnabled            Boolean  @default(true) @map("is_enabled")
+  postsThreshold       Int      @default(50) @map("posts_threshold")
+  timeThresholdSeconds Int      @default(600) @map("time_threshold_seconds")
+  breakDurationSeconds Int      @default(300) @map("break_duration_seconds")
+  title                String   @default("Doom Scrolling?")
+  message              String   @default("As much as we love having you on Deebop, you've been scrolling for a while. Is it time to take a break?")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("doom_scroll_settings")
+}
+
+// ============================================
+// Repost Settings (Chain Reposting Control)
+// ============================================
+
+model RepostSettings {
+  id                String   @id @default(cuid())
+  allowChainReposts Boolean  @default(true) @map("allow_chain_reposts")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("repost_settings")
+}
+
+enum AccountTier {
+  free
+  standard
+  pro
+}
+
+enum ContentType {
+  shout
+  image
+  video
+  panorama360
+  audio
+}
+
+enum MediaType {
+  video
+  audio
+}
+
+enum ProvenanceLabel {
+  original
+  ai_assisted
+  ai_generated
+  composite
+}
+
+enum Visibility {
+  public
+  followers
+  private
+  unlisted
+}
+
+enum ReportStatus {
+  pending
+  reviewed
+  dismissed
+  action_taken
+}
+
+enum NotificationType {
+  like
+  follow
+  follow_request
+  share
+  mention
+  repost
+  repost_request
+  repost_approved
+  repost_denied
+}
+
+enum RepostStatus {
+  pending
+  approved
+  denied
+}
+
+enum BlogPostStatus {
+  draft
+  published
+  scheduled
+}
+
+enum AlbumRole {
+  owner
+  co_owner
+  contributor
+}
+
+enum AlbumInviteStatus {
+  pending
+  accepted
+  declined
+}
+
+enum HeadlineStyle {
+  normal
+  news
+}
+
+enum ContentStatus {
+  published
+  scheduled
+}
+
+enum VideoJobStatus {
+  pending
+  processing
+  completed
+  failed
+  cancelled
+}
+
+// Event-related enums
+enum EventStatus {
+  scheduled
+  cancelled
+  completed
+}
+
+enum RsvpStatus {
+  attending
+  maybe
+  cant_make_it
+  no_response
+}
+
+enum LocationMode {
+  exact
+  area_only
+  hidden
+}
+
+enum UploadWindow {
+  during_and_after
+  after_only
+}
+
+enum AlbumType {
+  standard
+  event
+}

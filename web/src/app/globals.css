@@ -1,0 +1,219 @@
+@import "tailwindcss";
+
+/* ===== THEME VARIABLES ===== */
+
+/* Dark theme (default) */
+:root,
+[data-theme="dark"] {
+  --background: #000000;
+  --foreground: #ffffff;
+  --bg-primary: #000000;
+  --bg-secondary: #111827;
+  --bg-tertiary: #1f2937;
+  --bg-card: #1f2937;
+  --bg-input: #111827;
+  --text-primary: #ffffff;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --border-color: #374151;
+  --border-light: #4b5563;
+}
+
+/* Light theme */
+[data-theme="light"] {
+  --background: #f9fafb;
+  --foreground: #111827;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f3f4f6;
+  --bg-tertiary: #e5e7eb;
+  --bg-card: #ffffff;
+  --bg-input: #f9fafb;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  --border-color: #d1d5db;
+  --border-light: #e5e7eb;
+}
+
+/* High contrast mode */
+[data-high-contrast="true"] {
+  --text-secondary: var(--text-primary);
+  --text-muted: var(--text-primary);
+  --border-color: var(--text-primary);
+}
+
+/* ===== FONT SIZE SCALES ===== */
+[data-font-size="small"] {
+  font-size: 14px;
+}
+
+[data-font-size="medium"] {
+  font-size: 16px;
+}
+
+[data-font-size="large"] {
+  font-size: 18px;
+}
+
+/* ===== REDUCED MOTION (via settings) ===== */
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] *::before,
+[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  /* Custom breakpoint for extra small screens */
+  --breakpoint-xs: 475px;
+}
+
+/* ===== LIGHT THEME COLOR OVERRIDES ===== */
+/* Override Tailwind gray classes in light mode */
+[data-theme="light"] {
+  /* Background overrides */
+  & .bg-black { background-color: #ffffff !important; }
+  & .bg-gray-900 { background-color: #f9fafb !important; }
+  & .bg-gray-800 { background-color: #f3f4f6 !important; }
+  & .bg-gray-800\/50 { background-color: rgba(243, 244, 246, 0.5) !important; }
+  & .bg-gray-800\/30 { background-color: rgba(243, 244, 246, 0.3) !important; }
+  & .bg-gray-700 { background-color: #e5e7eb !important; }
+  & .bg-gray-600 { background-color: #d1d5db !important; }
+
+  /* Text overrides */
+  & .text-white { color: #111827 !important; }
+  & .text-gray-100 { color: #1f2937 !important; }
+  & .text-gray-200 { color: #374151 !important; }
+  & .text-gray-300 { color: #4b5563 !important; }
+  & .text-gray-400 { color: #6b7280 !important; }
+  & .text-gray-500 { color: #6b7280 !important; }
+
+  /* Border overrides */
+  & .border-gray-700 { border-color: #d1d5db !important; }
+  & .border-gray-800 { border-color: #e5e7eb !important; }
+
+  /* Hover states */
+  & .hover\:bg-gray-700:hover { background-color: #d1d5db !important; }
+  & .hover\:bg-gray-800:hover { background-color: #e5e7eb !important; }
+  & .hover\:bg-gray-600:hover { background-color: #9ca3af !important; }
+  & .hover\:border-gray-600:hover { border-color: #9ca3af !important; }
+  & .hover\:text-white:hover { color: #111827 !important; }
+
+  /* Ring colors */
+  & .ring-gray-700 { --tw-ring-color: #d1d5db !important; }
+  & .focus\:ring-gray-700:focus { --tw-ring-color: #d1d5db !important; }
+
+  /* Divide colors */
+  & .divide-gray-700 > :not([hidden]) ~ :not([hidden]) { border-color: #d1d5db !important; }
+  & .divide-gray-800 > :not([hidden]) ~ :not([hidden]) { border-color: #e5e7eb !important; }
+
+  /* Placeholder text */
+  & .placeholder-gray-400::placeholder { color: #9ca3af !important; }
+  & .placeholder-gray-500::placeholder { color: #6b7280 !important; }
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Safe area utilities for iPhone notch/home indicator */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+.safe-area-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom, 0), 0.5rem);
+}
+
+/* Improve touch target accessibility */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Skip to main content for screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Focus visible styles for keyboard navigation */
+:focus-visible {
+  outline: 2px solid #34d399;
+  outline-offset: 2px;
+}
+
+/* Logo shimmer wave animation */
+@keyframes logo-shimmer {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+.logo-shimmer {
+  background: linear-gradient(
+    90deg,
+    #34d399 0%,
+    #6ee7b7 10%,
+    #facc15 20%,
+    #fde047 30%,
+    #22d3ee 40%,
+    #67e8f9 50%,
+    #34d399 60%,
+    #6ee7b7 70%,
+    #facc15 80%,
+    #fde047 90%,
+    #22d3ee 100%
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: logo-shimmer 8s linear infinite;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Highlight animation for post scroll-to */
+@keyframes highlight-pulse {
+  0%, 100% { 
+    box-shadow: none; 
+  }
+  50% { 
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.4); 
+  }
+}
+
+.highlight-pulse {
+  animation: highlight-pulse 0.5s ease-in-out 2;
+  border-radius: 0.75rem;
+}
