@@ -10,15 +10,21 @@ const S3_ACCESS_KEY = process.env.S3_ACCESS_KEY_ID || 'minioadmin';
 const S3_SECRET_KEY = process.env.S3_SECRET_ACCESS_KEY || 'minioadmin123';
 const S3_BUCKET = process.env.S3_BUCKET || 'deebop-media';
 
-// Create S3 client configured for MinIO
+// Detect if we're using Supabase Storage (for public URL generation)
+const isSupabase = S3_ENDPOINT.includes('supabase.co');
+const SUPABASE_PROJECT_URL = isSupabase
+  ? S3_ENDPOINT.replace('/storage/v1/s3', '')
+  : null;
+
+// Create S3 client configured for MinIO/Supabase
 const s3Client = new S3Client({
   endpoint: S3_ENDPOINT,
-  region: 'us-east-1', // MinIO requires a region but ignores the value
+  region: 'us-east-1', // Required but value doesn't matter for MinIO/Supabase
   credentials: {
     accessKeyId: S3_ACCESS_KEY,
     secretAccessKey: S3_SECRET_KEY,
   },
-  forcePathStyle: true, // Required for MinIO
+  forcePathStyle: true, // Required for MinIO and Supabase S3
 });
 
 interface PresignedUrlOptions {
@@ -42,9 +48,14 @@ export async function generateUploadUrl(options: PresignedUrlOptions): Promise<s
 }
 
 /**
- * Get the public URL for a file in MinIO
+ * Get the public URL for a file in MinIO/Supabase
  */
 export function getPublicUrl(key: string): string {
+  if (isSupabase && SUPABASE_PROJECT_URL) {
+    // Supabase public URL format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[key]
+    return `${SUPABASE_PROJECT_URL}/storage/v1/object/public/${S3_BUCKET}/${key}`;
+  }
+  // MinIO format
   return `${S3_ENDPOINT}/${S3_BUCKET}/${key}`;
 }
 
@@ -128,9 +139,17 @@ export async function deleteFromMinio(key: string): Promise<void> {
 }
 
 /**
- * Extract the key from a full MinIO URL
+ * Extract the key from a full MinIO/Supabase URL
  */
 export function extractKeyFromUrl(url: string): string {
+  // Handle Supabase URLs
+  if (isSupabase && SUPABASE_PROJECT_URL) {
+    const supabasePrefix = `${SUPABASE_PROJECT_URL}/storage/v1/object/public/${S3_BUCKET}/`;
+    if (url.startsWith(supabasePrefix)) {
+      return url.slice(supabasePrefix.length);
+    }
+  }
+  // Handle MinIO URLs
   const bucketPrefix = `${S3_ENDPOINT}/${S3_BUCKET}/`;
   if (url.startsWith(bucketPrefix)) {
     return url.slice(bucketPrefix.length);
