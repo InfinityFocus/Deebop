@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/db';
-import { stripe } from '@/lib/stripe';
+import { getStripe, isStripeEnabled } from '@/lib/stripe';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
@@ -31,9 +31,9 @@ export async function GET(request: NextRequest) {
 
     let subscription = null;
 
-    // If user has Stripe customer ID, get subscription details
-    if (user.stripeCustomerId) {
-      const subscriptions = await stripe.subscriptions.list({
+    // If user has Stripe customer ID and Stripe is enabled, get subscription details
+    if (user.stripeCustomerId && isStripeEnabled()) {
+      const subscriptions = await getStripe().subscriptions.list({
         customer: user.stripeCustomerId,
         status: 'active',
         limit: 1,

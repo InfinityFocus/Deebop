@@ -1,13 +1,32 @@
 import Stripe from 'stripe';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is not set');
+// Stripe is optional for beta - only initialize if key is provided
+let stripeInstance: Stripe | null = null;
+
+export function getStripe(): Stripe {
+  if (!stripeInstance) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY is not set - payments are disabled');
+    }
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-12-15.clover',
+      typescript: true,
+    });
+  }
+  return stripeInstance;
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-12-15.clover',
-  typescript: true,
-});
+// Check if Stripe is configured
+export function isStripeEnabled(): boolean {
+  return !!process.env.STRIPE_SECRET_KEY;
+}
+
+// Legacy export for backward compatibility - use getStripe() instead
+export const stripe = {
+  get instance() {
+    return getStripe();
+  },
+};
 
 // Subscription tier configuration
 export const SUBSCRIPTION_TIERS = {

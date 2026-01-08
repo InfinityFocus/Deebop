@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/db';
-import { stripe } from '@/lib/stripe';
+import { getStripe, isStripeEnabled } from '@/lib/stripe';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
@@ -69,6 +69,14 @@ export async function GET(request: NextRequest) {
 // Create a new boost (with Stripe payment)
 export async function POST(request: NextRequest) {
   try {
+    // Check if payments are enabled
+    if (!isStripeEnabled()) {
+      return NextResponse.json(
+        { error: 'Payments are disabled in beta mode' },
+        { status: 503 }
+      );
+    }
+
     const cookieStore = await cookies();
     const token = cookieStore.get('deebop-auth')?.value;
 
@@ -122,7 +130,7 @@ export async function POST(request: NextRequest) {
     // Create or get Stripe customer
     let customerId = user.stripeCustomerId;
     if (!customerId) {
-      const customer = await stripe.customers.create({
+      const customer = await getStripe().customers.create({
         email: user.email,
         metadata: { userId },
       });
@@ -151,7 +159,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Create Stripe checkout session for the boost
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       customer: customerId,
       mode: 'payment',
       payment_method_types: ['card'],

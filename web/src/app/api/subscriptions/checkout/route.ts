@@ -2,12 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/db';
-import { stripe, getPriceIdForTier, type SubscriptionTier } from '@/lib/stripe';
+import { getStripe, isStripeEnabled, getPriceIdForTier, type SubscriptionTier } from '@/lib/stripe';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if payments are enabled
+    if (!isStripeEnabled()) {
+      return NextResponse.json(
+        { error: 'Subscriptions are disabled in beta mode' },
+        { status: 503 }
+      );
+    }
+
     // Get user from JWT
     const cookieStore = await cookies();
     const token = cookieStore.get('deebop-auth')?.value;
@@ -50,7 +58,7 @@ export async function POST(request: NextRequest) {
     let customerId = user.stripeCustomerId;
 
     if (!customerId) {
-      const customer = await stripe.customers.create({
+      const customer = await getStripe().customers.create({
         email: user.email,
         metadata: { userId: user.id },
       });
@@ -64,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create checkout session
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
       payment_method_types: ['card'],
