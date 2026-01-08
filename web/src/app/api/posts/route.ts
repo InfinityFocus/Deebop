@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
 async function fetchSavedFeed(
   user: { id: string } | null,
   contentTypeFilter: { contentType?: string },
-  sensitiveContentFilter: Record<string, boolean>,
+  sensitiveContentFilter: { isSensitiveContent?: boolean },
   cursor: string | null,
   limit: number
 ) {
@@ -182,7 +182,7 @@ async function fetchSavedFeed(
 async function fetchFollowingFeed(
   user: { id: string } | null,
   contentTypeFilter: { contentType?: string },
-  sensitiveContentFilter: Record<string, boolean>,
+  sensitiveContentFilter: { isSensitiveContent?: boolean },
   cursor: string | null,
   limit: number,
   followingIds: string[],
@@ -387,7 +387,7 @@ async function fetchFollowingFeed(
 async function fetchDiscoveryFeed(
   user: { id: string } | null,
   contentTypeFilter: { contentType?: string },
-  sensitiveContentFilter: Record<string, boolean>,
+  sensitiveContentFilter: { isSensitiveContent?: boolean },
   cursor: string | null,
   limit: number,
   followingIds: string[],
@@ -651,7 +651,7 @@ async function fetchProfileFeed(
   user: { id: string } | null,
   profileUserId: string,
   contentTypeFilter: { contentType?: string },
-  sensitiveContentFilter: Record<string, boolean>,
+  sensitiveContentFilter: { isSensitiveContent?: boolean },
   cursor: string | null,
   limit: number,
   followingIds: string[]
