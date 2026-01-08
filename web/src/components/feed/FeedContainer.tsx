@@ -394,7 +394,7 @@ export function FeedContainer({ contentType, userId, mode = 'discovery', highlig
           />
         );
       } else {
-        items.push(<PostCard key={post.id} post={post} />);
+        items.push(<PostCard key={post.id} post={post as any} />);
       }
 
       // Insert ad after every adFrequency posts

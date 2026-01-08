@@ -146,7 +146,7 @@ export function SavedFeedContainer({ contentType, columns = 2 }: SavedFeedContai
       >
         {posts.map((post) => (
           <div key={post.id} className="mb-4">
-            <PostCard post={post} />
+            <PostCard post={post as any} />
           </div>
         ))}
       </Masonry>

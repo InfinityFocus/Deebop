@@ -581,7 +581,7 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
             headline: localHeadline,
             headline_style: localHeadlineStyle,
             text_content: localTextContent,
-            visibility: localVisibility,
+            visibility: localVisibility as 'public' | 'followers' | 'private',
           }}
           onClose={() => setShowEditModal(false)}
           onSave={(updated) => {
