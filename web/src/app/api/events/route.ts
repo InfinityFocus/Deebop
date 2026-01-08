@@ -57,14 +57,20 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
         whereClause = {
-          OR: [
-            { status: 'completed' },
-            { endAt: { lt: now } },
-          ],
-          OR: [
-            { hostId: user.id },
-            { invites: { some: { inviteeId: user.id } } },
-            { rsvps: { some: { userId: user.id } } },
+          AND: [
+            {
+              OR: [
+                { status: 'completed' },
+                { endAt: { lt: now } },
+              ],
+            },
+            {
+              OR: [
+                { hostId: user.id },
+                { invites: { some: { inviteeId: user.id } } },
+                { rsvps: { some: { userId: user.id } } },
+              ],
+            },
           ],
         };
         break;
