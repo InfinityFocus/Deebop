@@ -234,8 +234,56 @@ export async function processVideoJobSafe(jobId: string): Promise<{ success: boo
 }
 
 export function triggerVideoProcessing(jobId: string): void {
-  checkFfmpegCli().then((ok) => {
-    if (!ok) { console.error("[VideoProcessor] FFmpeg not available, job " + jobId + " pending"); return; }
+  checkFfmpegCli().then(async (ok) => {
+    if (!ok) {
+      console.warn("[VideoProcessor] FFmpeg not available, attempting fallback for job " + jobId);
+      // Fall back to accepting raw file without processing
+      await processJobWithoutFfmpeg(jobId);
+      return;
+    }
     processVideoJobSafe(jobId).catch((e) => console.error("[VideoProcessor] Error:", e));
   });
+}
+
+// Fallback for when FFmpeg is not available (e.g., Vercel serverless)
+// This accepts the raw uploaded file as-is without transcoding
+async function processJobWithoutFfmpeg(jobId: string): Promise<void> {
+  try {
+    const job = await prisma.videoJob.findUnique({ where: { id: jobId } });
+    if (!job) throw new Error("Job not found");
+
+    await prisma.videoJob.update({ where: { id: jobId }, data: { status: "processing", progress: 50 } });
+
+    // For audio, we can accept the raw file as-is (most browsers support webm/mp3/etc)
+    if (job.mediaType === "audio") {
+      // Just use the raw file URL as the output
+      await prisma.videoJob.update({
+        where: { id: jobId },
+        data: {
+          status: "completed",
+          progress: 100,
+          outputUrl: job.rawFileUrl,
+          processedAt: new Date()
+        },
+      });
+      console.log("[AudioProcessor] Job " + jobId + " completed (no transcoding - FFmpeg not available)");
+      return;
+    }
+
+    // For video without FFmpeg, we also accept raw file but warn that quality may vary
+    await prisma.videoJob.update({
+      where: { id: jobId },
+      data: {
+        status: "completed",
+        progress: 100,
+        outputUrl: job.rawFileUrl,
+        processedAt: new Date()
+      },
+    });
+    console.log("[VideoProcessor] Job " + jobId + " completed (no transcoding - FFmpeg not available)");
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    await prisma.videoJob.update({ where: { id: jobId }, data: { status: "failed", errorMessage: msg } });
+    console.error("[VideoProcessor] Fallback failed for job " + jobId + ":", msg);
+  }
 }

@@ -75,10 +75,10 @@ export async function GET(request: NextRequest) {
           suspendedReason: true,
           followersCount: true,
           followingCount: true,
-          postsCount: true,
           createdAt: true,
           _count: {
             select: {
+              posts: true,
               reports: true,
             },
           },
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
         suspended_reason: u.suspendedReason,
         followers_count: u.followersCount,
         following_count: u.followingCount,
-        posts_count: u.postsCount,
+        posts_count: u._count.posts,
         reports_count: u._count.reports,
         created_at: u.createdAt,
       })),

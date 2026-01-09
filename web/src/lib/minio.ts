@@ -3,6 +3,7 @@
  */
 
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Readable } from 'stream';
 
 const S3_ENDPOINT = process.env.S3_ENDPOINT || 'http://localhost:9000';
@@ -34,17 +35,20 @@ interface PresignedUrlOptions {
 }
 
 /**
- * Generate a presigned URL for uploading to MinIO
- * Uses a simple HMAC-SHA256 signature for local dev
+ * Generate a presigned URL for uploading directly to MinIO/Supabase
+ * This allows clients to upload large files directly without going through serverless functions
  */
 export async function generateUploadUrl(options: PresignedUrlOptions): Promise<string> {
   const { key, contentType, expiresIn = 3600 } = options;
 
-  // For local MinIO, we'll use a simple direct URL
-  // In production, you'd use AWS SDK or similar
-  const url = `${S3_ENDPOINT}/${S3_BUCKET}/${key}`;
+  const command = new PutObjectCommand({
+    Bucket: S3_BUCKET,
+    Key: key,
+    ContentType: contentType,
+  });
 
-  return url;
+  const signedUrl = await getSignedUrl(s3Client, command, { expiresIn });
+  return signedUrl;
 }
 
 /**

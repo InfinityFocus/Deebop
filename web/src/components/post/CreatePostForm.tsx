@@ -150,29 +150,64 @@ export function CreatePostForm() {
     }
   }, [audioJobId, audioJobStatus, pollAudioJobStatus]);
 
-  // Upload audio file and get job ID for async processing
+  // Upload audio file using presigned URL (bypasses serverless function body limit)
   const uploadAudioFile = async (file: File | Blob): Promise<string> => {
     setIsUploadingAudio(true);
     setAudioJobError(null);
 
     try {
-      const formData = new FormData();
       // Convert Blob to File if needed
       const audioFile = file instanceof File ? file : new File([file], 'recording.webm', { type: file.type || 'audio/webm' });
-      formData.append('file', audioFile);
-      formData.append('mediaType', 'audio');
 
-      const res = await fetch('/api/upload', {
+      // Step 1: Get presigned URL
+      const presignedRes = await fetch('/api/upload/presigned', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: audioFile.name,
+          contentType: audioFile.type,
+          mediaType: 'audio',
+          fileSize: audioFile.size,
+        }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to upload audio');
+      if (!presignedRes.ok) {
+        const data = await presignedRes.json();
+        throw new Error(data.error || 'Failed to get upload URL');
       }
 
-      const data = await res.json();
+      const { uploadUrl, key } = await presignedRes.json();
+
+      // Step 2: Upload directly to storage
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: audioFile,
+        headers: {
+          'Content-Type': audioFile.type,
+        },
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error('Failed to upload file to storage');
+      }
+
+      // Step 3: Finalize upload to create processing job
+      const finalizeRes = await fetch('/api/upload/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          key,
+          mediaType: 'audio',
+          fileSize: audioFile.size,
+        }),
+      });
+
+      if (!finalizeRes.ok) {
+        const data = await finalizeRes.json();
+        throw new Error(data.error || 'Failed to finalize upload');
+      }
+
+      const data = await finalizeRes.json();
 
       if (data.jobId) {
         setAudioJobId(data.jobId);
@@ -246,27 +281,61 @@ export function CreatePostForm() {
     }
   };
 
-  // Upload video and get job ID for async processing
+  // Upload video using presigned URL (bypasses serverless function body limit)
   const uploadVideoFile = async (file: File): Promise<string> => {
     setIsUploadingVideo(true);
     setVideoJobError(null);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('mediaType', 'video');
-
-      const res = await fetch('/api/upload', {
+      // Step 1: Get presigned URL
+      const presignedRes = await fetch('/api/upload/presigned', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+          mediaType: 'video',
+          fileSize: file.size,
+        }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to upload video');
+      if (!presignedRes.ok) {
+        const data = await presignedRes.json();
+        throw new Error(data.error || 'Failed to get upload URL');
       }
 
-      const data = await res.json();
+      const { uploadUrl, key } = await presignedRes.json();
+
+      // Step 2: Upload directly to storage
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error('Failed to upload file to storage');
+      }
+
+      // Step 3: Finalize upload to create processing job
+      const finalizeRes = await fetch('/api/upload/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          key,
+          mediaType: 'video',
+          fileSize: file.size,
+        }),
+      });
+
+      if (!finalizeRes.ok) {
+        const data = await finalizeRes.json();
+        throw new Error(data.error || 'Failed to finalize upload');
+      }
+
+      const data = await finalizeRes.json();
 
       if (data.jobId) {
         setVideoJobId(data.jobId);
@@ -289,6 +358,44 @@ export function CreatePostForm() {
 
   const uploadFile = async (file: File): Promise<string | null> => {
     try {
+      // Use presigned URLs for panoramas (large files) to bypass serverless limits
+      if (selectedType === 'panorama360') {
+        // Step 1: Get presigned URL
+        const presignedRes = await fetch('/api/upload/presigned', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: file.name,
+            contentType: file.type,
+            mediaType: 'panorama360',
+            fileSize: file.size,
+          }),
+        });
+
+        if (!presignedRes.ok) {
+          const data = await presignedRes.json();
+          throw new Error(data.error || 'Failed to get upload URL');
+        }
+
+        const { uploadUrl, publicUrl } = await presignedRes.json();
+
+        // Step 2: Upload directly to storage
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type,
+          },
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error('Failed to upload file to storage');
+        }
+
+        return publicUrl;
+      }
+
+      // For images, use the regular upload endpoint (smaller files)
       const formData = new FormData();
       formData.append('file', file);
       formData.append('mediaType', selectedType as string);
