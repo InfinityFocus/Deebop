@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
       where,
       select: {
         id: true,
+        headline: true,
         description: true,
         contentType: true,
         mediaUrl: true,
@@ -100,6 +101,7 @@ export async function GET(request: NextRequest) {
 
       return {
         id: post.id,
+        headline: post.headline,
         textContent: post.description,
         contentType: post.contentType,
         mediaUrl: post.mediaUrl,

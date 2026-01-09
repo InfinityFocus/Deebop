@@ -112,6 +112,7 @@ export interface ShoutResult {
 
 export interface PostResult {
   id: string;
+  headline: string | null;
   textContent: string | null;
   contentType: string;
   mediaUrl: string | null;
