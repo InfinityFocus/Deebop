@@ -2,18 +2,29 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, Eye, Play, Music, MessageCircle } from 'lucide-react';
+import { Heart, Eye, Play, Music, MessageCircle, Video } from 'lucide-react';
 import type { PostResult } from '@/types/explore';
 
 interface TrendingPostCardProps {
   post: PostResult;
 }
 
+// Check if URL is an image (not a video file)
+function isImageUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg'];
+  const lowerUrl = url.toLowerCase();
+  return imageExtensions.some(ext => lowerUrl.includes(ext));
+}
+
 export default function TrendingPostCard({ post }: TrendingPostCardProps) {
   const isVideo = post.contentType === 'video' || post.contentType === 'reel';
   const isAudio = post.contentType === 'audio';
   const isShout = post.contentType === 'shout';
-  const hasMedia = post.mediaUrl || post.thumbnailUrl;
+  // Only use image URLs for the Image component
+  const imageUrl = isImageUrl(post.thumbnailUrl) ? post.thumbnailUrl :
+                   isImageUrl(post.mediaUrl) ? post.mediaUrl : null;
+  const hasValidImage = !!imageUrl;
   const displayName = post.user.displayName || post.user.username;
 
   return (
@@ -77,10 +88,39 @@ export default function TrendingPostCard({ post }: TrendingPostCardProps) {
               </span>
             </div>
           </div>
-        ) : hasMedia ? (
+        ) : isVideo && !hasValidImage ? (
+          // Styled video card (no thumbnail available)
+          <div className="w-full h-full bg-gradient-to-br from-blue-900/80 via-gray-900 to-indigo-900/80 flex flex-col items-center justify-center p-4 relative">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center mb-3 shadow-lg z-10">
+              <Play size={24} className="text-white ml-1" fill="white" />
+            </div>
+            <p className="text-white text-sm font-medium text-center line-clamp-2 z-10">
+              {post.headline || post.textContent || 'Video'}
+            </p>
+            <div className="absolute bottom-3 left-3 flex items-center gap-1.5 z-10">
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-[10px] font-bold text-white">
+                {displayName[0]?.toUpperCase() || '?'}
+              </div>
+              <span className="text-gray-400 text-xs">@{post.user.username}</span>
+            </div>
+            {/* Engagement stats */}
+            <div className="absolute bottom-3 right-3 flex items-center gap-2 text-xs text-white/80 z-10">
+              <span className="flex items-center gap-1">
+                <Heart className="w-3 h-3" />
+                {post.likeCount}
+              </span>
+              {post.viewCount !== undefined && post.viewCount > 0 && (
+                <span className="flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  {post.viewCount >= 1000 ? `${(post.viewCount / 1000).toFixed(1)}k` : post.viewCount}
+                </span>
+              )}
+            </div>
+          </div>
+        ) : hasValidImage ? (
           <>
             <Image
-              src={post.thumbnailUrl || post.mediaUrl || ''}
+              src={imageUrl!}
               alt=""
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -117,8 +157,8 @@ export default function TrendingPostCard({ post }: TrendingPostCardProps) {
         )}
       </div>
 
-      {/* Creator info - only show for non-shout/non-audio posts */}
-      {!isShout && !isAudio && (
+      {/* Creator info - only show for posts with image thumbnails */}
+      {!isShout && !isAudio && hasValidImage && (
         <div className="mt-2 flex items-center gap-2">
           {post.user.avatar ? (
             <Image
