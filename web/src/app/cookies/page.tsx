@@ -66,11 +66,26 @@ export default function CookiesPage() {
 
           <section>
             <h2 className="text-2xl font-semibold mb-4">Managing Cookies</h2>
-            <p className="text-gray-300 leading-relaxed">
-              Most web browsers allow you to control cookies through their settings. You can
-              set your browser to refuse cookies or delete cookies that have already been set.
-              However, if you block essential cookies, some parts of the website may not function
-              properly.
+            <p className="text-gray-300 leading-relaxed mb-4">
+              You can manage your cookie preferences at any time using our cookie settings panel.
+              This allows you to enable or disable different categories of cookies based on your
+              preferences.
+            </p>
+            <div className="p-4 bg-gray-900 border border-gray-800 rounded-lg">
+              <p className="text-gray-400 text-sm mb-3">
+                Click below to open the cookie preferences panel:
+              </p>
+              <Link
+                href="/cookie-preferences"
+                className="inline-block px-4 py-2 text-sm font-medium text-black bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-colors"
+              >
+                Manage Cookie Preferences
+              </Link>
+            </div>
+            <p className="text-gray-300 leading-relaxed mt-4">
+              You can also control cookies through your browser settings. Most browsers allow you
+              to refuse cookies or delete cookies that have already been set. However, if you block
+              essential cookies, some parts of the website may not function properly.
             </p>
           </section>
 
@@ -78,7 +93,7 @@ export default function CookiesPage() {
             <h2 className="text-2xl font-semibold mb-4">Contact Us</h2>
             <p className="text-gray-300 leading-relaxed">
               If you have questions about our use of cookies, please contact us at{' '}
-              <a href="mailto:privacy@deebop.com" className="text-purple-400 hover:text-purple-300">
+              <a href="mailto:privacy@deebop.com" className="text-emerald-400 hover:text-emerald-300">
                 privacy@deebop.com
               </a>
             </p>
