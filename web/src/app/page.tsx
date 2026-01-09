@@ -1,5 +1,5 @@
 import Footer from "@/components/layout/Footer";
-import { ShieldCheck, BadgeCheck, Clock, Users } from "lucide-react";
+import { ShieldCheck, BadgeCheck, Clock, Images } from "lucide-react";
 import EventsSection from "@/components/home/EventsSection";
 import TrustSection from "@/components/home/TrustSection";
 import CreatorPageSection from "@/components/home/CreatorPageSection";
@@ -8,27 +8,32 @@ import ExplorePreview from "@/components/home/ExplorePreview";
 import FeaturedCreators from "@/components/home/FeaturedCreators";
 import HomepageTracker from "@/components/home/HomepageTracker";
 import { TrackedCTAs } from "@/components/home/TrackedCTAs";
+import Link from "next/link";
 
 const differentiators = [
   {
     icon: ShieldCheck,
     label: "No Comments",
     description: "No drama",
+    href: "/features#simple-interactions",
   },
   {
     icon: BadgeCheck,
     label: "Provenance",
     description: "AI transparency",
+    href: "/features#creator-tools",
   },
   {
     icon: Clock,
     label: "Drops",
     description: "Schedule content",
+    href: "/features#creator-tools",
   },
   {
-    icon: Users,
+    icon: Images,
     label: "Albums",
     description: "Collaborate",
+    href: "/features#creator-tools",
   },
 ];
 
@@ -62,16 +67,17 @@ export default function Home() {
             {differentiators.map((item) => {
               const Icon = item.icon;
               return (
-                <div
+                <Link
                   key={item.label}
-                  className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-800 bg-gray-900/50 min-w-[120px]"
+                  href={item.href}
+                  className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-800 bg-gray-900/50 min-w-[120px] transition-all hover:border-emerald-500/50 hover:bg-gray-800/50"
                 >
                   <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
                     <Icon size={20} className="text-purple-400" />
                   </div>
                   <span className="text-sm font-medium text-white">{item.label}</span>
                   <span className="text-xs text-gray-500">{item.description}</span>
-                </div>
+                </Link>
               );
             })}
           </div>

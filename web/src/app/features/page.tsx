@@ -199,7 +199,7 @@ export default function FeaturesPage() {
         </section>
 
         {/* Creator Tools */}
-        <section className="mb-16">
+        <section id="creator-tools" className="mb-16 scroll-mt-8">
           <h2 className="text-2xl font-bold mb-8">Creator Tools</h2>
           <div className="grid md:grid-cols-2 gap-6">
             {creatorTools.map((tool) => {
@@ -243,7 +243,7 @@ export default function FeaturesPage() {
         </section>
 
         {/* Engagement */}
-        <section className="mb-16">
+        <section id="simple-interactions" className="mb-16 scroll-mt-8">
           <h2 className="text-2xl font-bold mb-8">Simple Interactions</h2>
           <p className="text-gray-400 mb-6">
             No comments, no drama. Simple, focused engagement:
