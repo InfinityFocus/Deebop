@@ -1018,11 +1018,15 @@ export async function POST(request: NextRequest) {
     let linkedAudioJob: { id: string; status: string } | null = null;
 
     // Handle video job linking (async video processing)
+    let mediaDurationSeconds: number | null = null;
+    let mediaWidth: number | null = null;
+    let mediaHeight: number | null = null;
+
     if (videoJobId && contentType === 'video') {
       // Verify the VideoJob exists and belongs to this user
       const videoJob = await prisma.videoJob.findUnique({
         where: { id: videoJobId },
-        select: { id: true, status: true, userId: true, outputUrl: true, thumbnailUrl: true },
+        select: { id: true, status: true, userId: true, outputUrl: true, thumbnailUrl: true, durationSeconds: true, width: true, height: true },
       });
 
       if (!videoJob) {
@@ -1033,20 +1037,22 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Video job does not belong to you' }, { status: 403 });
       }
 
-      // If job already completed, use the output URLs
+      // Always link the VideoJob to the post
+      linkedVideoJob = { id: videoJob.id, status: videoJob.status };
+
+      // If job already completed, use the output URLs and metadata
       if (videoJob.status === 'completed' && videoJob.outputUrl) {
         mediaUrl = videoJob.outputUrl;
         thumbnailUrl = videoJob.thumbnailUrl;
-      } else {
-        // Job still processing - post will be created without mediaUrl
-        // Worker will update it when processing completes
-        linkedVideoJob = { id: videoJob.id, status: videoJob.status };
+        mediaDurationSeconds = videoJob.durationSeconds;
+        mediaWidth = videoJob.width;
+        mediaHeight = videoJob.height;
       }
     } else if (audioJobId && contentType === 'audio') {
       // Handle audio job linking (async audio processing)
       const audioJob = await prisma.videoJob.findUnique({
         where: { id: audioJobId },
-        select: { id: true, status: true, userId: true, outputUrl: true, waveformUrl: true },
+        select: { id: true, status: true, userId: true, outputUrl: true, waveformUrl: true, durationSeconds: true },
       });
 
       if (!audioJob) {
@@ -1057,14 +1063,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Audio job does not belong to you' }, { status: 403 });
       }
 
-      // If job already completed, use the output URLs
+      // Always link the AudioJob to the post
+      linkedAudioJob = { id: audioJob.id, status: audioJob.status };
+
+      // If job already completed, use the output URLs and metadata
       if (audioJob.status === 'completed' && audioJob.outputUrl) {
         mediaUrl = audioJob.outputUrl;
+        mediaDurationSeconds = audioJob.durationSeconds;
         // Note: waveformUrl is stored on the job, accessible via the post's linked job
-      } else {
-        // Job still processing - post will be created without mediaUrl
-        // Worker will update it when processing completes
-        linkedAudioJob = { id: audioJob.id, status: audioJob.status };
       }
     } else if (mediaUrlFromClient && contentType === 'panorama360') {
       // Pre-uploaded panorama via presigned URL
@@ -1094,6 +1100,9 @@ export async function POST(request: NextRequest) {
           description: textContent?.trim() || null,
           mediaUrl,
           mediaThumbnailUrl: thumbnailUrl,
+          mediaDurationSeconds,
+          mediaWidth,
+          mediaHeight,
           visibility,
           provenance: provenance || 'original',
           status,
