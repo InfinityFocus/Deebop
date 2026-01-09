@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Sparkles, TrendingUp, Shield, Play, MessageCircle } from 'lucide-react';
+import { ArrowRight, Sparkles, TrendingUp, Shield, Play, MessageCircle, Music } from 'lucide-react';
 import { useHomepageAnalytics } from '@/hooks/useHomepageAnalytics';
 
 interface PublicPost {
@@ -112,6 +112,7 @@ export default function ExplorePreview() {
                 : post.media_url;
               const isVideo = post.content_type === 'video';
               const isShout = post.content_type === 'shout';
+              const isAudio = post.content_type === 'audio';
 
               return (
                 <Link
@@ -119,7 +120,7 @@ export default function ExplorePreview() {
                   href={post.author ? `/u/${username}?post=${post.id}` : '#'}
                   className="group relative aspect-square rounded-xl overflow-hidden bg-gray-800"
                 >
-                  {thumbnailUrl ? (
+                  {thumbnailUrl && !isAudio ? (
                     <>
                       <img
                         src={thumbnailUrl}
@@ -135,6 +136,32 @@ export default function ExplorePreview() {
                         </div>
                       )}
                     </>
+                  ) : isAudio ? (
+                    // Styled audio card
+                    <div className="w-full h-full bg-gradient-to-br from-rose-900/80 via-gray-900 to-purple-900/80 flex flex-col items-center justify-center p-4 relative">
+                      {/* Decorative waveform bars */}
+                      <div className="absolute inset-0 flex items-center justify-center gap-1 opacity-20">
+                        {[...Array(12)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="w-1 bg-white rounded-full"
+                            style={{ height: `${20 + Math.sin(i * 0.8) * 30 + Math.random() * 20}%` }}
+                          />
+                        ))}
+                      </div>
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-500 to-purple-500 flex items-center justify-center mb-3 shadow-lg z-10">
+                        <Music size={28} className="text-white" />
+                      </div>
+                      <p className="text-white text-sm font-medium text-center line-clamp-2 z-10">
+                        {post.headline || post.text_content || 'Audio'}
+                      </p>
+                      <div className="absolute bottom-3 left-3 flex items-center gap-1.5 z-10">
+                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-rose-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white">
+                          {displayName[0]?.toUpperCase() || '?'}
+                        </div>
+                        <span className="text-gray-400 text-xs">@{username}</span>
+                      </div>
+                    </div>
                   ) : isShout ? (
                     // Styled shout card
                     <div className="w-full h-full bg-gradient-to-br from-emerald-900/80 via-gray-900 to-cyan-900/80 flex flex-col items-center justify-center p-4 relative">

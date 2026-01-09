@@ -55,6 +55,7 @@ export function CreatePostForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadedMediaUrl, setUploadedMediaUrl] = useState<string | null>(null); // For presigned uploads (panoramas)
 
   // Scheduling state
   const [isScheduled, setIsScheduled] = useState(false);
@@ -279,6 +280,64 @@ export function CreatePostForm() {
         // Error already handled in uploadAudioFile
       }
     }
+
+    // For panoramas, immediately upload via presigned URL
+    if (selectedType === 'panorama360' && file.type.startsWith('image/')) {
+      try {
+        await uploadPanoramaFile(file);
+      } catch (err) {
+        console.error('Panorama upload error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to upload panorama');
+      }
+    }
+  };
+
+  // Upload panorama using presigned URL (bypasses serverless function body limit)
+  const uploadPanoramaFile = async (file: File): Promise<string> => {
+    setUploadProgress(10);
+
+    try {
+      // Step 1: Get presigned URL
+      const presignedRes = await fetch('/api/upload/presigned', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+          mediaType: 'panorama360',
+          fileSize: file.size,
+        }),
+      });
+
+      if (!presignedRes.ok) {
+        const data = await presignedRes.json();
+        throw new Error(data.error || 'Failed to get upload URL');
+      }
+
+      const { uploadUrl, publicUrl } = await presignedRes.json();
+      setUploadProgress(30);
+
+      // Step 2: Upload directly to storage
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error('Failed to upload file to storage');
+      }
+
+      setUploadProgress(100);
+      setUploadedMediaUrl(publicUrl);
+      return publicUrl;
+    } catch (err) {
+      console.error('Panorama upload error:', err);
+      setUploadProgress(0);
+      throw err;
+    }
   };
 
   // Upload video using presigned URL (bypasses serverless function body limit)
@@ -421,7 +480,8 @@ export function CreatePostForm() {
   const handleSubmit = async () => {
     if (!selectedType) return;
     if (selectedType === 'shout' && !textContent.trim()) return;
-    if (['image', 'panorama360'].includes(selectedType) && !selectedFile) return;
+    if (selectedType === 'image' && !selectedFile) return;
+    if (selectedType === 'panorama360' && !uploadedMediaUrl) return;
     // For videos, require either a file or a video job ID
     if (selectedType === 'video' && !selectedFile && !videoJobId) return;
     // For audio, require either a file/recording or an audio job ID
@@ -472,6 +532,9 @@ export function CreatePostForm() {
       } else if (selectedType === 'audio' && audioJobId) {
         // For audio, use audio_job_id
         formData.append('audio_job_id', audioJobId);
+      } else if (selectedType === 'panorama360' && uploadedMediaUrl) {
+        // For panoramas, send the pre-uploaded URL
+        formData.append('media_url', uploadedMediaUrl);
       } else if (selectedFile) {
         formData.append('media', selectedFile);
       }
@@ -543,7 +606,11 @@ export function CreatePostForm() {
       // Allow posting if we have a job ID (even if still processing)
       return !!audioJobId;
     }
-    // For image/panorama, just need the file
+    if (selectedType === 'panorama360') {
+      // For panoramas, need uploaded URL (immediate presigned upload)
+      return !!uploadedMediaUrl;
+    }
+    // For images, just need the file
     return !!selectedFile;
   })();
 
@@ -633,6 +700,8 @@ export function CreatePostForm() {
                 setSelectedType(null);
                 setSelectedFile(null);
                 setPreviewUrl(null);
+                setUploadedMediaUrl(null);
+                setUploadProgress(0);
                 // Reset video processing state
                 setVideoJobId(null);
                 setVideoJobStatus(null);
@@ -871,6 +940,9 @@ export function CreatePostForm() {
                         setAudioJobError(null);
                         setRecordedAudioBlob(null);
                         setRecordedAudioDuration(0);
+                        // Reset panorama presigned upload state
+                        setUploadedMediaUrl(null);
+                        setUploadProgress(0);
                       }}
                       className="absolute top-2 right-2 p-2 bg-black/70 rounded-full hover:bg-black transition"
                     >

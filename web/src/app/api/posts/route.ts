@@ -561,27 +561,23 @@ async function fetchDiscoveryFeed(
       .map((repost) => ({
         type: 'repost' as const,
         timestamp: repost.createdAt,
-        // Give reposts a reasonable score based on the original post's engagement
+        // Use the repost timestamp for scoring (not the original post's age)
+        // This prevents old viral posts from staying at the top when reposted
         score: calculateTrendingScore({
           id: repost.post.id,
           likesCount: repost.post._count?.likes || 0,
           savesCount: repost.post._count?.saves || 0,
           sharesCount: repost.post._count?.shares || 0,
           viewsCount: 0,
-          createdAt: repost.post.createdAt,
+          createdAt: repost.createdAt, // Use repost time, not original post time
         }),
         data: repost,
         isFollowed: followingSet.has(repost.post.userId),
       })),
   ];
 
-  // Sort by score (trending), with reposts given a slight boost for recency
-  feedItems.sort((a, b) => {
-    // For reposts, blend score with recency (reposts are time-sensitive social signals)
-    const aScore = a.type === 'repost' ? a.score * 1.2 : a.score;
-    const bScore = b.type === 'repost' ? b.score * 1.2 : b.score;
-    return bScore - aScore;
-  });
+  // Sort by score (trending) - no special boost for reposts to prevent them dominating feed
+  feedItems.sort((a, b) => b.score - a.score);
 
   // Build a map of postId -> repost for posts that have been reposted by followed users
   // These should be shown as reposts, not as original posts
@@ -887,6 +883,7 @@ export async function POST(request: NextRequest) {
     const visibility = (formData.get('visibility') as 'public' | 'followers' | 'private') || 'public';
     const provenance = formData.get('provenance') as 'original' | 'ai_assisted' | 'ai_generated' | 'composite' | null;
     const media = formData.get('media') as File | null;
+    const mediaUrlFromClient = formData.get('media_url') as string | null; // For pre-uploaded media (panoramas)
     const thumbnail = formData.get('thumbnail') as File | null;
     const videoJobId = formData.get('video_job_id') as string | null; // For pre-uploaded videos
     const audioJobId = formData.get('audio_job_id') as string | null; // For pre-uploaded audio
@@ -950,9 +947,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate media types have media (video/audio can use jobId instead)
-    if (['image', 'panorama360'].includes(contentType) && !media) {
-      return NextResponse.json({ error: 'Media file is required' }, { status: 400 });
+    // Validate media types have media (video/audio can use jobId instead, panorama can use pre-uploaded URL)
+    if (contentType === 'image' && !media) {
+      return NextResponse.json({ error: 'Image file is required' }, { status: 400 });
+    }
+    if (contentType === 'panorama360' && !media && !mediaUrlFromClient) {
+      return NextResponse.json({ error: 'Panorama file or URL is required' }, { status: 400 });
     }
     if (contentType === 'video' && !media && !videoJobId) {
       return NextResponse.json({ error: 'Video file or job ID is required' }, { status: 400 });
@@ -1066,8 +1066,11 @@ export async function POST(request: NextRequest) {
         // Worker will update it when processing completes
         linkedAudioJob = { id: audioJob.id, status: audioJob.status };
       }
+    } else if (mediaUrlFromClient && contentType === 'panorama360') {
+      // Pre-uploaded panorama via presigned URL
+      mediaUrl = mediaUrlFromClient;
     } else if (media) {
-      // Direct media upload (images, panoramas, or legacy video path)
+      // Direct media upload (images or legacy video path)
       const buffer = Buffer.from(await media.arrayBuffer());
       const key = generateFileKey(user.id, contentType, media.name);
       mediaUrl = await uploadToMinio(key, buffer, media.type);

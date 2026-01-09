@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
+import { useUnreadNotificationCount } from '@/hooks/useNotifications';
 
 const navItems = [
   { href: '/home', icon: Home, label: 'Home' },
@@ -35,6 +36,7 @@ const secondaryMenuItems = [
 export function Navbar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const unreadCount = useUnreadNotificationCount();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -105,6 +107,8 @@ export function Navbar() {
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname.startsWith(item.href);
+              const isNotifications = item.href === '/notifications';
+              const showBadge = isNotifications && unreadCount > 0;
               return (
                 <Link
                   key={item.href}
@@ -116,7 +120,14 @@ export function Navbar() {
                       : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                   )}
                 >
-                  <Icon size={20} />
+                  <div className="relative">
+                    <Icon size={20} className={showBadge && !isActive ? 'text-emerald-400' : undefined} />
+                    {showBadge && (
+                      <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </div>
                   <span>{item.label}</span>
                 </Link>
               );
@@ -214,7 +225,14 @@ export function Navbar() {
               aria-label="Open menu"
               aria-expanded={menuOpen}
             >
-              <User size={24} strokeWidth={isProfileActive || menuOpen ? 2.5 : 1.5} aria-hidden="true" />
+              <div className="relative">
+                <User size={24} strokeWidth={isProfileActive || menuOpen ? 2.5 : 1.5} aria-hidden="true" />
+                {unreadCount > 0 && !menuOpen && (
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </div>
               <span className="text-xs mt-1">Menu</span>
             </button>
           </li>

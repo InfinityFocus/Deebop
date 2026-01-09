@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Home, Search, PlaySquare, PlusSquare, Bell, User, Settings, LogOut, Bookmark, Crown, Images, Calendar, Link2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
+import { useUnreadNotificationCount } from '@/hooks/useNotifications';
 
 const mainNavItems = [
   { href: '/home', icon: Home, label: 'Home' },
@@ -27,6 +28,7 @@ const secondaryNavItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const unreadCount = useUnreadNotificationCount();
 
   return (
     <aside
@@ -49,6 +51,8 @@ export function Sidebar() {
           {mainNavItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
             const Icon = item.icon;
+            const isNotifications = item.href === '/notifications';
+            const showBadge = isNotifications && unreadCount > 0;
 
             return (
               <li key={item.href}>
@@ -61,7 +65,14 @@ export function Sidebar() {
                       : 'text-gray-400 hover:bg-gray-900 hover:text-white'
                   )}
                 >
-                  <Icon size={24} strokeWidth={isActive ? 2.5 : 1.5} />
+                  <div className="relative">
+                    <Icon size={24} strokeWidth={isActive ? 2.5 : 1.5} className={showBadge && !isActive ? 'text-emerald-400' : undefined} />
+                    {showBadge && (
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </div>
                   <span>{item.label}</span>
                 </Link>
               </li>
