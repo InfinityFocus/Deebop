@@ -1163,6 +1163,33 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      // Extract and link hashtags from text content and headline
+      const combinedText = `${textContent || ''} ${headline || ''}`;
+      const hashtagMatches = combinedText.match(/#[\w\u0080-\uFFFF]+/g);
+      if (hashtagMatches && hashtagMatches.length > 0) {
+        // Get unique, normalized hashtag names
+        const uniqueHashtags = [...new Set(
+          hashtagMatches.map(tag => tag.toLowerCase().replace(/^#/, '').trim())
+        )].filter(tag => tag.length > 0 && tag.length <= 50);
+
+        for (const tagName of uniqueHashtags) {
+          // Upsert the hashtag (create if doesn't exist)
+          const hashtag = await tx.hashtag.upsert({
+            where: { name: tagName },
+            create: { name: tagName, postsCount: 1 },
+            update: { postsCount: { increment: 1 } },
+          });
+
+          // Create the PostHashtag junction record
+          await tx.postHashtag.create({
+            data: {
+              postId: newPost.id,
+              hashtagId: hashtag.id,
+            },
+          });
+        }
+      }
+
       return newPost;
     });
 

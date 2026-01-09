@@ -114,8 +114,22 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Get hashtags linked to this post so we can decrement their counts
+    const postHashtags = await prisma.postHashtag.findMany({
+      where: { postId: id },
+      select: { hashtagId: true },
+    });
+
     // Delete post (cascades to likes, saves, shares, hashtags)
     await prisma.post.delete({ where: { id } });
+
+    // Decrement hashtag counts
+    if (postHashtags.length > 0) {
+      await prisma.hashtag.updateMany({
+        where: { id: { in: postHashtags.map(ph => ph.hashtagId) } },
+        data: { postsCount: { decrement: 1 } },
+      });
+    }
 
     // Update user post count
     await prisma.user.update({
