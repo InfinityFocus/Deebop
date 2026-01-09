@@ -117,8 +117,8 @@ export function MiniPlayer() {
       {/* Hidden audio element */}
       <audio ref={audioRef} preload="metadata" />
 
-      {/* Mini Player Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-lg border-t border-gray-800 shadow-2xl">
+      {/* Mini Player Bar - positioned above mobile nav (h-16 = 64px) */}
+      <div className="fixed bottom-16 md:bottom-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-lg border-t border-gray-800 shadow-2xl">
         {/* Progress bar (clickable) */}
         <div
           className="h-1 bg-gray-800 cursor-pointer group"
@@ -200,7 +200,9 @@ export function MiniPlayer() {
       </div>
 
       {/* Spacer to prevent content from being hidden behind mini player */}
-      <div className="h-14" />
+      {/* On mobile: nav (h-16) + player (~h-14) = h-30, but nav already has pb-20 in layout */}
+      {/* On desktop: just the player height */}
+      <div className="h-14 md:h-14" />
     </>
   );
 }
