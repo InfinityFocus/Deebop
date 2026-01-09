@@ -53,7 +53,7 @@ export default function Home() {
               Share your vision. No noise.
             </p>
             <p className="text-lg text-gray-400">
-              Post photos, videos, 360 panoramas, and shouts. Provenance labels, paid partnership disclosure, and shared event galleries. No comments, no drama.
+              Share what you love, see what you chose. Photos, videos, audio, 360 panoramas, shouts, and events, all on your terms.
             </p>
           </div>
 
