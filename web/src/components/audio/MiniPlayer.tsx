@@ -64,10 +64,18 @@ export function MiniPlayer() {
     };
 
     const handleLoadedMetadata = () => {
-      setDuration(audio.duration);
+      if (audio.duration && isFinite(audio.duration)) {
+        setDuration(audio.duration);
+      }
       // Start playing if isPlaying is true
       if (isPlaying) {
         audio.play().catch(console.error);
+      }
+    };
+
+    const handleDurationChange = () => {
+      if (audio.duration && isFinite(audio.duration)) {
+        setDuration(audio.duration);
       }
     };
 
@@ -75,13 +83,21 @@ export function MiniPlayer() {
       playNext();
     };
 
+    // If metadata is already loaded (readyState >= 1), set duration immediately
+    // This handles the race condition where loadedmetadata fires before listener is attached
+    if (audio.readyState >= 1 && audio.duration && isFinite(audio.duration)) {
+      setDuration(audio.duration);
+    }
+
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('durationchange', handleDurationChange);
     audio.addEventListener('ended', handleEnded);
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('durationchange', handleDurationChange);
       audio.removeEventListener('ended', handleEnded);
     };
   }, [setCurrentTime, setDuration, isPlaying, playNext]);
