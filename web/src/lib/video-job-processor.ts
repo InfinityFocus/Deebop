@@ -167,10 +167,17 @@ async function processVideoJobInternal(jobId: string, job: { rawFileUrl: string;
     await uploadToMinio(thumbKey, thumbBuffer, "image/jpeg");
     await prisma.videoJob.update({ where: { id: jobId }, data: { progress: 90 } });
     const outputMeta = await getVideoMetadataCli(outputPath);
-    await prisma.videoJob.update({
+    const updatedJob = await prisma.videoJob.update({
       where: { id: jobId },
       data: { status: "completed", progress: 100, outputUrl: getPublicUrl(outputKey), thumbnailUrl: getPublicUrl(thumbKey), durationSeconds: outputMeta.duration, width: outputMeta.width, height: outputMeta.height, processedAt: new Date() },
     });
+    // Also update the linked Post with duration
+    if (updatedJob.postId) {
+      await prisma.post.update({
+        where: { id: updatedJob.postId },
+        data: { mediaDurationSeconds: outputMeta.duration, mediaWidth: outputMeta.width, mediaHeight: outputMeta.height },
+      });
+    }
     console.log("[VideoProcessor] Job " + jobId + " completed");
   } finally {
     await Promise.all([unlink(inputPath).catch(() => {}), unlink(outputPath).catch(() => {}), unlink(thumbPath).catch(() => {})]);
@@ -207,7 +214,7 @@ async function processAudioJob(jobId: string, job: { rawFileUrl: string; userTie
 
     // Get final duration
     const outputMeta = await getAudioMetadataCli(outputPath);
-    await prisma.videoJob.update({
+    const updatedJob = await prisma.videoJob.update({
       where: { id: jobId },
       data: {
         status: "completed",
@@ -217,6 +224,13 @@ async function processAudioJob(jobId: string, job: { rawFileUrl: string; userTie
         processedAt: new Date()
       },
     });
+    // Also update the linked Post with duration
+    if (updatedJob.postId) {
+      await prisma.post.update({
+        where: { id: updatedJob.postId },
+        data: { mediaDurationSeconds: outputMeta.duration },
+      });
+    }
     console.log("[AudioProcessor] Job " + jobId + " completed");
   } finally {
     await Promise.all([unlink(inputPath).catch(() => {}), unlink(outputPath).catch(() => {})]);

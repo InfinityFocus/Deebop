@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { useAudioPlayerStore, type AudioTrack } from '@/stores/audioPlayerStore';
 import { WaveformVisualizer } from './WaveformVisualizer';
@@ -13,6 +13,7 @@ interface AudioPlayerProps {
 }
 
 function formatTime(seconds: number): string {
+  if (!isFinite(seconds) || isNaN(seconds)) return '0:00';
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -24,8 +25,6 @@ export function AudioPlayer({
   compact = false,
   className = '',
 }: AudioPlayerProps) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-
   const {
     currentTrack,
     isPlaying,
@@ -36,8 +35,6 @@ export function AudioPlayer({
     play,
     pause,
     resume,
-    setCurrentTime,
-    setDuration,
     seek,
     setVolume,
     toggleMute,
@@ -45,62 +42,6 @@ export function AudioPlayer({
 
   const isCurrentTrack = currentTrack?.postId === track.postId;
   const isThisPlaying = isCurrentTrack && isPlaying;
-
-  // Sync audio element with store state
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || !isCurrentTrack) return;
-
-    // Update audio element state based on store
-    if (isPlaying && audio.paused) {
-      audio.play().catch(console.error);
-    } else if (!isPlaying && !audio.paused) {
-      audio.pause();
-    }
-
-    // Sync volume
-    audio.volume = isMuted ? 0 : volume;
-  }, [isCurrentTrack, isPlaying, volume, isMuted]);
-
-  // Handle audio element events
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || !isCurrentTrack) return;
-
-    const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime);
-    };
-
-    const handleLoadedMetadata = () => {
-      setDuration(audio.duration);
-    };
-
-    const handleEnded = () => {
-      pause();
-      seek(0);
-    };
-
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    audio.addEventListener('ended', handleEnded);
-
-    return () => {
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.removeEventListener('ended', handleEnded);
-    };
-  }, [isCurrentTrack, setCurrentTime, setDuration, pause, seek]);
-
-  // Seek when store's currentTime changes (e.g., from mini-player)
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || !isCurrentTrack) return;
-
-    // Only sync if there's a significant difference (avoid feedback loop)
-    if (Math.abs(audio.currentTime - currentTime) > 0.5) {
-      audio.currentTime = currentTime;
-    }
-  }, [currentTime, isCurrentTrack]);
 
   const handlePlayPause = useCallback(() => {
     if (isThisPlaying) {
@@ -114,37 +55,28 @@ export function AudioPlayer({
 
   const handleSeek = useCallback(
     (progress: number) => {
-      const newTime = progress * (isCurrentTrack ? duration : track.duration);
+      const targetDuration = isCurrentTrack && duration > 0 ? duration : track.duration;
+      const newTime = progress * targetDuration;
       if (isCurrentTrack) {
         seek(newTime);
-        if (audioRef.current) {
-          audioRef.current.currentTime = newTime;
-        }
       } else {
         // Start playing from this position
         play(track);
-        setTimeout(() => {
-          if (audioRef.current) {
-            audioRef.current.currentTime = newTime;
-          }
-        }, 100);
+        // Seek after playback starts
+        setTimeout(() => seek(newTime), 100);
       }
     },
     [isCurrentTrack, duration, track, seek, play]
   );
 
-  const progress = isCurrentTrack && duration > 0 ? currentTime / duration : 0;
+  // Use store duration if this is current track and loaded, otherwise use track's pre-loaded duration
+  const displayDuration = isCurrentTrack && duration > 0 ? duration : (track.duration || 0);
+  const progress = isCurrentTrack && displayDuration > 0 ? currentTime / displayDuration : 0;
   const displayTime = isCurrentTrack ? currentTime : 0;
-  const displayDuration = isCurrentTrack && duration > 0 ? duration : track.duration;
 
   if (compact) {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
-        {/* Only render audio element for current track */}
-        {isCurrentTrack && (
-          <audio ref={audioRef} src={track.url} preload="metadata" />
-        )}
-
         <button
           onClick={handlePlayPause}
           className="p-2 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black transition-colors"
@@ -174,11 +106,6 @@ export function AudioPlayer({
 
   return (
     <div className={`bg-gray-900/80 rounded-xl p-4 ${className}`}>
-      {/* Only render audio element for current track */}
-      {isCurrentTrack && (
-        <audio ref={audioRef} src={track.url} preload="metadata" />
-      )}
-
       <div className="flex items-center gap-4">
         {/* Play/Pause button */}
         <button
@@ -206,8 +133,8 @@ export function AudioPlayer({
               className="h-10 bg-gray-800 rounded-lg relative cursor-pointer"
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
-                const progress = (e.clientX - rect.left) / rect.width;
-                handleSeek(progress);
+                const clickProgress = (e.clientX - rect.left) / rect.width;
+                handleSeek(clickProgress);
               }}
             >
               <div

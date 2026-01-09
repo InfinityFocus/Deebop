@@ -225,6 +225,18 @@ async function processVideoJob(jobId: string): Promise<void> {
       },
     });
 
+    // Also update the linked Post with duration and dimensions
+    if (job.postId) {
+      await prisma.post.update({
+        where: { id: job.postId },
+        data: {
+          mediaDurationSeconds: outputMetadata.duration,
+          mediaWidth: outputMetadata.width,
+          mediaHeight: outputMetadata.height,
+        },
+      });
+    }
+
     console.log(`[VideoProcessor] Job ${jobId} completed successfully`);
   } finally {
     // Cleanup temp files
