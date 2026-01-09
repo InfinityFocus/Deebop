@@ -20,22 +20,24 @@ const filterOptions: { type: ContentType | null; label: string; icon: React.Comp
 
 export function ContentTypeFilter({ selected, onChange }: ContentTypeFilterProps) {
   return (
-    <div className="flex justify-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-      {filterOptions.map(({ type, label, icon: Icon }) => (
-        <button
-          key={type ?? 'all'}
-          onClick={() => onChange(type)}
-          className={clsx(
-            'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition',
-            selected === type
-              ? 'bg-white text-black'
-              : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-          )}
-        >
-          {Icon && <Icon size={16} />}
-          {label}
-        </button>
-      ))}
+    <div className="overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
+      <div className="flex gap-2 w-max mx-auto">
+        {filterOptions.map(({ type, label, icon: Icon }) => (
+          <button
+            key={type ?? 'all'}
+            onClick={() => onChange(type)}
+            className={clsx(
+              'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition',
+              selected === type
+                ? 'bg-white text-black'
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+            )}
+          >
+            {Icon && <Icon size={16} />}
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
