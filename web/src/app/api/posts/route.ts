@@ -1312,6 +1312,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Extract and link hashtags from text content and headline
+      // Use batched operations to avoid transaction timeout
       try {
         const combinedText = `${textContent || ''} ${headline || ''}`;
         const hashtagMatches = combinedText.match(/#[\w\u0080-\uFFFF]+/g);
@@ -1321,20 +1322,32 @@ export async function POST(request: NextRequest) {
             hashtagMatches.map(tag => tag.toLowerCase().replace(/^#/, '').trim())
           )].filter(tag => tag.length > 0 && tag.length <= 50);
 
-          for (const tagName of uniqueHashtags) {
-            // Upsert the hashtag (create if doesn't exist)
-            const hashtag = await tx.hashtag.upsert({
-              where: { name: tagName },
-              create: { name: tagName, postsCount: 1 },
-              update: { postsCount: { increment: 1 } },
+          if (uniqueHashtags.length > 0) {
+            // Step 1: Create any missing hashtags in bulk (ignore duplicates)
+            await tx.hashtag.createMany({
+              data: uniqueHashtags.map(name => ({ name, postsCount: 0 })),
+              skipDuplicates: true,
             });
 
-            // Create the PostHashtag junction record
-            await tx.postHashtag.create({
-              data: {
+            // Step 2: Fetch all hashtags we need (now guaranteed to exist)
+            const hashtags = await tx.hashtag.findMany({
+              where: { name: { in: uniqueHashtags } },
+              select: { id: true, name: true },
+            });
+
+            // Step 3: Create PostHashtag junction records in bulk
+            await tx.postHashtag.createMany({
+              data: hashtags.map(h => ({
                 postId: newPost.id,
-                hashtagId: hashtag.id,
-              },
+                hashtagId: h.id,
+              })),
+              skipDuplicates: true,
+            });
+
+            // Step 4: Increment postsCount for all used hashtags in bulk
+            await tx.hashtag.updateMany({
+              where: { id: { in: hashtags.map(h => h.id) } },
+              data: { postsCount: { increment: 1 } },
             });
           }
         }
