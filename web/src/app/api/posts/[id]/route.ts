@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/db';
+import { extractKeyFromUrl } from '@/lib/minio';
 
 // GET /api/posts/[id] - Get a single post
 export async function GET(
@@ -127,9 +128,21 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Fetch post with all media URLs for scheduled deletion
     const post = await prisma.post.findUnique({
       where: { id },
-      select: { userId: true },
+      select: {
+        userId: true,
+        contentType: true,
+        mediaUrl: true,
+        mediaThumbnailUrl: true,
+        media: {
+          select: {
+            mediaUrl: true,
+            thumbnailUrl: true,
+          },
+        },
+      },
     });
 
     if (!post) {
@@ -138,6 +151,101 @@ export async function DELETE(
 
     if (post.userId !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Schedule media files for deletion (7 days from now)
+    const deletedAt = new Date();
+    const scheduledFor = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const pendingDeletions: Array<{
+      storageKey: string;
+      originalUrl: string;
+      mediaType: string;
+      postId: string;
+      userId: string;
+      deletedAt: Date;
+      scheduledFor: Date;
+    }> = [];
+
+    // Helper to determine media type from content type and URL context
+    const getMediaType = (contentType: string, isThumbnail: boolean = false): string => {
+      if (isThumbnail) return 'thumbnail';
+      switch (contentType) {
+        case 'video': return 'video';
+        case 'audio': return 'audio';
+        case 'panorama360': return 'panorama';
+        default: return 'image';
+      }
+    };
+
+    // Add primary media URL
+    if (post.mediaUrl) {
+      const key = extractKeyFromUrl(post.mediaUrl);
+      if (key && key !== post.mediaUrl) {
+        pendingDeletions.push({
+          storageKey: key,
+          originalUrl: post.mediaUrl,
+          mediaType: getMediaType(post.contentType),
+          postId: id,
+          userId: user.id,
+          deletedAt,
+          scheduledFor,
+        });
+      }
+    }
+
+    // Add thumbnail URL (for videos/audio)
+    if (post.mediaThumbnailUrl) {
+      const key = extractKeyFromUrl(post.mediaThumbnailUrl);
+      if (key && key !== post.mediaThumbnailUrl) {
+        pendingDeletions.push({
+          storageKey: key,
+          originalUrl: post.mediaThumbnailUrl,
+          mediaType: 'thumbnail',
+          postId: id,
+          userId: user.id,
+          deletedAt,
+          scheduledFor,
+        });
+      }
+    }
+
+    // Add carousel media (multi-image posts)
+    for (const media of post.media) {
+      if (media.mediaUrl) {
+        const key = extractKeyFromUrl(media.mediaUrl);
+        if (key && key !== media.mediaUrl) {
+          pendingDeletions.push({
+            storageKey: key,
+            originalUrl: media.mediaUrl,
+            mediaType: 'image',
+            postId: id,
+            userId: user.id,
+            deletedAt,
+            scheduledFor,
+          });
+        }
+      }
+      if (media.thumbnailUrl) {
+        const key = extractKeyFromUrl(media.thumbnailUrl);
+        if (key && key !== media.thumbnailUrl) {
+          pendingDeletions.push({
+            storageKey: key,
+            originalUrl: media.thumbnailUrl,
+            mediaType: 'thumbnail',
+            postId: id,
+            userId: user.id,
+            deletedAt,
+            scheduledFor,
+          });
+        }
+      }
+    }
+
+    // Create pending deletion records
+    if (pendingDeletions.length > 0) {
+      await prisma.pendingMediaDeletion.createMany({
+        data: pendingDeletions,
+      });
     }
 
     // Get hashtags linked to this post so we can decrement their counts

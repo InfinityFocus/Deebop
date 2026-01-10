@@ -1196,3 +1196,23 @@ enum AlbumType {
   standard
   event
 }
+
+// ============================================
+// Pending Media Deletion (7-day retention)
+// ============================================
+
+model PendingMediaDeletion {
+  id           String   @id @default(cuid())
+  storageKey   String   @map("storage_key")
+  originalUrl  String   @map("original_url")
+  mediaType    String   @map("media_type") // image, video, audio, panorama, thumbnail
+  postId       String?  @map("post_id") // Original post ID (for audit trail)
+  userId       String   @map("user_id")
+  deletedAt    DateTime @map("deleted_at")
+  scheduledFor DateTime @map("scheduled_for")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([scheduledFor])
+  @@index([userId])
+  @@map("pending_media_deletions")
+}
