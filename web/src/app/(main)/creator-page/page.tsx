@@ -234,7 +234,7 @@ export default function CreatorPageBuilder() {
   const selectedBlock = blocks.find((b) => b.id === selectedBlockId);
 
   return (
-    <div className="flex h-screen bg-gray-950 pb-16 md:pb-0">
+    <div className="flex h-screen bg-gray-950 pb-32 md:pb-0">
       {/* Left Panel - Block List */}
       <div className={clsx(
         "md:w-80 md:border-r border-gray-800 flex flex-col",
@@ -446,8 +446,8 @@ export default function CreatorPageBuilder() {
         </div>
       )}
 
-      {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 flex z-50">
+      {/* Mobile Bottom Navigation - positioned above main navbar */}
+      <div className="md:hidden fixed bottom-16 left-0 right-0 bg-gray-900 border-t border-gray-800 flex z-[60] rounded-t-xl">
         <button
           onClick={() => setMobileView('blocks')}
           className={clsx(
