@@ -452,7 +452,7 @@ async function fetchDiscoveryFeed(
     }
   }
 
-  // For Discovery, we only show public posts
+  // For Discovery, we only show public posts (excluding user's own posts)
   const posts = await prisma.post.findMany({
     where: {
       ...contentTypeFilter,
@@ -460,6 +460,8 @@ async function fetchDiscoveryFeed(
       ...contentPrefsFilter,
       visibility: 'public',
       status: 'published',
+      // Exclude user's own posts from discovery - they should see new content, not their own
+      ...(user ? { userId: { not: user.id } } : {}),
     },
     // Fetch more for ranking/sorting
     take: Math.min(limit * 3, 150),
