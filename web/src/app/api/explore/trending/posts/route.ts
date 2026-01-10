@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get posts with engagement metrics
+    // Get posts with engagement metrics (using _count for live counts)
     const posts = await prisma.post.findMany({
       where,
       select: {
@@ -64,11 +64,16 @@ export async function GET(request: NextRequest) {
         mediaUrl: true,
         mediaThumbnailUrl: true,
         createdAt: true,
-        likesCount: true,
-        sharesCount: true,
-        savesCount: true,
-        viewsCount: true,
         repostsCount: true,
+        viewsCount: true,
+        _count: {
+          select: {
+            likes: true,
+            saves: true,
+            shares: true,
+            reposts: true,
+          },
+        },
         user: {
           select: {
             id: true,
@@ -88,13 +93,10 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: [
-        { likesCount: 'desc' },
-        { sharesCount: 'desc' },
-        { viewsCount: 'desc' },
-        { createdAt: 'desc' },
+        { createdAt: 'desc' }, // Initial sort by recency, then re-rank by engagement
       ],
       skip: offset,
-      take: limit,
+      take: Math.min(limit * 3, 100), // Fetch more for better ranking
     });
 
     // Calculate trending score for each post
@@ -102,12 +104,20 @@ export async function GET(request: NextRequest) {
       const hoursOld =
         (Date.now() - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
       const timeDecay = Math.pow(0.95, hoursOld); // 5% decay per hour
+
+      // Use live counts from _count
+      const likesCount = post._count.likes;
+      const savesCount = post._count.saves;
+      const sharesCount = post._count.shares;
+      const repostsCount = post._count.reposts;
+      const viewsCount = post.viewsCount || 0;
+
       const engagement =
-        post.likesCount * 1 +
-        post.sharesCount * 3 +
-        post.savesCount * 2 +
-        post.viewsCount * 0.01 +
-        (post.repostsCount || 0) * 1.2;
+        likesCount * 1 +
+        sharesCount * 3 +
+        savesCount * 2 +
+        viewsCount * 0.01 +
+        repostsCount * 1.2;
       const recencyBonus = hoursOld < 6 ? 10 : hoursOld < 12 ? 5 : 0;
 
       // For multi-image posts, use first image from media array as thumbnail
@@ -123,10 +133,11 @@ export async function GET(request: NextRequest) {
         mediaUrl: effectiveMediaUrl,
         thumbnailUrl: effectiveThumbnail,
         createdAt: post.createdAt,
-        likeCount: post.likesCount,
-        shareCount: post.sharesCount,
-        saveCount: post.savesCount,
-        viewCount: post.viewsCount,
+        likeCount: likesCount,
+        shareCount: sharesCount,
+        saveCount: savesCount,
+        viewCount: viewsCount,
+        repostCount: repostsCount,
         user: {
           id: post.user.id,
           username: post.user.username,
@@ -138,11 +149,12 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Sort by trending score
+    // Sort by trending score and limit to requested amount
     scoredPosts.sort((a, b) => b.trendingScore - a.trendingScore);
+    const limitedPosts = scoredPosts.slice(0, limit);
 
     return NextResponse.json({
-      posts: scoredPosts,
+      posts: limitedPosts,
       window: '24h',
     });
   } catch (error) {
