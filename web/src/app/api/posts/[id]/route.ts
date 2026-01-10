@@ -241,11 +241,16 @@ export async function DELETE(
       }
     }
 
-    // Create pending deletion records
+    // Create pending deletion records (gracefully handle if table doesn't exist yet)
     if (pendingDeletions.length > 0) {
-      await prisma.pendingMediaDeletion.createMany({
-        data: pendingDeletions,
-      });
+      try {
+        await prisma.pendingMediaDeletion.createMany({
+          data: pendingDeletions,
+        });
+      } catch (err) {
+        // Table may not exist yet if migration hasn't been applied
+        console.warn('Failed to schedule media deletion (table may not exist yet):', err);
+      }
     }
 
     // Get hashtags linked to this post so we can decrement their counts
