@@ -1,4 +1,5 @@
 import Footer from '@/components/layout/Footer';
+import Link from 'next/link';
 import { BackButton } from '@/components/shared/BackButton';
 
 export const metadata = {

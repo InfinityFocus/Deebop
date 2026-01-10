@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Footer from '@/components/layout/Footer';
+import Link from 'next/link';
 import { BackButton } from '@/components/shared/BackButton';
 import { Users, Zap, Shield, Globe } from 'lucide-react';
 
