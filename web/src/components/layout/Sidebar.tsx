@@ -48,7 +48,7 @@ export function Sidebar() {
       </div>
 
       {/* Main Navigation */}
-      <nav className="flex-1 px-3">
+      <nav className="flex-1 px-3 overflow-y-auto">
         <ul className="space-y-1">
           {mainNavItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
