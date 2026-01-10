@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Heart, Bookmark, Share2, MoreHorizontal, Sparkles, Crown, Rocket, Flag, Pencil, Loader2, Music, Trash2, Repeat } from 'lucide-react';
 import { PanoramaViewer } from '@/components/viewers/PanoramaViewer';
 import { AudioPlayer } from '@/components/audio';
+import { ImageCarousel } from '@/components/post/ImageCarousel';
 import { BoostPostModal } from '@/components/ads';
 import { ReportModal } from '@/components/moderation/ReportModal';
 import { EditPostModal } from '@/components/post/EditPostModal';
@@ -23,6 +24,14 @@ interface PostAuthor {
   display_name: string | null;
   avatar_url: string | null;
   tier: string;
+}
+
+interface PostMediaItem {
+  id: string;
+  media_url: string;
+  thumbnail_url?: string | null;
+  alt_text?: string | null;
+  sort_order: number;
 }
 
 interface Post {
@@ -53,6 +62,8 @@ interface Post {
   is_sponsored_content?: boolean;
   is_sensitive_content?: boolean;
   visibility?: Visibility;
+  // Multi-image support
+  media?: PostMediaItem[] | null;
   // Repost fields
   is_reposted?: boolean;
   repost_status?: string | null;
@@ -348,16 +359,18 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
       </header>
 
       {/* Content - Only show if no headline overlay on media */}
-      {localTextContent && !(localHeadline && post.media_url) && (
+      {localTextContent && !(localHeadline && (post.media_url || (post.media && post.media.length > 0))) && (
         <div className="px-4 pb-3">
           <p className="text-white whitespace-pre-wrap">{renderRichText(localTextContent)}</p>
         </div>
       )}
 
       {/* Media */}
-      {post.media_url && (
+      {(post.media_url || (post.media && post.media.length > 0)) && (
         <div className="relative">
-          {post.content_type === 'image' && (
+          {post.content_type === 'image' && post.media && post.media.length > 1 ? (
+            <ImageCarousel images={post.media} />
+          ) : post.content_type === 'image' && post.media_url && (
             <img
               src={post.media_url}
               alt=""
@@ -365,7 +378,7 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
             />
           )}
 
-          {post.content_type === 'video' && (
+          {post.content_type === 'video' && post.media_url && (
             <video
               src={post.media_url}
               poster={post.media_thumbnail_url || undefined}
@@ -374,7 +387,7 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
             />
           )}
 
-          {post.content_type === 'panorama360' && (
+          {post.content_type === 'panorama360' && post.media_url && (
             <div className="relative aspect-video">
               <PanoramaViewer
                 src={post.media_url}

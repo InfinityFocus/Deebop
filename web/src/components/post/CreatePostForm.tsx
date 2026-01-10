@@ -57,6 +57,13 @@ export function CreatePostForm() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadedMediaUrl, setUploadedMediaUrl] = useState<string | null>(null); // For presigned uploads (panoramas)
 
+  // Multi-image upload state (for image posts with multiple images)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+
   // Scheduling state
   const [isScheduled, setIsScheduled] = useState(false);
   const [scheduledFor, setScheduledFor] = useState<string>('');
@@ -292,6 +299,79 @@ export function CreatePostForm() {
     }
   };
 
+  // Handle multiple image file selection
+  const handleMultipleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileArray = Array.from(files);
+
+    // Validate max 8 images
+    if (fileArray.length > 8) {
+      setError('Maximum 8 images allowed');
+      return;
+    }
+
+    // Validate all are images
+    const nonImages = fileArray.filter((f) => !f.type.startsWith('image/'));
+    if (nonImages.length > 0) {
+      setError('All files must be images');
+      return;
+    }
+
+    setError(null);
+    setImageUploadError(null);
+
+    // Single image: use the regular single-image flow
+    if (fileArray.length === 1) {
+      setSelectedFile(fileArray[0]);
+      setPreviewUrl(URL.createObjectURL(fileArray[0]));
+      setSelectedFiles([]);
+      setPreviewUrls([]);
+      setUploadedImageUrls([]);
+      return;
+    }
+
+    // Multiple images: use the multi-image flow
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setSelectedFiles(fileArray);
+
+    // Create preview URLs
+    const urls = fileArray.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+
+    // Start batch upload for 2+ images
+    try {
+      await uploadMultipleImages(fileArray);
+    } catch {
+      // Error already handled in uploadMultipleImages
+    }
+  };
+
+  // Remove an image from multi-image selection
+  const removeImageAtIndex = (index: number) => {
+    const newFiles = selectedFiles.filter((_, i) => i !== index);
+    const newUrls = previewUrls.filter((_, i) => i !== index);
+    const newUploaded = uploadedImageUrls.filter((_, i) => i !== index);
+
+    setSelectedFiles(newFiles);
+    setPreviewUrls(newUrls);
+    setUploadedImageUrls(newUploaded);
+
+    // If we go from 2+ to 1 image, clear multi-image state
+    if (newFiles.length < 2) {
+      if (newFiles.length === 1) {
+        // Switch to single image mode
+        setSelectedFile(newFiles[0]);
+        setPreviewUrl(newUrls[0]);
+      }
+      setSelectedFiles([]);
+      setPreviewUrls([]);
+      setUploadedImageUrls([]);
+    }
+  };
+
   // Upload panorama using presigned URL (bypasses serverless function body limit)
   const uploadPanoramaFile = async (file: File): Promise<string> => {
     setUploadProgress(10);
@@ -415,6 +495,63 @@ export function CreatePostForm() {
     }
   };
 
+  // Upload multiple images using batch presigned URLs
+  const uploadMultipleImages = async (files: File[]): Promise<string[]> => {
+    setIsUploadingImages(true);
+    setImageUploadError(null);
+
+    try {
+      // Step 1: Get batch presigned URLs
+      const batchRes = await fetch('/api/upload/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          files: files.map((file) => ({
+            filename: file.name,
+            contentType: file.type,
+            fileSize: file.size,
+          })),
+          mediaType: 'image',
+        }),
+      });
+
+      if (!batchRes.ok) {
+        const data = await batchRes.json();
+        throw new Error(data.error || 'Failed to get upload URLs');
+      }
+
+      const { uploads } = await batchRes.json();
+
+      // Step 2: Upload all files in parallel
+      const uploadPromises = uploads.map(async (upload: { index: number; uploadUrl: string; publicUrl: string }, i: number) => {
+        const file = files[upload.index];
+        const uploadRes = await fetch(upload.uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type,
+          },
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error(`Failed to upload image ${i + 1}`);
+        }
+
+        return upload.publicUrl;
+      });
+
+      const urls = await Promise.all(uploadPromises);
+      setUploadedImageUrls(urls);
+      return urls;
+    } catch (err) {
+      console.error('Multi-image upload error:', err);
+      setImageUploadError(err instanceof Error ? err.message : 'Failed to upload images');
+      throw err;
+    } finally {
+      setIsUploadingImages(false);
+    }
+  };
+
   const uploadFile = async (file: File): Promise<string | null> => {
     try {
       // Use presigned URLs for panoramas (large files) to bypass serverless limits
@@ -480,7 +617,8 @@ export function CreatePostForm() {
   const handleSubmit = async () => {
     if (!selectedType) return;
     if (selectedType === 'shout' && !textContent.trim()) return;
-    if (selectedType === 'image' && !selectedFile) return;
+    // For images, require either a single file OR multiple uploaded URLs (2-8)
+    if (selectedType === 'image' && !selectedFile && uploadedImageUrls.length === 0) return;
     if (selectedType === 'panorama360' && !uploadedMediaUrl) return;
     // For videos, require either a file or a video job ID
     if (selectedType === 'video' && !selectedFile && !videoJobId) return;
@@ -535,6 +673,9 @@ export function CreatePostForm() {
       } else if (selectedType === 'panorama360' && uploadedMediaUrl) {
         // For panoramas, send the pre-uploaded URL
         formData.append('media_url', uploadedMediaUrl);
+      } else if (selectedType === 'image' && uploadedImageUrls.length >= 2) {
+        // For multi-image posts, send the uploaded URLs
+        formData.append('media_urls', JSON.stringify(uploadedImageUrls));
       } else if (selectedFile) {
         formData.append('media', selectedFile);
       }
@@ -610,8 +751,15 @@ export function CreatePostForm() {
       // For panoramas, need uploaded URL (immediate presigned upload)
       return !!uploadedMediaUrl;
     }
-    // For images, just need the file
-    return !!selectedFile;
+    if (selectedType === 'image') {
+      // Block if currently uploading multiple images
+      if (isUploadingImages) return false;
+      // For multi-image: need uploaded URLs (2-8)
+      if (uploadedImageUrls.length >= 2) return true;
+      // For single image: just need the file
+      return !!selectedFile;
+    }
+    return false;
   })();
 
   return (
@@ -715,6 +863,11 @@ export function CreatePostForm() {
                 setShowAudioRecorder(false);
                 setRecordedAudioBlob(null);
                 setRecordedAudioDuration(0);
+                // Reset multi-image state
+                setSelectedFiles([]);
+                setPreviewUrls([]);
+                setUploadedImageUrls([]);
+                setImageUploadError(null);
               }}
               className="text-emerald-400 hover:text-emerald-300 text-sm"
             >
@@ -807,7 +960,58 @@ export function CreatePostForm() {
             {/* Media Upload */}
             {selectedType !== 'shout' && (
               <div>
-                {previewUrl ? (
+                {/* Multi-image preview grid */}
+                {selectedType === 'image' && previewUrls.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-4 gap-2">
+                      {previewUrls.map((url, index) => (
+                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-900">
+                          <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeImageAtIndex(index)}
+                            className="absolute top-1 right-1 p-1 bg-black/70 rounded-full hover:bg-black transition"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      {/* Add more images button */}
+                      {previewUrls.length < 8 && (
+                        <label className="aspect-square rounded-lg border-2 border-dashed border-gray-700 flex items-center justify-center cursor-pointer hover:border-emerald-500 transition">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleMultipleImageSelect}
+                            className="hidden"
+                          />
+                          <span className="text-2xl text-gray-500">+</span>
+                        </label>
+                      )}
+                    </div>
+                    {/* Upload progress/status */}
+                    {isUploadingImages && (
+                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Uploading images...
+                      </div>
+                    )}
+                    {uploadedImageUrls.length >= 2 && !isUploadingImages && (
+                      <div className="flex items-center gap-2 text-sm text-emerald-400">
+                        <CheckCircle className="w-4 h-4" />
+                        {uploadedImageUrls.length} images ready
+                      </div>
+                    )}
+                    {imageUploadError && (
+                      <div className="flex items-center gap-2 text-sm text-red-400">
+                        <AlertCircle className="w-4 h-4" />
+                        {imageUploadError}
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-500">{previewUrls.length}/8 images selected</p>
+                  </div>
+                ) : previewUrl ? (
                   <div className="relative rounded-xl overflow-hidden">
                     {selectedType === 'image' && (
                       <img src={previewUrl} alt="Preview" className="w-full max-h-[400px] object-contain bg-gray-900" />
@@ -997,14 +1201,28 @@ export function CreatePostForm() {
                       </div>
                     </div>
                   )
+                ) : selectedType === 'image' ? (
+                  // Image upload with multi-select support
+                  <label className="block border-2 border-dashed border-gray-700 rounded-xl p-8 text-center cursor-pointer hover:border-emerald-500 transition">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleMultipleImageSelect}
+                      className="hidden"
+                    />
+                    <Upload size={32} className="mx-auto mb-3 text-gray-500" />
+                    <p className="font-semibold mb-1">Click to upload images</p>
+                    <p className="text-sm text-gray-500">
+                      Select 1-8 images (max {user.tier === 'free' ? '500KB' : user.tier === 'standard' ? '10MB' : '50MB'} each)
+                    </p>
+                  </label>
                 ) : (
                   <label className="block border-2 border-dashed border-gray-700 rounded-xl p-8 text-center cursor-pointer hover:border-emerald-500 transition">
                     <input
                       type="file"
                       accept={
-                        selectedType === 'image'
-                          ? 'image/*'
-                          : selectedType === 'video'
+                        selectedType === 'video'
                           ? 'video/*'
                           : 'image/*'
                       }
@@ -1014,8 +1232,6 @@ export function CreatePostForm() {
                     <Upload size={32} className="mx-auto mb-3 text-gray-500" />
                     <p className="font-semibold mb-1">Click to upload {selectedType}</p>
                     <p className="text-sm text-gray-500">
-                      {selectedType === 'image' &&
-                        `Max ${user.tier === 'free' ? '500KB' : user.tier === 'standard' ? '10MB' : '50MB'}`}
                       {selectedType === 'video' &&
                         `Max ${tierLimits.maxVideoSeconds}s at ${tierLimits.maxVideoResolution}`}
                       {selectedType === 'panorama360' && 'Max 100MB, equirectangular format'}

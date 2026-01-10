@@ -155,6 +155,16 @@ async function fetchSavedFeed(
           shares: true,
         },
       },
+      media: {
+        orderBy: { sortOrder: 'asc' },
+        select: {
+          id: true,
+          mediaUrl: true,
+          thumbnailUrl: true,
+          altText: true,
+          sortOrder: true,
+        },
+      },
       likes: { where: { userId: user.id }, select: { userId: true } },
       saves: { where: { userId: user.id }, select: { userId: true } },
       reposts: { where: { userId: user.id }, select: { status: true } },
@@ -263,6 +273,16 @@ async function fetchFollowingFeed(
           shares: true,
         },
       },
+      media: {
+        orderBy: { sortOrder: 'asc' },
+        select: {
+          id: true,
+          mediaUrl: true,
+          thumbnailUrl: true,
+          altText: true,
+          sortOrder: true,
+        },
+      },
       likes: { where: { userId: user.id }, select: { userId: true } },
       saves: { where: { userId: user.id }, select: { userId: true } },
       reposts: { where: { userId: user.id }, select: { status: true } },
@@ -307,6 +327,16 @@ async function fetchFollowingFeed(
               likes: true,
               saves: true,
               shares: true,
+            },
+          },
+          media: {
+            orderBy: { sortOrder: 'asc' },
+            select: {
+              id: true,
+              mediaUrl: true,
+              thumbnailUrl: true,
+              altText: true,
+              sortOrder: true,
             },
           },
           likes: { where: { userId: user.id }, select: { userId: true } },
@@ -454,6 +484,16 @@ async function fetchDiscoveryFeed(
           shares: true,
         },
       },
+      media: {
+        orderBy: { sortOrder: 'asc' },
+        select: {
+          id: true,
+          mediaUrl: true,
+          thumbnailUrl: true,
+          altText: true,
+          sortOrder: true,
+        },
+      },
       likes: user ? { where: { userId: user.id }, select: { userId: true } } : false,
       saves: user ? { where: { userId: user.id }, select: { userId: true } } : false,
       reposts: user ? { where: { userId: user.id }, select: { status: true } } : false,
@@ -507,6 +547,16 @@ async function fetchDiscoveryFeed(
                 likes: true,
                 saves: true,
                 shares: true,
+              },
+            },
+            media: {
+              orderBy: { sortOrder: 'asc' },
+              select: {
+                id: true,
+                mediaUrl: true,
+                thumbnailUrl: true,
+                altText: true,
+                sortOrder: true,
               },
             },
             likes: { where: { userId: user.id }, select: { userId: true } },
@@ -717,6 +767,16 @@ async function fetchProfileFeed(
           shares: true,
         },
       },
+      media: {
+        orderBy: { sortOrder: 'asc' },
+        select: {
+          id: true,
+          mediaUrl: true,
+          thumbnailUrl: true,
+          altText: true,
+          sortOrder: true,
+        },
+      },
       likes: user ? { where: { userId: user.id }, select: { userId: true } } : false,
       saves: user ? { where: { userId: user.id }, select: { userId: true } } : false,
       reposts: user ? { where: { userId: user.id }, select: { status: true } } : false,
@@ -794,6 +854,14 @@ function formatPost(
                 !post.user.isPrivate &&
                 (post.user.allowReposts ?? true) &&
                 user?.id !== post.userId,
+    // Carousel media (for content_type === 'carousel')
+    media: post.media?.map((m: any) => ({
+      id: m.id,
+      media_url: m.mediaUrl,
+      thumbnail_url: m.thumbnailUrl,
+      alt_text: m.altText,
+      sort_order: m.sortOrder,
+    })) || null,
   };
 }
 
@@ -863,6 +931,14 @@ function formatRepost(
     is_reposted: user ? (Array.isArray(post.reposts) && post.reposts.length > 0) : false,
     repost_status: user && Array.isArray(post.reposts) && post.reposts.length > 0 ? post.reposts[0].status : null,
     can_repost: canRepost, // Based on allowChainReposts admin setting
+    // Carousel media (for content_type === 'carousel')
+    media: post.media?.map((m: any) => ({
+      id: m.id,
+      media_url: m.mediaUrl,
+      thumbnail_url: m.thumbnailUrl,
+      alt_text: m.altText,
+      sort_order: m.sortOrder,
+    })) || null,
   };
 }
 
@@ -877,6 +953,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
 
     const contentType = formData.get('content_type') as 'shout' | 'image' | 'video' | 'audio' | 'panorama360';
+    const mediaUrlsStr = formData.get('media_urls') as string | null; // JSON array for multi-image posts
     const textContent = formData.get('text_content') as string | null;
     const headline = formData.get('headline') as string | null;
     const headlineStyle = (formData.get('headline_style') as 'normal' | 'news') || 'normal';
@@ -929,6 +1006,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid content type' }, { status: 400 });
     }
 
+    // Parse multi-image URLs for image posts (optional - can have single media OR multiple media_urls)
+    let multiImageUrls: string[] = [];
+    if (contentType === 'image' && mediaUrlsStr) {
+      try {
+        multiImageUrls = JSON.parse(mediaUrlsStr);
+      } catch {
+        return NextResponse.json({ error: 'Invalid media_urls format' }, { status: 400 });
+      }
+      if (!Array.isArray(multiImageUrls) || multiImageUrls.length < 2 || multiImageUrls.length > 8) {
+        return NextResponse.json({ error: 'Multi-image posts require 2-8 images' }, { status: 400 });
+      }
+    }
+
     // Validate shouts have text
     if (contentType === 'shout' && !textContent?.trim()) {
       return NextResponse.json({ error: 'Shout must have text content' }, { status: 400 });
@@ -948,8 +1038,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate media types have media (video/audio can use jobId instead, panorama can use pre-uploaded URL)
-    if (contentType === 'image' && !media) {
-      return NextResponse.json({ error: 'Image file is required' }, { status: 400 });
+    // Image posts need either a single media file OR multiple media_urls
+    if (contentType === 'image' && !media && multiImageUrls.length === 0) {
+      return NextResponse.json({ error: 'Image file or media_urls is required' }, { status: 400 });
     }
     if (contentType === 'panorama360' && !media && !mediaUrlFromClient) {
       return NextResponse.json({ error: 'Panorama file or URL is required' }, { status: 400 });
@@ -1137,6 +1228,17 @@ export async function POST(request: NextRequest) {
         await tx.videoJob.update({
           where: { id: linkedAudioJob.id },
           data: { postId: newPost.id },
+        });
+      }
+
+      // Create PostMedia records for multi-image posts
+      if (contentType === 'image' && multiImageUrls.length > 0) {
+        await tx.postMedia.createMany({
+          data: multiImageUrls.map((url, index) => ({
+            postId: newPost.id,
+            mediaUrl: url,
+            sortOrder: index,
+          })),
         });
       }
 

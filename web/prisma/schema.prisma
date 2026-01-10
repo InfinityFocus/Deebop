@@ -149,12 +149,33 @@ model Post {
   interests    PostInterest[]
   postLocation PostLocation?
 
+  // Carousel media (multiple images)
+  media        PostMedia[]
+
   @@index([userId])
   @@index([contentType])
   @@index([createdAt])
   @@index([status])
   @@index([status, scheduledFor])
   @@map("posts")
+}
+
+model PostMedia {
+  id           String   @id @default(cuid())
+  postId       String   @map("post_id")
+  mediaUrl     String   @map("media_url")
+  thumbnailUrl String?  @map("thumbnail_url")
+  mediaWidth   Int?     @map("media_width")
+  mediaHeight  Int?     @map("media_height")
+  sortOrder    Int      @default(0) @map("sort_order")
+  altText      String?  @map("alt_text")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([sortOrder])
+  @@map("post_media")
 }
 
 model Hashtag {

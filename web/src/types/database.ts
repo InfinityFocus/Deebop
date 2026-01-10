@@ -288,13 +288,26 @@ export type Post = Database['public']['Tables']['posts']['Row'];
 export type Hashtag = Database['public']['Tables']['hashtags']['Row'];
 export type Notification = Database['public']['Tables']['notifications']['Row'];
 
+// Post media for carousels (multiple images)
+export interface PostMedia {
+  id: string;
+  media_url: string;
+  thumbnail_url?: string | null;
+  media_width?: number | null;
+  media_height?: number | null;
+  alt_text?: string | null;
+  sort_order: number;
+}
+
 // Extended types with relations
 export interface PostWithAuthor extends Post {
   author: Profile;
+  media?: PostMedia[] | null;
 }
 
 export interface PostWithEngagement extends Post {
   author: Profile;
   isLiked?: boolean;
   isSaved?: boolean;
+  media?: PostMedia[] | null;
 }
