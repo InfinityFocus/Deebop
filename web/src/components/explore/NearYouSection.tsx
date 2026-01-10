@@ -131,7 +131,7 @@ export default function NearYouSection() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <MapPin className="w-5 h-5 text-emerald-400" />
-          <h3 className="text-lg font-semibold">Near You</h3>
+          <h3 className="text-lg font-semibold">Creators Near You</h3>
           <span className="text-zinc-400">· {userCity?.name}</span>
         </div>
         <div className="flex items-center gap-2">

@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, PlaySquare, PlusSquare, Bell, User, Settings, LogOut, Bookmark, Crown, Images, Calendar, Link2 } from 'lucide-react';
+import { Home, Search, PlaySquare, PlusSquare, Bell, User, Settings, LogOut, Bookmark, Crown, Images, Calendar, Link2, MoreHorizontal, ChevronDown } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnreadNotificationCount } from '@/hooks/useNotifications';
@@ -29,6 +30,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const unreadCount = useUnreadNotificationCount();
+  const [moreOpen, setMoreOpen] = useState(false);
 
   return (
     <aside
@@ -105,6 +107,99 @@ export function Sidebar() {
               );
             })}
           </ul>
+
+          {/* More Section - Footer Links */}
+          <div className="mt-4 pt-4 border-t border-gray-800">
+            <button
+              onClick={() => setMoreOpen(!moreOpen)}
+              className="flex items-center gap-4 px-4 py-3 w-full text-left text-gray-400 hover:bg-gray-900 hover:text-white rounded-lg transition-colors"
+            >
+              <MoreHorizontal size={24} strokeWidth={1.5} />
+              <span>More</span>
+              <ChevronDown
+                size={16}
+                className={clsx(
+                  'ml-auto transition-transform',
+                  moreOpen && 'rotate-180'
+                )}
+              />
+            </button>
+
+            {moreOpen && (
+              <div className="mt-2 space-y-4 pl-4">
+                {/* Product */}
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider px-4 mb-1">Product</p>
+                  <ul className="space-y-1">
+                    <li>
+                      <Link href="/features" className="block px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+                        Features
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/pricing" className="block px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+                        Pricing
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/blog" className="block px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+                        Blog
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Company */}
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider px-4 mb-1">Company</p>
+                  <ul className="space-y-1">
+                    <li>
+                      <Link href="/about" className="block px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+                        About
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/careers" className="block px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+                        Careers
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/contact" className="block px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+                        Contact
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Legal */}
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider px-4 mb-1">Legal</p>
+                  <ul className="space-y-1">
+                    <li>
+                      <Link href="/terms" className="block px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+                        Terms
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/privacy" className="block px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+                        Privacy
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/cookies" className="block px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+                        Cookies
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/community-guidelines" className="block px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+                        Community Guidelines
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </nav>
 

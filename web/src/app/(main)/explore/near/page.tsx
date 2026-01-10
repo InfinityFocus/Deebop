@@ -107,7 +107,7 @@ export default function NearYouPage() {
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <h1 className="text-xl font-bold">Near You</h1>
+            <h1 className="text-xl font-bold">Creators Near You</h1>
           </div>
         </div>
 
@@ -152,7 +152,7 @@ export default function NearYouPage() {
               </Link>
               <div className="flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-emerald-400" />
-                <h1 className="text-xl font-bold">Near You</h1>
+                <h1 className="text-xl font-bold">Creators Near You</h1>
                 {userCity && (
                   <span className="text-zinc-400">· {userCity.name}</span>
                 )}
