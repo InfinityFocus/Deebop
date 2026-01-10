@@ -1184,6 +1184,12 @@ export async function POST(request: NextRequest) {
     const audienceUserIds = audienceUserIdsStr ? JSON.parse(audienceUserIdsStr) : [];
     const audienceGroupIds = audienceGroupIdsStr ? JSON.parse(audienceGroupIdsStr) : [];
 
+    // Get user's location for auto-tagging posts with city
+    const userLocation = await prisma.userLocation.findUnique({
+      where: { userId: user.id },
+      select: { cityId: true },
+    });
+
     // Validate content type
     if (!contentType || !['shout', 'image', 'video', 'audio', 'panorama360'].includes(contentType)) {
       return NextResponse.json({ error: 'Invalid content type' }, { status: 400 });
@@ -1536,6 +1542,21 @@ export async function POST(request: NextRequest) {
         }
       } catch (err) {
         throw new Error(`Failed to process hashtags: ${err instanceof Error ? err.message : 'Unknown'}`);
+      }
+
+      // Auto-tag post with user's city location if they have one set
+      if (userLocation?.cityId) {
+        try {
+          await tx.postLocation.create({
+            data: {
+              postId: newPost.id,
+              cityId: userLocation.cityId,
+            },
+          });
+        } catch (err) {
+          // Non-fatal - log but don't fail the post creation
+          console.error(`Failed to create post location: ${err instanceof Error ? err.message : 'Unknown'}`);
+        }
       }
 
       return newPost;
