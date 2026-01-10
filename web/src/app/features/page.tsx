@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 import Footer from '@/components/layout/Footer';
-import Link from 'next/link';
+import { BackButton } from '@/components/shared/BackButton';
 import {
-  ArrowLeft, Image, Video, Compass, MessageSquare, Heart, Bookmark, Share2, Shield,
+  Image, Video, Compass, MessageSquare, Heart, Bookmark, Share2, Shield,
   FolderOpen, Clock, Rocket, BadgeCheck, Users, Hash, Bell, Mic, Calendar,
   Layout, DollarSign, ShieldAlert
 } from 'lucide-react';
@@ -157,13 +157,7 @@ export default function FeaturesPage() {
       {/* Header */}
       <header className="border-b border-gray-800">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition"
-          >
-            <ArrowLeft size={20} />
-            Back to home
-          </Link>
+          <BackButton />
         </div>
       </header>
 

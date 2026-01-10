@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import Footer from '@/components/layout/Footer';
-import Link from 'next/link';
-import { ArrowLeft, Mail, MessageSquare, Send, Loader2, CheckCircle } from 'lucide-react';
+import { BackButton } from '@/components/shared/BackButton';
+import { Mail, MessageSquare, Send, Loader2, CheckCircle } from 'lucide-react';
 
 export default function ContactPage() {
   const [name, setName] = useState('');
@@ -50,13 +50,7 @@ export default function ContactPage() {
       {/* Header */}
       <header className="border-b border-gray-800">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition"
-          >
-            <ArrowLeft size={20} />
-            Back to home
-          </Link>
+          <BackButton />
         </div>
       </header>
 

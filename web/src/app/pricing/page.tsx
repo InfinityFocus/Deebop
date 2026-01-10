@@ -1,7 +1,8 @@
 import { Metadata } from 'next';
 import Footer from '@/components/layout/Footer';
 import Link from 'next/link';
-import { ArrowLeft, Check, X } from 'lucide-react';
+import { BackButton } from '@/components/shared/BackButton';
+import { Check, X } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export const metadata: Metadata = {
@@ -95,13 +96,7 @@ export default function PricingPage() {
       {/* Header */}
       <header className="border-b border-gray-800">
         <div className="max-w-6xl mx-auto px-4 py-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition"
-          >
-            <ArrowLeft size={20} />
-            Back to home
-          </Link>
+          <BackButton />
         </div>
       </header>
 
