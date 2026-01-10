@@ -4,6 +4,7 @@ import prisma from '@/lib/db';
 import { hasAlbumPermission } from '@/lib/album-permissions';
 import { buildEventContext, canUploadToGallery, canViewGallery } from '@/lib/event-permissions';
 import { uploadToMinio, generateFileKey } from '@/lib/minio';
+import { getUploadLimits, SubscriptionTier } from '@/lib/stripe';
 import { AlbumRole } from '@prisma/client';
 
 // Helper to get user's role in an album
@@ -328,8 +329,39 @@ export async function POST(
       return NextResponse.json({ error: 'Media file is required' }, { status: 400 });
     }
 
-    // Upload media
+    // Get file size for storage limit check
     const buffer = Buffer.from(await media.arrayBuffer());
+    const fileSize = buffer.length;
+
+    // Get user's tier and storage limits
+    const userData = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { tier: true },
+    });
+    const userTier = (userData?.tier || 'free') as SubscriptionTier;
+    const limits = getUploadLimits(userTier);
+
+    // Calculate user's total album storage usage
+    const storageUsage = await prisma.albumItem.aggregate({
+      where: { uploaderId: user.id },
+      _sum: { fileSize: true },
+    });
+    const currentUsage = storageUsage._sum.fileSize || 0;
+
+    // Check if adding this file would exceed the limit
+    if (currentUsage + fileSize > limits.maxAlbumStorage) {
+      const usedGB = (currentUsage / (1024 * 1024 * 1024)).toFixed(2);
+      const limitGB = (limits.maxAlbumStorage / (1024 * 1024 * 1024)).toFixed(0);
+      return NextResponse.json({
+        error: `Album storage limit exceeded. You've used ${usedGB}GB of your ${limitGB}GB limit. Upgrade your plan for more storage.`,
+        code: 'STORAGE_LIMIT_EXCEEDED',
+        currentUsage,
+        maxStorage: limits.maxAlbumStorage,
+        tier: userTier,
+      }, { status: 403 });
+    }
+
+    // Upload media
     const key = generateFileKey(user.id, `album-${albumId}`, media.name);
     const mediaUrl = await uploadToMinio(key, buffer, media.type);
 
@@ -357,6 +389,7 @@ export async function POST(
           contentType,
           mediaUrl,
           thumbnailUrl,
+          fileSize,
           caption: caption?.trim() || null,
           provenance: (provenance as any) || 'original',
           sortOrder: nextSortOrder,

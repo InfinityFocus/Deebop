@@ -16,25 +16,27 @@ interface UpgradePromptProps {
 const TIER_INFO = {
   standard: {
     name: 'Standard',
-    price: '£5.99/month',
+    price: '£3.99/month',
     icon: Zap,
     color: 'blue',
     features: [
       '10MB image uploads',
       '1 minute videos @ 1080p',
+      '10GB album storage',
       'Profile link',
       'Reduced ads',
     ],
   },
   pro: {
     name: 'Pro',
-    price: '£14.99/month',
+    price: '£9.99/month',
     icon: Crown,
     color: 'emerald',
     features: [
       '50MB image uploads',
       '5 minute videos @ 4K',
       '360 Panorama uploads',
+      '50GB album storage',
       'No ads',
       'Priority support',
     ],

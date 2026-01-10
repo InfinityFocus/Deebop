@@ -8,7 +8,7 @@ import { clsx } from 'clsx';
 const faqs = [
   {
     question: 'Is it free?',
-    answer: 'Yes! Deebop is free to use. Standard (\u00a35.99/mo) and Pro (\u00a314.99/mo) tiers unlock higher upload limits, 360 panoramas, and ad-free browsing.',
+    answer: 'Yes! Deebop is free to use. Standard (£3.99/mo) and Pro (£9.99/mo) tiers unlock higher upload limits, 360 panoramas, and ad-free browsing.',
   },
   {
     question: 'What can I post?',

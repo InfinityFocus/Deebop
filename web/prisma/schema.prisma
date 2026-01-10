@@ -571,6 +571,7 @@ model AlbumItem {
   thumbnailUrl String?         @map("thumbnail_url")
   mediaWidth   Int?            @map("media_width")
   mediaHeight  Int?            @map("media_height")
+  fileSize     Int?            @map("file_size")
   caption      String?
   provenance   ProvenanceLabel @default(original)
   sortOrder    Int             @default(0) @map("sort_order")

@@ -21,7 +21,7 @@ const tiers = [
       { text: 'Videos up to 30s @ 720p', included: true },
       { text: 'Audio up to 1min', included: true },
       { text: 'Unlimited shouts', included: true },
-      { text: 'Collaborative Albums', included: true },
+      { text: 'Collaborative Albums (2GB)', included: true },
       { text: 'Scheduled Drops', included: true },
       { text: 'Audience Groups', included: true },
       { text: 'Events', included: true },
@@ -38,7 +38,7 @@ const tiers = [
   },
   {
     name: 'Standard',
-    price: '£5.99',
+    price: '£3.99',
     period: '/month',
     description: 'For serious creators',
     features: [
@@ -46,7 +46,7 @@ const tiers = [
       { text: 'Videos up to 1min @ 1080p', included: true },
       { text: 'Audio up to 5min', included: true },
       { text: 'Unlimited shouts', included: true },
-      { text: 'Collaborative Albums', included: true },
+      { text: 'Collaborative Albums (10GB)', included: true },
       { text: 'Scheduled Drops', included: true },
       { text: 'Audience Groups', included: true },
       { text: 'Events', included: true },
@@ -64,7 +64,7 @@ const tiers = [
   },
   {
     name: 'Pro',
-    price: '£14.99',
+    price: '£9.99',
     period: '/month',
     description: 'Everything, unlocked',
     features: [
@@ -72,7 +72,7 @@ const tiers = [
       { text: 'Videos up to 5min @ 4K', included: true },
       { text: 'Audio up to 30min', included: true },
       { text: 'Unlimited shouts', included: true },
-      { text: 'Collaborative Albums', included: true },
+      { text: 'Collaborative Albums (50GB)', included: true },
       { text: 'Scheduled Drops', included: true },
       { text: 'Audience Groups', included: true },
       { text: 'Events', included: true },

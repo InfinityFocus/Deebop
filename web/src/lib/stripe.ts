@@ -42,23 +42,25 @@ export const SUBSCRIPTION_TIERS = {
   },
   standard: {
     name: 'Standard',
-    price: 599, // £5.99 in pence
+    price: 399, // £3.99 in pence
     priceId: process.env.STRIPE_STANDARD_PRICE_ID,
     features: [
       'Images up to 10MB (original quality)',
       'Videos up to 1min @ 1080p',
+      'Album storage up to 10GB',
       'Reduced ads',
       'Profile link',
     ],
   },
   pro: {
     name: 'Pro',
-    price: 1499, // £14.99 in pence
+    price: 999, // £9.99 in pence
     priceId: process.env.STRIPE_PRO_PRICE_ID,
     features: [
       'Images up to 50MB (original quality)',
       'Videos up to 5min @ 4K',
       '360 Panorama uploads (100MB)',
+      'Album storage up to 50GB',
       'No ads',
       'Profile link',
       'Priority support',
@@ -93,6 +95,7 @@ export function getUploadLimits(tier: SubscriptionTier) {
       maxVideoResolution: 720,
       canUploadPanorama: false,
       maxPanoramaSize: 0,
+      maxAlbumStorage: 2 * 1024 * 1024 * 1024, // 2GB
     },
     standard: {
       maxImageSize: 10 * 1024 * 1024, // 10MB
@@ -101,6 +104,7 @@ export function getUploadLimits(tier: SubscriptionTier) {
       maxVideoResolution: 1080,
       canUploadPanorama: false,
       maxPanoramaSize: 0,
+      maxAlbumStorage: 10 * 1024 * 1024 * 1024, // 10GB
     },
     pro: {
       maxImageSize: 50 * 1024 * 1024, // 50MB
@@ -109,6 +113,7 @@ export function getUploadLimits(tier: SubscriptionTier) {
       maxVideoResolution: 2160, // 4K
       canUploadPanorama: true,
       maxPanoramaSize: 100 * 1024 * 1024, // 100MB
+      maxAlbumStorage: 50 * 1024 * 1024 * 1024, // 50GB
     },
   };
   return limits[tier];
