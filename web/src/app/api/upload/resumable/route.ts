@@ -22,6 +22,11 @@ const FILE_LIMITS = {
 function getSupabaseConfig() {
   const s3Endpoint = process.env.S3_ENDPOINT || '';
   const bucket = process.env.S3_BUCKET || 'deebop-media';
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!serviceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for resumable uploads. Add it to your environment variables.');
+  }
 
   // Extract project ID from S3 endpoint
   // Format: https://[project_id].supabase.co/storage/v1/s3
@@ -37,8 +42,8 @@ function getSupabaseConfig() {
     bucket,
     // TUS endpoint for resumable uploads
     tusEndpoint: `https://${projectId}.supabase.co/storage/v1/upload/resumable`,
-    // S3 secret key can be used as auth token for storage operations
-    authToken: process.env.S3_SECRET_ACCESS_KEY,
+    // Service role key for authentication
+    authToken: serviceRoleKey,
   };
 }
 
