@@ -13,9 +13,12 @@ import type {
   EmailCaptureBlockData,
   DividerBlockData,
   FeaturedContentBlockData,
+  BookingBlockData,
+  BookingPlatform,
   SocialPlatform,
   SOCIAL_PLATFORMS,
 } from '@/types/creator-page';
+import { BOOKING_PLATFORMS } from '@/types/creator-page';
 
 interface BlockEditorProps {
   block: CreatorPageBlock;
@@ -40,6 +43,8 @@ export function BlockEditor({ block, onUpdate }: BlockEditorProps) {
       return <DividerEditor data={block.data as DividerBlockData} onUpdate={onUpdate} />;
     case 'featured_content':
       return <FeaturedContentEditor data={block.data as FeaturedContentBlockData} onUpdate={onUpdate} />;
+    case 'booking':
+      return <BookingEditor data={block.data as BookingBlockData} onUpdate={onUpdate} />;
     default:
       return <div className="text-gray-500">No editor available</div>;
   }
@@ -901,6 +906,143 @@ function FeaturedContentEditor({
         onSelect={handlePickerSelect}
         selectedIds={items.map((i) => i.id)}
         maxItems={6}
+      />
+    </div>
+  );
+}
+
+// Booking Editor
+const BOOKING_PLATFORM_OPTIONS: BookingPlatform[] = [
+  'calendly',
+  'acuity',
+  'calcom',
+  'tidycal',
+  'setmore',
+  'youcanbookme',
+  'other',
+];
+
+function BookingEditor({
+  data,
+  onUpdate,
+}: {
+  data: BookingBlockData;
+  onUpdate: (data: Record<string, unknown>) => void;
+}) {
+  const mode = data.mode || 'link';
+
+  return (
+    <div className="space-y-4">
+      {/* Platform Selector */}
+      <Select
+        label="Booking Platform"
+        value={data.platform || 'calendly'}
+        onChange={(v) => onUpdate({ ...data, platform: v })}
+        options={BOOKING_PLATFORM_OPTIONS.map((p) => ({
+          value: p,
+          label: BOOKING_PLATFORMS[p].label,
+        }))}
+      />
+
+      {/* Mode Toggle */}
+      <div>
+        <label className="block text-sm font-medium text-gray-400 mb-2">Display Mode</label>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => onUpdate({ ...data, mode: 'link' })}
+            className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition ${
+              mode === 'link'
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+                : 'bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-600'
+            }`}
+          >
+            Link Card
+          </button>
+          <button
+            type="button"
+            onClick={() => onUpdate({ ...data, mode: 'embed' })}
+            className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition ${
+              mode === 'embed'
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+                : 'bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-600'
+            }`}
+          >
+            Embed Widget
+          </button>
+        </div>
+        <p className="mt-1 text-xs text-gray-500">
+          {mode === 'link'
+            ? 'Opens booking page in a new tab'
+            : 'Embeds the booking calendar directly on your page'}
+        </p>
+      </div>
+
+      {/* Title */}
+      <Input
+        label="Title"
+        value={data.title || ''}
+        onChange={(v) => onUpdate({ ...data, title: v })}
+        placeholder="e.g., Book a Session"
+      />
+
+      {/* Description */}
+      <Textarea
+        label="Description"
+        value={data.description || ''}
+        onChange={(v) => onUpdate({ ...data, description: v })}
+        placeholder="Brief description (optional)"
+        rows={2}
+      />
+
+      {/* URL */}
+      <Input
+        label={mode === 'embed' ? 'Embed URL' : 'Booking URL'}
+        value={data.url || ''}
+        onChange={(v) => onUpdate({ ...data, url: v })}
+        placeholder="https://calendly.com/your-link"
+        type="url"
+      />
+      <p className="text-xs text-gray-500 -mt-2">
+        {mode === 'embed'
+          ? 'Use the embed/inline URL from your booking platform'
+          : 'Link to your booking page'}
+      </p>
+
+      {/* Mode-specific fields */}
+      {mode === 'link' ? (
+        <Input
+          label="Button Label"
+          value={data.ctaLabel || ''}
+          onChange={(v) => onUpdate({ ...data, ctaLabel: v })}
+          placeholder="Book Now"
+        />
+      ) : (
+        <div>
+          <label className="block text-sm font-medium text-gray-400 mb-1">
+            Widget Height: {data.embedHeight || 600}px
+          </label>
+          <input
+            type="range"
+            min={300}
+            max={900}
+            step={50}
+            value={data.embedHeight || 600}
+            onChange={(e) => onUpdate({ ...data, embedHeight: parseInt(e.target.value) })}
+            className="w-full accent-emerald-500"
+          />
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <span>300px</span>
+            <span>900px</span>
+          </div>
+        </div>
+      )}
+
+      {/* Highlight Toggle */}
+      <Toggle
+        label="Highlight (Accent Border)"
+        checked={data.highlight || false}
+        onChange={(v) => onUpdate({ ...data, highlight: v })}
       />
     </div>
   );

@@ -10,6 +10,7 @@ import {
   Minus,
   Grid,
   X,
+  Calendar,
 } from 'lucide-react';
 import type { BlockType } from '@/types/creator-page';
 import { getLimitsForTier } from '@/lib/creator-page-limits';
@@ -74,6 +75,12 @@ const BLOCK_TYPES: Array<{
     label: 'Divider',
     description: 'Space or line separator',
     icon: Minus,
+  },
+  {
+    type: 'booking',
+    label: 'Booking',
+    description: 'Booking link or embed (Calendly, Acuity, etc.)',
+    icon: Calendar,
   },
 ];
 

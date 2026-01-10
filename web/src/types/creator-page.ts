@@ -9,7 +9,8 @@ export type BlockType =
   | 'social_links'
   | 'affiliate_card'
   | 'email_capture'
-  | 'divider';
+  | 'divider'
+  | 'booking';
 
 // Hero Block - Avatar, name, bio, and primary CTA
 export interface HeroBlockData {
@@ -89,6 +90,20 @@ export interface DividerBlockData {
   height?: 'small' | 'medium' | 'large'; // Space height
 }
 
+// Booking Block - External scheduling link or embed
+export type BookingPlatform = 'acuity' | 'calendly' | 'calcom' | 'tidycal' | 'setmore' | 'youcanbookme' | 'other';
+
+export interface BookingBlockData {
+  platform: BookingPlatform;       // Platform for icon/branding
+  mode: 'link' | 'embed';          // Link out vs iframe embed
+  title: string;                   // "Book a Session", "Schedule a Call"
+  description?: string;            // Optional subtitle
+  url: string;                     // Booking URL (external or embed)
+  embedHeight?: number;            // iframe height in pixels (embed mode only, default 600)
+  ctaLabel?: string;               // "Book Now", "Schedule" (link mode only)
+  highlight?: boolean;             // Visual emphasis toggle
+}
+
 // Union type for all block data
 export type BlockData =
   | HeroBlockData
@@ -98,7 +113,8 @@ export type BlockData =
   | SocialLinksBlockData
   | AffiliateCardBlockData
   | EmailCaptureBlockData
-  | DividerBlockData;
+  | DividerBlockData
+  | BookingBlockData;
 
 // Block with type discriminator
 export interface CreatorPageBlock {
@@ -174,4 +190,15 @@ export const SOCIAL_PLATFORMS: Record<SocialPlatform, { label: string; icon: str
   discord: { label: 'Discord', icon: 'MessageCircle', color: '#5865F2' },
   github: { label: 'GitHub', icon: 'Github', color: '#181717' },
   email: { label: 'Email', icon: 'Mail', color: '#6B7280' },
+};
+
+// Booking platform metadata for rendering
+export const BOOKING_PLATFORMS: Record<BookingPlatform, { label: string; color: string; urlPattern?: RegExp }> = {
+  acuity: { label: 'Acuity Scheduling', color: '#0066CC', urlPattern: /acuityscheduling\.com/ },
+  calendly: { label: 'Calendly', color: '#006BFF', urlPattern: /calendly\.com/ },
+  calcom: { label: 'Cal.com', color: '#111827', urlPattern: /cal\.com/ },
+  tidycal: { label: 'TidyCal', color: '#4F46E5', urlPattern: /tidycal\.com/ },
+  setmore: { label: 'Setmore', color: '#00C389', urlPattern: /setmore\.com/ },
+  youcanbookme: { label: 'YouCanBook.me', color: '#5A67D8', urlPattern: /youcanbook\.me/ },
+  other: { label: 'Book', color: '#6B7280' },
 };

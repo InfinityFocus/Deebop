@@ -11,6 +11,7 @@ import { AffiliateCardBlock } from './blocks/AffiliateCardBlock';
 import { EmailCaptureBlock } from './blocks/EmailCaptureBlock';
 import { DividerBlock } from './blocks/DividerBlock';
 import { FeaturedContentBlock } from './blocks/FeaturedContentBlock';
+import { BookingBlock } from './blocks/BookingBlock';
 import type { BlockType, BlockData } from '@/types/creator-page';
 
 interface CreatorPageBlock {
@@ -182,6 +183,15 @@ export function CreatorPageRenderer({ user, page }: CreatorPageRendererProps) {
 
       case 'divider':
         return <DividerBlock key={block.id} data={data} />;
+
+      case 'booking':
+        return (
+          <BookingBlock
+            key={block.id}
+            data={data}
+            onClick={() => handleClick(block.id)}
+          />
+        );
 
       default:
         return null;
