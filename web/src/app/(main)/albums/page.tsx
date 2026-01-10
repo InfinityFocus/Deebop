@@ -1,21 +1,43 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Images, Bell } from 'lucide-react';
 import { clsx } from 'clsx';
 import { AlbumGrid } from '@/components/albums';
 import { AlbumInviteCard } from '@/components/albums/AlbumInviteCard';
+import { StorageUsageBar } from '@/components/subscription/StorageUsageBar';
 import { useAuth } from '@/hooks/useAuth';
 import { useAlbumInvites, usePendingInviteCount } from '@/hooks/useAlbumInvites';
+
+interface StorageData {
+  used: number;
+  max: number;
+  percentage: number;
+}
 
 type Tab = 'feed' | 'owned' | 'shared' | 'saved' | 'invites';
 
 export default function AlbumsPage() {
   const { user, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('feed');
+  const [storage, setStorage] = useState<StorageData | null>(null);
   const { data: invites, isLoading: invitesLoading } = useAlbumInvites();
   const inviteCount = usePendingInviteCount();
+
+  // Fetch storage usage for authenticated users
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetch('/api/subscriptions/status')
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => {
+          if (data?.storage) {
+            setStorage(data.storage);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isAuthenticated]);
 
   const tabs: { value: Tab; label: string; authRequired?: boolean }[] = [
     { value: 'feed', label: 'Discover' },
@@ -48,6 +70,18 @@ export default function AlbumsPage() {
           </Link>
         )}
       </div>
+
+      {/* Storage Usage */}
+      {isAuthenticated && storage && (
+        <div className="mb-6">
+          <StorageUsageBar
+            used={storage.used}
+            max={storage.max}
+            percentage={storage.percentage}
+            compact
+          />
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">

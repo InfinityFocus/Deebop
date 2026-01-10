@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/db';
-import { getStripe, isStripeEnabled } from '@/lib/stripe';
+import { getStripe, isStripeEnabled, getUploadLimits, SubscriptionTier } from '@/lib/stripe';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
@@ -28,6 +28,15 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+
+    // Calculate album storage usage
+    const storageUsage = await prisma.albumItem.aggregate({
+      where: { uploaderId: userId },
+      _sum: { fileSize: true },
+    });
+    const usedStorage = storageUsage._sum.fileSize || 0;
+    const limits = getUploadLimits(user.tier as SubscriptionTier);
+    const maxStorage = limits.maxAlbumStorage;
 
     let subscription = null;
 
@@ -55,6 +64,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       tier: user.tier,
       subscription,
+      storage: {
+        used: usedStorage,
+        max: maxStorage,
+        percentage: maxStorage > 0 ? Math.round((usedStorage / maxStorage) * 100) : 0,
+      },
     });
   } catch (error) {
     console.error('Status error:', error);

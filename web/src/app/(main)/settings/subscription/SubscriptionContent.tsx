@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Check, Crown, Zap, Sparkles, Loader2, ExternalLink
- } from 'lucide-react';
+import { Check, Crown, Zap, Sparkles, Loader2, ExternalLink } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
+import { StorageUsageBar } from '@/components/subscription/StorageUsageBar';
 
 interface SubscriptionStatus {
   tier: 'free' | 'standard' | 'pro';
@@ -15,6 +15,11 @@ interface SubscriptionStatus {
     currentPeriodEnd: string;
     cancelAtPeriodEnd: boolean;
   } | null;
+  storage: {
+    used: number;
+    max: number;
+    percentage: number;
+  };
 }
 
 const TIERS = {
@@ -44,7 +49,7 @@ const TIERS = {
   },
   standard: {
     name: 'Standard',
-    price: 599,
+    price: 399,
     description: 'For content creators',
     icon: Zap,
     features: [
@@ -71,7 +76,7 @@ const TIERS = {
   },
   pro: {
     name: 'Pro',
-    price: 1499,
+    price: 999,
     description: 'For professionals',
     icon: Crown,
     popular: true,
@@ -198,6 +203,18 @@ export function SubscriptionContent() {
       {canceled && (
         <div className="mb-6 p-4 bg-yellow-500/20 border border-yellow-500 rounded-lg text-yellow-400">
           Checkout was canceled. You can try again anytime.
+        </div>
+      )}
+
+      {/* Storage Usage */}
+      {status?.storage && (
+        <div className="mb-8">
+          <StorageUsageBar
+            used={status.storage.used}
+            max={status.storage.max}
+            percentage={status.storage.percentage}
+            showUpgradeLink={false}
+          />
         </div>
       )}
 
