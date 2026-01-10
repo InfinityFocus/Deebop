@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, Image, Video, Globe, Type, Loader2, Upload, Crown, Lock, Newspaper, Clock, Calendar, Eye, EyeOff, AlertCircle, CheckCircle, Music, Mic, FileAudio } from 'lucide-react';
+import { X, Image, Video, Globe, Type, Loader2, Upload, Crown, Lock, Newspaper, Clock, Calendar, Eye, EyeOff, AlertCircle, CheckCircle, Music, Mic, FileAudio, GripVertical, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
@@ -299,54 +299,114 @@ export function CreatePostForm() {
     }
   };
 
-  // Handle multiple image file selection
+  // Handle multiple image file selection - supports incremental addition
   const handleMultipleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const fileArray = Array.from(files);
+    const newFiles = Array.from(files);
 
-    // Validate max 8 images
-    if (fileArray.length > 8) {
-      setError('Maximum 8 images allowed');
+    // Validate all are images
+    const nonImages = newFiles.filter((f) => !f.type.startsWith('image/'));
+    if (nonImages.length > 0) {
+      setError('All files must be images');
       return;
     }
 
-    // Validate all are images
-    const nonImages = fileArray.filter((f) => !f.type.startsWith('image/'));
-    if (nonImages.length > 0) {
-      setError('All files must be images');
+    // Calculate total images after adding
+    const existingCount = selectedFiles.length + (selectedFile ? 1 : 0);
+    const totalCount = existingCount + newFiles.length;
+
+    // Validate max 8 images
+    if (totalCount > 8) {
+      setError(`Maximum 8 images allowed. You can add ${8 - existingCount} more.`);
       return;
     }
 
     setError(null);
     setImageUploadError(null);
 
-    // Single image: use the regular single-image flow
-    if (fileArray.length === 1) {
-      setSelectedFile(fileArray[0]);
-      setPreviewUrl(URL.createObjectURL(fileArray[0]));
+    // If we have a single selected file, convert it to multi-image mode first
+    let combinedFiles = [...selectedFiles];
+    let combinedPreviews = [...previewUrls];
+    let combinedUploads = [...uploadedImageUrls];
+
+    if (selectedFile && !selectedFiles.length) {
+      combinedFiles = [selectedFile];
+      combinedPreviews = [previewUrl!];
+      // Single file wasn't uploaded yet, need to upload it
+      combinedUploads = [];
+      setSelectedFile(null);
+      setPreviewUrl(null);
+    }
+
+    // Add new files
+    combinedFiles = [...combinedFiles, ...newFiles];
+    const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
+    combinedPreviews = [...combinedPreviews, ...newPreviews];
+
+    // Update state
+    setSelectedFiles(combinedFiles);
+    setPreviewUrls(combinedPreviews);
+
+    // If we now have 2+ images, upload all (re-upload everything to ensure consistency)
+    if (combinedFiles.length >= 2) {
+      try {
+        await uploadMultipleImages(combinedFiles);
+      } catch {
+        // Error already handled in uploadMultipleImages
+      }
+    } else if (combinedFiles.length === 1) {
+      // Single image mode
+      setSelectedFile(combinedFiles[0]);
+      setPreviewUrl(combinedPreviews[0]);
       setSelectedFiles([]);
       setPreviewUrls([]);
       setUploadedImageUrls([]);
-      return;
     }
 
-    // Multiple images: use the multi-image flow
-    setSelectedFile(null);
-    setPreviewUrl(null);
-    setSelectedFiles(fileArray);
+    // Clear the input so the same file can be selected again
+    e.target.value = '';
+  };
 
-    // Create preview URLs
-    const urls = fileArray.map((file) => URL.createObjectURL(file));
-    setPreviewUrls(urls);
+  // Drag and drop reordering state
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-    // Start batch upload for 2+ images
-    try {
-      await uploadMultipleImages(fileArray);
-    } catch {
-      // Error already handled in uploadMultipleImages
+  // Handle drag start
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  // Handle drag over
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) return;
+
+    // Reorder arrays
+    const newFiles = [...selectedFiles];
+    const newPreviews = [...previewUrls];
+    const newUploads = [...uploadedImageUrls];
+
+    // Remove from old position and insert at new position
+    const [draggedFile] = newFiles.splice(draggedIndex, 1);
+    const [draggedPreview] = newPreviews.splice(draggedIndex, 1);
+    newFiles.splice(index, 0, draggedFile);
+    newPreviews.splice(index, 0, draggedPreview);
+
+    if (newUploads.length === newFiles.length) {
+      const [draggedUpload] = newUploads.splice(draggedIndex, 1);
+      newUploads.splice(index, 0, draggedUpload);
+      setUploadedImageUrls(newUploads);
     }
+
+    setSelectedFiles(newFiles);
+    setPreviewUrls(newPreviews);
+    setDraggedIndex(index);
+  };
+
+  // Handle drag end
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
   };
 
   // Remove an image from multi-image selection
@@ -965,12 +1025,30 @@ export function CreatePostForm() {
                   <div className="space-y-3">
                     <div className="grid grid-cols-4 gap-2">
                       {previewUrls.map((url, index) => (
-                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-900">
+                        <div
+                          key={index}
+                          draggable
+                          onDragStart={() => handleDragStart(index)}
+                          onDragOver={(e) => handleDragOver(e, index)}
+                          onDragEnd={handleDragEnd}
+                          className={clsx(
+                            'relative aspect-square rounded-lg overflow-hidden bg-gray-900 cursor-move group',
+                            draggedIndex === index && 'opacity-50 ring-2 ring-emerald-500'
+                          )}
+                        >
                           <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                          {/* Order number badge */}
+                          <div className="absolute top-1 left-1 w-5 h-5 bg-black/70 rounded-full flex items-center justify-center text-xs font-medium text-white">
+                            {index + 1}
+                          </div>
+                          {/* Drag handle - visible on hover */}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center">
+                            <GripVertical className="w-6 h-6 text-white opacity-0 group-hover:opacity-70 transition" />
+                          </div>
                           <button
                             type="button"
                             onClick={() => removeImageAtIndex(index)}
-                            className="absolute top-1 right-1 p-1 bg-black/70 rounded-full hover:bg-black transition"
+                            className="absolute top-1 right-1 p-1 bg-black/70 rounded-full hover:bg-black transition opacity-0 group-hover:opacity-100"
                           >
                             <X size={14} />
                           </button>
@@ -978,7 +1056,7 @@ export function CreatePostForm() {
                       ))}
                       {/* Add more images button */}
                       {previewUrls.length < 8 && (
-                        <label className="aspect-square rounded-lg border-2 border-dashed border-gray-700 flex items-center justify-center cursor-pointer hover:border-emerald-500 transition">
+                        <label className="aspect-square rounded-lg border-2 border-dashed border-gray-700 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-gray-900/50 transition gap-1">
                           <input
                             type="file"
                             accept="image/*"
@@ -986,7 +1064,8 @@ export function CreatePostForm() {
                             onChange={handleMultipleImageSelect}
                             className="hidden"
                           />
-                          <span className="text-2xl text-gray-500">+</span>
+                          <Plus size={20} className="text-gray-500" />
+                          <span className="text-xs text-gray-500">Add</span>
                         </label>
                       )}
                     </div>
@@ -1009,12 +1088,26 @@ export function CreatePostForm() {
                         {imageUploadError}
                       </div>
                     )}
-                    <p className="text-xs text-gray-500">{previewUrls.length}/8 images selected</p>
+                    <p className="text-xs text-gray-500">{previewUrls.length}/8 images • Drag to reorder</p>
                   </div>
                 ) : previewUrl ? (
                   <div className="relative rounded-xl overflow-hidden">
                     {selectedType === 'image' && (
-                      <img src={previewUrl} alt="Preview" className="w-full max-h-[400px] object-contain bg-gray-900" />
+                      <div className="relative">
+                        <img src={previewUrl} alt="Preview" className="w-full max-h-[400px] object-contain bg-gray-900" />
+                        {/* Add more images button for single image */}
+                        <label className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-black/70 hover:bg-black rounded-full cursor-pointer transition text-sm text-white">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleMultipleImageSelect}
+                            className="hidden"
+                          />
+                          <Plus size={16} />
+                          Add more
+                        </label>
+                      </div>
                     )}
                     {selectedType === 'video' && (
                       <div className="relative">

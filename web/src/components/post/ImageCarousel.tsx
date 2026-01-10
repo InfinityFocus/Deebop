@@ -22,12 +22,17 @@ export function ImageCarousel({ images, className }: ImageCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
 
+  // Touch handling state for controlled swipe
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
+  const isSwiping = useRef(false);
+
   // Sort images by sort_order
   const sortedImages = [...images].sort((a, b) => a.sort_order - b.sort_order);
 
   // Update current index based on scroll position
   const handleScroll = useCallback(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && !isSwiping.current) {
       const scrollLeft = scrollRef.current.scrollLeft;
       const width = scrollRef.current.clientWidth;
       const newIndex = Math.round(scrollLeft / width);
@@ -52,6 +57,7 @@ export function ImageCarousel({ images, className }: ImageCarouselProps) {
         left: width * index,
         behavior: 'smooth',
       });
+      setCurrentIndex(index);
     }
   };
 
@@ -64,6 +70,38 @@ export function ImageCarousel({ images, className }: ImageCarouselProps) {
   const goToNext = () => {
     if (currentIndex < sortedImages.length - 1) {
       scrollTo(currentIndex + 1);
+    }
+  };
+
+  // Touch event handlers for controlled swipe behavior
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    isSwiping.current = true;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    isSwiping.current = false;
+    const diff = touchStartX.current - touchEndX.current;
+    const threshold = 50; // Minimum swipe distance
+
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0 && currentIndex < sortedImages.length - 1) {
+        // Swipe left - go to next
+        scrollTo(currentIndex + 1);
+      } else if (diff < 0 && currentIndex > 0) {
+        // Swipe right - go to previous
+        scrollTo(currentIndex - 1);
+      } else {
+        // Bounce back to current position
+        scrollTo(currentIndex);
+      }
+    } else {
+      // Didn't meet threshold, snap back to current
+      scrollTo(currentIndex);
     }
   };
 
@@ -94,19 +132,27 @@ export function ImageCarousel({ images, className }: ImageCarouselProps) {
       {/* Scrollable container with snap */}
       <div
         ref={scrollRef}
-        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide touch-pan-x"
+        style={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch',
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         {sortedImages.map((image, index) => (
           <div
             key={image.id}
-            className="flex-none w-full snap-center"
+            className="flex-none w-full snap-center snap-always"
           >
             <img
               src={image.media_url}
               alt={image.alt_text || `Image ${index + 1}`}
               className="w-full max-h-[95vh] object-contain"
               loading={index === 0 ? 'eager' : 'lazy'}
+              draggable={false}
             />
           </div>
         ))}
