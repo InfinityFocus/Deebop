@@ -1181,124 +1181,165 @@ export async function POST(request: NextRequest) {
 
     // Create post with audience records in a transaction
     const post = await prisma.$transaction(async (tx) => {
+      // Prepare headline - trim and replace newlines
+      const processedHeadline = headline?.trim().replace(/[\r\n]+/g, ' ') || null;
+
+      // Extra validation for headline length (VarChar(80) in DB)
+      if (processedHeadline && processedHeadline.length > 80) {
+        throw new Error(`Headline too long: ${processedHeadline.length} characters (max 80)`);
+      }
+
       // Create the post
-      const newPost = await tx.post.create({
-        data: {
-          userId: user.id,
-          contentType,
-          headline: headline?.trim().replace(/[\r\n]+/g, ' ') || null,
-          headlineStyle,
-          description: textContent?.trim() || null,
-          mediaUrl,
-          mediaThumbnailUrl: thumbnailUrl,
-          mediaDurationSeconds,
-          mediaWidth,
-          mediaHeight,
-          visibility,
-          provenance: provenance || 'original',
-          status,
-          scheduledFor,
-          hideTeaser,
-          isSponsoredContent,
-          isSensitiveContent,
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              username: true,
-              displayName: true,
-              avatarUrl: true,
-              tier: true,
+      let newPost;
+      try {
+        newPost = await tx.post.create({
+          data: {
+            userId: user.id,
+            contentType,
+            headline: processedHeadline,
+            headlineStyle,
+            description: textContent?.trim() || null,
+            mediaUrl,
+            mediaThumbnailUrl: thumbnailUrl,
+            mediaDurationSeconds,
+            mediaWidth,
+            mediaHeight,
+            visibility,
+            provenance: provenance || 'original',
+            status,
+            scheduledFor,
+            hideTeaser,
+            isSponsoredContent,
+            isSensitiveContent,
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                displayName: true,
+                avatarUrl: true,
+                tier: true,
+              },
             },
           },
-        },
-      });
+        });
+      } catch (err) {
+        throw new Error(`Failed to create post record: ${err instanceof Error ? err.message : 'Unknown'}`);
+      }
 
       // Link VideoJob to post if we have one
       if (linkedVideoJob) {
-        await tx.videoJob.update({
-          where: { id: linkedVideoJob.id },
-          data: { postId: newPost.id },
-        });
+        try {
+          await tx.videoJob.update({
+            where: { id: linkedVideoJob.id },
+            data: { postId: newPost.id },
+          });
+        } catch (err) {
+          throw new Error(`Failed to link video job: ${err instanceof Error ? err.message : 'Unknown'}`);
+        }
       }
 
       // Link AudioJob to post if we have one
       if (linkedAudioJob) {
-        await tx.videoJob.update({
-          where: { id: linkedAudioJob.id },
-          data: { postId: newPost.id },
-        });
+        try {
+          await tx.videoJob.update({
+            where: { id: linkedAudioJob.id },
+            data: { postId: newPost.id },
+          });
+        } catch (err) {
+          throw new Error(`Failed to link audio job: ${err instanceof Error ? err.message : 'Unknown'}`);
+        }
       }
 
       // Create PostMedia records for multi-image posts
       if (contentType === 'image' && multiImageUrls.length > 0) {
-        await tx.postMedia.createMany({
-          data: multiImageUrls.map((url, index) => ({
-            postId: newPost.id,
-            mediaUrl: url,
-            sortOrder: index,
-          })),
-        });
+        try {
+          await tx.postMedia.createMany({
+            data: multiImageUrls.map((url, index) => ({
+              postId: newPost.id,
+              mediaUrl: url,
+              sortOrder: index,
+            })),
+          });
+        } catch (err) {
+          throw new Error(`Failed to create post media records: ${err instanceof Error ? err.message : 'Unknown'}`);
+        }
       }
 
       // Create audience user records for private posts
       if (visibility === 'private' && audienceUserIds.length > 0) {
-        await tx.postAudienceUser.createMany({
-          data: audienceUserIds.map((userId: string) => ({
-            postId: newPost.id,
-            userId,
-          })),
-        });
+        try {
+          await tx.postAudienceUser.createMany({
+            data: audienceUserIds.map((userId: string) => ({
+              postId: newPost.id,
+              userId,
+            })),
+          });
+        } catch (err) {
+          throw new Error(`Failed to create audience user records: ${err instanceof Error ? err.message : 'Unknown'}`);
+        }
       }
 
       // Create audience group records for private posts
       if (visibility === 'private' && audienceGroupIds.length > 0) {
-        await tx.postAudienceGroup.createMany({
-          data: audienceGroupIds.map((groupId: string) => ({
-            postId: newPost.id,
-            groupId,
-          })),
-        });
+        try {
+          await tx.postAudienceGroup.createMany({
+            data: audienceGroupIds.map((groupId: string) => ({
+              postId: newPost.id,
+              groupId,
+            })),
+          });
+        } catch (err) {
+          throw new Error(`Failed to create audience group records: ${err instanceof Error ? err.message : 'Unknown'}`);
+        }
       }
 
       // Auto-assign interests based on hashtags and keywords
-      const interestIds = await matchPostToInterests(textContent, headline);
-      if (interestIds.length > 0) {
-        await tx.postInterest.createMany({
-          data: interestIds.map((interestId) => ({
-            postId: newPost.id,
-            interestId,
-          })),
-          skipDuplicates: true,
-        });
+      try {
+        const interestIds = await matchPostToInterests(textContent, headline);
+        if (interestIds.length > 0) {
+          await tx.postInterest.createMany({
+            data: interestIds.map((interestId) => ({
+              postId: newPost.id,
+              interestId,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      } catch (err) {
+        throw new Error(`Failed to match/create interests: ${err instanceof Error ? err.message : 'Unknown'}`);
       }
 
       // Extract and link hashtags from text content and headline
-      const combinedText = `${textContent || ''} ${headline || ''}`;
-      const hashtagMatches = combinedText.match(/#[\w\u0080-\uFFFF]+/g);
-      if (hashtagMatches && hashtagMatches.length > 0) {
-        // Get unique, normalized hashtag names
-        const uniqueHashtags = [...new Set(
-          hashtagMatches.map(tag => tag.toLowerCase().replace(/^#/, '').trim())
-        )].filter(tag => tag.length > 0 && tag.length <= 50);
+      try {
+        const combinedText = `${textContent || ''} ${headline || ''}`;
+        const hashtagMatches = combinedText.match(/#[\w\u0080-\uFFFF]+/g);
+        if (hashtagMatches && hashtagMatches.length > 0) {
+          // Get unique, normalized hashtag names
+          const uniqueHashtags = [...new Set(
+            hashtagMatches.map(tag => tag.toLowerCase().replace(/^#/, '').trim())
+          )].filter(tag => tag.length > 0 && tag.length <= 50);
 
-        for (const tagName of uniqueHashtags) {
-          // Upsert the hashtag (create if doesn't exist)
-          const hashtag = await tx.hashtag.upsert({
-            where: { name: tagName },
-            create: { name: tagName, postsCount: 1 },
-            update: { postsCount: { increment: 1 } },
-          });
+          for (const tagName of uniqueHashtags) {
+            // Upsert the hashtag (create if doesn't exist)
+            const hashtag = await tx.hashtag.upsert({
+              where: { name: tagName },
+              create: { name: tagName, postsCount: 1 },
+              update: { postsCount: { increment: 1 } },
+            });
 
-          // Create the PostHashtag junction record
-          await tx.postHashtag.create({
-            data: {
-              postId: newPost.id,
-              hashtagId: hashtag.id,
-            },
-          });
+            // Create the PostHashtag junction record
+            await tx.postHashtag.create({
+              data: {
+                postId: newPost.id,
+                hashtagId: hashtag.id,
+              },
+            });
+          }
         }
+      } catch (err) {
+        throw new Error(`Failed to process hashtags: ${err instanceof Error ? err.message : 'Unknown'}`);
       }
 
       return newPost;
