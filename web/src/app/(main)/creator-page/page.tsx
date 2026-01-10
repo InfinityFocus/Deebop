@@ -19,7 +19,9 @@ import {
   Edit3,
   Lock,
   BarChart3,
+  Layers,
 } from 'lucide-react';
+import { clsx } from 'clsx';
 import type { CreatorPageBlock, BlockType, CreatorPageResponse } from '@/types/creator-page';
 import { BlockTypeMenu } from './components/BlockTypeMenu';
 import { BlockEditor } from './components/BlockEditor';
@@ -40,6 +42,9 @@ export default function CreatorPageBuilder() {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile');
   const [copied, setCopied] = useState(false);
+
+  // Mobile view state
+  const [mobileView, setMobileView] = useState<'blocks' | 'preview' | 'editor'>('preview');
 
   // Dragging state
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
@@ -192,6 +197,15 @@ export default function CreatorPageBuilder() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Handle block selection with mobile auto-switch
+  const handleBlockSelect = (blockId: string) => {
+    setSelectedBlockId(blockId);
+    // On mobile, switch to editor view when block selected
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setMobileView('editor');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -220,9 +234,13 @@ export default function CreatorPageBuilder() {
   const selectedBlock = blocks.find((b) => b.id === selectedBlockId);
 
   return (
-    <div className="flex h-screen bg-gray-950">
+    <div className="flex h-screen bg-gray-950 pb-16 md:pb-0">
       {/* Left Panel - Block List */}
-      <div className="w-80 border-r border-gray-800 flex flex-col">
+      <div className={clsx(
+        "md:w-80 md:border-r border-gray-800 flex flex-col",
+        "w-full",
+        mobileView !== 'blocks' && 'hidden md:flex'
+      )}>
         {/* Header */}
         <div className="p-4 border-b border-gray-800">
           <h1 className="text-lg font-semibold text-white">Creator Page</h1>
@@ -265,7 +283,7 @@ export default function CreatorPageBuilder() {
                       ? 'bg-emerald-500/10 border-emerald-500'
                       : 'bg-gray-800 border-gray-700 hover:border-gray-600'
                   } ${draggedBlockId === block.id ? 'opacity-50' : ''}`}
-                  onClick={() => setSelectedBlockId(block.id)}
+                  onClick={() => handleBlockSelect(block.id)}
                 >
                   <GripVertical size={16} className="text-gray-500 cursor-grab" />
                   <span className="flex-1 text-sm text-white capitalize">
@@ -355,9 +373,13 @@ export default function CreatorPageBuilder() {
       </div>
 
       {/* Center - Preview */}
-      <div className="flex-1 flex flex-col bg-gray-900">
-        {/* Preview Controls */}
-        <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+      <div className={clsx(
+        "md:flex-1 flex flex-col bg-gray-900",
+        "flex-1",
+        mobileView !== 'preview' && 'hidden md:flex'
+      )}>
+        {/* Preview Controls - hidden on mobile */}
+        <div className="hidden md:flex p-4 border-b border-gray-800 items-center justify-between">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPreviewMode('mobile')}
@@ -380,12 +402,12 @@ export default function CreatorPageBuilder() {
         </div>
 
         {/* Preview Frame */}
-        <div className="flex-1 overflow-y-auto flex items-start justify-center p-8">
+        <div className="flex-1 overflow-y-auto flex items-start justify-center p-4 md:p-8">
           <PreviewFrame
             mode={previewMode}
             user={pageData?.user || null}
             blocks={blocks}
-            onBlockClick={setSelectedBlockId}
+            onBlockClick={handleBlockSelect}
             selectedBlockId={selectedBlockId}
           />
         </div>
@@ -393,13 +415,23 @@ export default function CreatorPageBuilder() {
 
       {/* Right Panel - Block Editor */}
       {selectedBlock && (
-        <div className="w-96 border-l border-gray-800 flex flex-col">
+        <div className={clsx(
+          "md:w-96 md:border-l border-gray-800 flex flex-col",
+          "w-full",
+          mobileView !== 'editor' && 'hidden md:flex'
+        )}>
           <div className="p-4 border-b border-gray-800 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-white capitalize">
               Edit {selectedBlock.type.replace('_', ' ')}
             </h2>
             <button
-              onClick={() => setSelectedBlockId(null)}
+              onClick={() => {
+                setSelectedBlockId(null);
+                // On mobile, go back to blocks view
+                if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                  setMobileView('blocks');
+                }
+              }}
               className="p-1 text-gray-500 hover:text-white transition"
             >
               ✕
@@ -413,6 +445,45 @@ export default function CreatorPageBuilder() {
           </div>
         </div>
       )}
+
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 flex z-50">
+        <button
+          onClick={() => setMobileView('blocks')}
+          className={clsx(
+            "flex-1 py-3 flex flex-col items-center gap-1 text-xs",
+            mobileView === 'blocks' ? 'text-emerald-400' : 'text-gray-500'
+          )}
+        >
+          <Layers size={20} />
+          Blocks
+        </button>
+        <button
+          onClick={() => setMobileView('preview')}
+          className={clsx(
+            "flex-1 py-3 flex flex-col items-center gap-1 text-xs",
+            mobileView === 'preview' ? 'text-emerald-400' : 'text-gray-500'
+          )}
+        >
+          <Eye size={20} />
+          Preview
+        </button>
+        <button
+          onClick={() => {
+            if (selectedBlock) {
+              setMobileView('editor');
+            }
+          }}
+          className={clsx(
+            "flex-1 py-3 flex flex-col items-center gap-1 text-xs",
+            mobileView === 'editor' ? 'text-emerald-400' : 'text-gray-500',
+            !selectedBlock && 'opacity-40'
+          )}
+        >
+          <Edit3 size={20} />
+          Edit
+        </button>
+      </div>
 
       {/* Add Block Menu Modal */}
       {showAddMenu && (

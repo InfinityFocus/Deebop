@@ -62,14 +62,16 @@ export function PreviewFrame({
   onBlockClick,
   selectedBlockId,
 }: PreviewFrameProps) {
+  // On actual mobile devices, show full-width preview without phone bezel
+  // On desktop, show the selected preview mode (mobile with bezel or desktop full-width)
   const containerClass =
     mode === 'mobile'
-      ? 'w-[375px] min-h-[667px] rounded-[3rem] border-8 border-gray-700'
+      ? 'w-full md:w-[375px] min-h-[500px] md:min-h-[667px] md:rounded-[3rem] md:border-8 md:border-gray-700 rounded-xl border border-gray-800'
       : 'w-full max-w-2xl min-h-[500px] rounded-xl border border-gray-700';
 
   return (
     <div className={`${containerClass} bg-gray-950 overflow-hidden`}>
-      <div className="p-4 space-y-4 overflow-y-auto max-h-[80vh]">
+      <div className="p-4 space-y-4 overflow-y-auto max-h-[80vh] md:max-h-[80vh]">
         {blocks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <p className="text-gray-500 mb-2">Your page is empty</p>
