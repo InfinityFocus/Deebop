@@ -22,33 +22,46 @@ export function ImageCarousel({ images, className }: ImageCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Touch handling state for controlled swipe
-  const touchStartX = useRef<number>(0);
-  const touchEndX = useRef<number>(0);
-  const isSwiping = useRef(false);
-
   // Sort images by sort_order
   const sortedImages = [...images].sort((a, b) => a.sort_order - b.sort_order);
 
-  // Update current index based on scroll position
+  // Update current index based on scroll position (debounced)
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const handleScroll = useCallback(() => {
-    if (scrollRef.current && !isSwiping.current) {
-      const scrollLeft = scrollRef.current.scrollLeft;
-      const width = scrollRef.current.clientWidth;
-      const newIndex = Math.round(scrollLeft / width);
-      if (newIndex !== currentIndex && newIndex >= 0 && newIndex < sortedImages.length) {
-        setCurrentIndex(newIndex);
-      }
+    // Debounce the index update to avoid jerkiness
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
     }
-  }, [currentIndex, sortedImages.length]);
+
+    scrollTimeoutRef.current = setTimeout(() => {
+      if (scrollRef.current) {
+        const scrollLeft = scrollRef.current.scrollLeft;
+        const width = scrollRef.current.clientWidth;
+        const newIndex = Math.round(scrollLeft / width);
+        if (newIndex >= 0 && newIndex < sortedImages.length) {
+          setCurrentIndex(newIndex);
+        }
+      }
+    }, 50);
+  }, [sortedImages.length]);
 
   useEffect(() => {
     const scrollEl = scrollRef.current;
     if (scrollEl) {
-      scrollEl.addEventListener('scroll', handleScroll);
+      scrollEl.addEventListener('scroll', handleScroll, { passive: true });
       return () => scrollEl.removeEventListener('scroll', handleScroll);
     }
   }, [handleScroll]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const scrollTo = (index: number) => {
     if (scrollRef.current) {
@@ -70,38 +83,6 @@ export function ImageCarousel({ images, className }: ImageCarouselProps) {
   const goToNext = () => {
     if (currentIndex < sortedImages.length - 1) {
       scrollTo(currentIndex + 1);
-    }
-  };
-
-  // Touch event handlers for controlled swipe behavior
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    isSwiping.current = true;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = () => {
-    isSwiping.current = false;
-    const diff = touchStartX.current - touchEndX.current;
-    const threshold = 50; // Minimum swipe distance
-
-    if (Math.abs(diff) > threshold) {
-      if (diff > 0 && currentIndex < sortedImages.length - 1) {
-        // Swipe left - go to next
-        scrollTo(currentIndex + 1);
-      } else if (diff < 0 && currentIndex > 0) {
-        // Swipe right - go to previous
-        scrollTo(currentIndex - 1);
-      } else {
-        // Bounce back to current position
-        scrollTo(currentIndex);
-      }
-    } else {
-      // Didn't meet threshold, snap back to current
-      scrollTo(currentIndex);
     }
   };
 
@@ -129,28 +110,27 @@ export function ImageCarousel({ images, className }: ImageCarouselProps) {
         {currentIndex + 1} / {sortedImages.length}
       </div>
 
-      {/* Scrollable container with snap */}
+      {/* Scrollable container with snap - uses native scroll behavior */}
       <div
         ref={scrollRef}
-        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide touch-pan-x"
+        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           WebkitOverflowScrolling: 'touch',
+          overscrollBehaviorX: 'contain', // Prevents horizontal overscroll from triggering page navigation
         }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         {sortedImages.map((image, index) => (
           <div
             key={image.id}
-            className="flex-none w-full snap-center snap-always"
+            className="flex-none w-full snap-center"
+            style={{ scrollSnapStop: 'always' }} // Force stop at each image
           >
             <img
               src={image.media_url}
               alt={image.alt_text || `Image ${index + 1}`}
-              className="w-full max-h-[95vh] object-contain"
+              className="w-full max-h-[95vh] object-contain select-none"
               loading={index === 0 ? 'eager' : 'lazy'}
               draggable={false}
             />
