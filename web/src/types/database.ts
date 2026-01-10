@@ -29,7 +29,9 @@ export type NotificationType =
   | 'boost_rejected'
   | 'subscription_renewed'
   | 'subscription_cancelled'
-  | 'system';
+  | 'system'
+  | 'event_invite'
+  | 'album_invite';
 export type HeadlineStyle = 'normal' | 'news';
 
 // Event-related types

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, Heart, UserPlus, Share2, Loader2, Repeat, Check, X, Star } from 'lucide-react';
+import { Bell, Heart, UserPlus, Share2, Loader2, Repeat, Check, X, Star, Calendar, Images } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
@@ -21,6 +21,18 @@ interface NotificationPost {
   media_thumbnail_url: string | null;
 }
 
+interface NotificationEvent {
+  id: string;
+  title: string;
+  cover_image_url: string | null;
+}
+
+interface NotificationAlbum {
+  id: string;
+  title: string;
+  cover_image_url: string | null;
+}
+
 interface Notification {
   id: string;
   type: string;
@@ -28,6 +40,8 @@ interface Notification {
   created_at: string;
   actor: NotificationActor | null;
   post: NotificationPost | null;
+  event: NotificationEvent | null;
+  album: NotificationAlbum | null;
   repost_id?: string;
 }
 
@@ -50,6 +64,8 @@ const notificationIcons: Record<string, React.ReactNode> = {
   repost_request: <Repeat size={16} className="text-yellow-500" />,
   repost_approved: <Check size={16} className="text-emerald-500" />,
   repost_denied: <X size={16} className="text-red-500" />,
+  event_invite: <Calendar size={16} className="text-cyan-500" />,
+  album_invite: <Images size={16} className="text-emerald-500" />,
 };
 
 const notificationMessages: Record<string, (actor: string) => string> = {
@@ -63,6 +79,8 @@ const notificationMessages: Record<string, (actor: string) => string> = {
   repost_request: (actor) => `${actor} wants to repost your post`,
   repost_approved: (actor) => `${actor} approved your repost request`,
   repost_denied: (actor) => `${actor} denied your repost request`,
+  event_invite: (actor) => `${actor} invited you to an event`,
+  album_invite: (actor) => `${actor} invited you to an album`,
 };
 
 export default function NotificationsPage() {
@@ -169,7 +187,11 @@ function NotificationItem({ notification }: { notification: Notification }) {
   const icon = notificationIcons[notification.type] || <Bell size={16} />;
   const timeAgo = formatDistanceToNow(new Date(notification.created_at), { addSuffix: true });
 
-  const href = notification.post
+  const href = notification.event
+    ? `/events/${notification.event.id}`
+    : notification.album
+    ? `/albums/${notification.album.id}`
+    : notification.post
     ? `/p/${notification.post.id}`
     : notification.actor
     ? `/u/${notification.actor.username}`
@@ -248,6 +270,16 @@ function NotificationItem({ notification }: { notification: Notification }) {
             {notification.post.text_content}
           </p>
         )}
+        {notification.event?.title && (
+          <p className="text-sm text-gray-300 mt-2 line-clamp-1">
+            📅 {notification.event.title}
+          </p>
+        )}
+        {notification.album?.title && (
+          <p className="text-sm text-gray-300 mt-2 line-clamp-1">
+            📷 {notification.album.title}
+          </p>
+        )}
 
         {/* Repost request approval buttons */}
         {isRepostRequest && notification.repost_id && (
@@ -280,10 +312,10 @@ function NotificationItem({ notification }: { notification: Notification }) {
         )}
       </div>
 
-      {/* Post thumbnail */}
-      {notification.post?.media_thumbnail_url && (
+      {/* Thumbnail */}
+      {(notification.post?.media_thumbnail_url || notification.event?.cover_image_url || notification.album?.cover_image_url) && (
         <img
-          src={notification.post.media_thumbnail_url}
+          src={notification.post?.media_thumbnail_url || notification.event?.cover_image_url || notification.album?.cover_image_url || ''}
           alt=""
           className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
         />

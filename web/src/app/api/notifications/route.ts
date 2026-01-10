@@ -36,6 +36,20 @@ export async function GET(request: NextRequest) {
             mediaThumbnailUrl: true,
           },
         },
+        event: {
+          select: {
+            id: true,
+            title: true,
+            coverImageUrl: true,
+          },
+        },
+        album: {
+          select: {
+            id: true,
+            title: true,
+            coverImageUrl: true,
+          },
+        },
       },
     });
 
@@ -104,6 +118,20 @@ export async function GET(request: NextRequest) {
               content_type: n.post.contentType,
               text_content: n.post.description,
               media_thumbnail_url: n.post.mediaThumbnailUrl,
+            }
+          : null,
+        event: n.event
+          ? {
+              id: n.event.id,
+              title: n.event.title,
+              cover_image_url: n.event.coverImageUrl,
+            }
+          : null,
+        album: n.album
+          ? {
+              id: n.album.id,
+              title: n.album.title,
+              cover_image_url: n.album.coverImageUrl,
             }
           : null,
       };

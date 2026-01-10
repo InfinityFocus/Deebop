@@ -142,6 +142,16 @@ export async function POST(
           skipDuplicates: true,
         });
 
+        // Create notifications for invited users
+        await tx.notification.createMany({
+          data: validUserIds.map((inviteeId) => ({
+            userId: inviteeId,
+            type: 'event_invite',
+            actorId: user.id,
+            eventId: id,
+          })),
+        });
+
         userInviteCount = validUserIds.length;
       }
 
