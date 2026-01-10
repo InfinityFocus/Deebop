@@ -177,6 +177,29 @@ body {
   display: none;  /* Chrome, Safari, Opera */
 }
 
+/* Thin stylish scrollbar */
+.scrollbar-thin {
+  scrollbar-width: thin;  /* Firefox */
+  scrollbar-color: #374151 transparent;  /* Firefox: thumb track */
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #374151;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: #4b5563;
+}
+
 /* Logo shimmer wave animation */
 @keyframes logo-shimmer {
   0% {

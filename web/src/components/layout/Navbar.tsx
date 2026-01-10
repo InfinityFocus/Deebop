@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home, Search, PlaySquare, PlusSquare, User,
-  Bell, Bookmark, Images, Calendar, Link2, Crown, Settings, LogOut, X
+  Bell, Bookmark, Images, Calendar, Link2, Crown, Settings, LogOut, X,
+  MoreHorizontal, ChevronDown
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
@@ -38,6 +39,7 @@ export function Navbar() {
   const { user, logout } = useAuth();
   const unreadCount = useUnreadNotificationCount();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu when clicking outside
@@ -72,7 +74,7 @@ export function Navbar() {
       {menuOpen && (
         <div
           ref={menuRef}
-          className="fixed bottom-20 right-2 left-2 bg-gray-900 border border-gray-700 rounded-2xl shadow-xl z-[60] overflow-hidden md:hidden"
+          className="fixed bottom-20 right-2 left-2 bg-gray-900 border border-gray-700 rounded-2xl shadow-xl z-[60] md:hidden max-h-[70vh] overflow-y-auto scrollbar-thin"
         >
           {/* User Info Header */}
           {user && (
@@ -155,6 +157,45 @@ export function Navbar() {
                 </Link>
               );
             })}
+
+            {/* More - Footer Links */}
+            <button
+              onClick={() => setMoreOpen(!moreOpen)}
+              className="flex items-center gap-4 px-4 py-3 w-full text-left text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+            >
+              <MoreHorizontal size={20} />
+              <span>More</span>
+              <ChevronDown
+                size={16}
+                className={clsx(
+                  'ml-auto transition-transform',
+                  moreOpen && 'rotate-180'
+                )}
+              />
+            </button>
+
+            {moreOpen && (
+              <div className="bg-gray-800/50 py-2">
+                {/* Product */}
+                <p className="text-xs text-gray-500 uppercase tracking-wider px-4 py-1">Product</p>
+                <Link href="/features" className="block px-6 py-2 text-sm text-gray-400 hover:text-white">Features</Link>
+                <Link href="/pricing" className="block px-6 py-2 text-sm text-gray-400 hover:text-white">Pricing</Link>
+                <Link href="/blog" className="block px-6 py-2 text-sm text-gray-400 hover:text-white">Blog</Link>
+
+                {/* Company */}
+                <p className="text-xs text-gray-500 uppercase tracking-wider px-4 py-1 mt-2">Company</p>
+                <Link href="/about" className="block px-6 py-2 text-sm text-gray-400 hover:text-white">About</Link>
+                <Link href="/careers" className="block px-6 py-2 text-sm text-gray-400 hover:text-white">Careers</Link>
+                <Link href="/contact" className="block px-6 py-2 text-sm text-gray-400 hover:text-white">Contact</Link>
+
+                {/* Legal */}
+                <p className="text-xs text-gray-500 uppercase tracking-wider px-4 py-1 mt-2">Legal</p>
+                <Link href="/terms" className="block px-6 py-2 text-sm text-gray-400 hover:text-white">Terms</Link>
+                <Link href="/privacy" className="block px-6 py-2 text-sm text-gray-400 hover:text-white">Privacy</Link>
+                <Link href="/cookies" className="block px-6 py-2 text-sm text-gray-400 hover:text-white">Cookies</Link>
+                <Link href="/community-guidelines" className="block px-6 py-2 text-sm text-gray-400 hover:text-white">Community Guidelines</Link>
+              </div>
+            )}
           </div>
 
           {/* Logout */}
