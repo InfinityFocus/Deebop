@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { uploadToMinio, generateFileKey } from '@/lib/minio';
-import { calculateTrendingScore, applyDiversityPass, applyFollowedPenalty } from '@/lib/feed-scoring';
+// Trending score imports removed - Discovery feed now uses pure chronological order
+// (feed-scoring.ts still used by /api/explore/trending/posts for Explore page)
 import { matchPostToInterests } from '@/lib/post-interest-matcher';
 import type { ContentType } from '@prisma/client';
 
@@ -813,103 +814,44 @@ async function fetchDiscoveryFeed(
     });
   }
 
-  // Calculate trending scores and sort posts
-  const scoredPosts = posts.map((post) => {
-    const isFollowed = followingSet.has(post.userId);
-    let score = calculateTrendingScore({
-      id: post.id,
-      likesCount: post._count.likes,
-      savesCount: post._count.saves,
-      sharesCount: post._count.shares,
-      viewsCount: 0,
-      createdAt: post.createdAt,
-    });
-
-    // Apply penalty to posts from followed users (30% reduction)
-    score = applyFollowedPenalty(score, isFollowed);
-
-    return { ...post, _score: score, _isFollowed: isFollowed };
-  });
-
-  // Sort by trending score (highest first)
-  scoredPosts.sort((a, b) => b._score - a._score);
-
   // Create combined feed items - posts + reposts
   type FeedItem = {
     type: 'post' | 'repost';
     timestamp: Date;
-    score: number;
     data: any;
     isFollowed: boolean;
   };
 
   const feedItems: FeedItem[] = [
-    ...scoredPosts.map((post) => ({
+    ...posts.map((post) => ({
       type: 'post' as const,
       timestamp: post.createdAt,
-      score: post._score,
       data: post,
-      isFollowed: post._isFollowed,
+      isFollowed: followingSet.has(post.userId),
     })),
     ...reposts
       .filter((r) => r.post.status === 'published')
       .map((repost) => ({
         type: 'repost' as const,
-        timestamp: repost.createdAt,
-        // Use the repost timestamp for scoring (not the original post's age)
-        // This prevents old viral posts from staying at the top when reposted
-        score: calculateTrendingScore({
-          id: repost.post.id,
-          likesCount: repost.post._count?.likes || 0,
-          savesCount: repost.post._count?.saves || 0,
-          sharesCount: repost.post._count?.shares || 0,
-          viewsCount: 0,
-          createdAt: repost.createdAt, // Use repost time, not original post time
-        }),
+        timestamp: repost.createdAt, // Repost appears at its creation time
         data: repost,
         isFollowed: followingSet.has(repost.post.userId),
       })),
   ];
 
-  // Sort by score (trending) - no special boost for reposts to prevent them dominating feed
-  feedItems.sort((a, b) => b.score - a.score);
+  // Sort by timestamp descending (newest first) - pure chronological order
+  feedItems.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
-  // Build a map of postId -> repost for posts that have been reposted by followed users
-  // These should be shown as reposts, not as original posts
-  const repostedByFollowedMap = new Map<string, FeedItem>();
-  for (const item of feedItems) {
-    if (item.type === 'repost') {
-      const postId = item.data.postId;
-      // Prefer the most recent repost if there are multiple
-      if (!repostedByFollowedMap.has(postId)) {
-        repostedByFollowedMap.set(postId, item);
-      }
-    }
-  }
-
-  // Deduplicate - prefer reposts from followed users over original posts
+  // Simple deduplication - first occurrence wins (most recent in chronological order)
   const seenPostIds = new Set<string>();
-  const deduplicatedItems: FeedItem[] = [];
-
-  for (const item of feedItems) {
+  const deduplicatedItems = feedItems.filter((item) => {
     const postId = item.type === 'post' ? item.data.id : item.data.postId;
-
     if (seenPostIds.has(postId)) {
-      continue; // Already seen this post
+      return false;
     }
-
-    // If this is an original post but we have a repost of it from a followed user,
-    // skip the original and add the repost instead
-    if (item.type === 'post' && repostedByFollowedMap.has(postId)) {
-      const repostItem = repostedByFollowedMap.get(postId)!;
-      deduplicatedItems.push(repostItem);
-      seenPostIds.add(postId);
-      continue;
-    }
-
-    deduplicatedItems.push(item);
     seenPostIds.add(postId);
-  }
+    return true;
+  });
 
   // Take only the limit we need
   const limitedItems = deduplicatedItems.slice(0, limit + 1);
