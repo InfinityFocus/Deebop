@@ -1116,6 +1116,7 @@ enum NotificationType {
   like
   follow
   follow_request
+  favourite
   share
   mention
   repost

@@ -72,7 +72,14 @@ export async function POST(
         data: { favouritesCount: { increment: 1 } },
       });
 
-      // No notification - favouriting is private
+      // Create notification for the favourited user
+      await prisma.notification.create({
+        data: {
+          userId: targetUser.id,
+          type: 'favourite',
+          actorId: user.id,
+        },
+      });
 
       return NextResponse.json({ favourited: true });
     }

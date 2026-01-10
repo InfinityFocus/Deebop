@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, Heart, UserPlus, Share2, Loader2, Repeat, Check, X } from 'lucide-react';
+import { Bell, Heart, UserPlus, Share2, Loader2, Repeat, Check, X, Star } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
@@ -44,6 +44,7 @@ const notificationIcons: Record<string, React.ReactNode> = {
   like: <Heart size={16} className="text-red-500" />,
   follow: <UserPlus size={16} className="text-purple-500" />,
   follow_request: <UserPlus size={16} className="text-yellow-500" />,
+  favourite: <Star size={16} className="text-yellow-400" />,
   share: <Share2 size={16} className="text-blue-500" />,
   repost: <Repeat size={16} className="text-emerald-500" />,
   repost_request: <Repeat size={16} className="text-yellow-500" />,
@@ -55,6 +56,7 @@ const notificationMessages: Record<string, (actor: string) => string> = {
   like: (actor) => `${actor} liked your post`,
   follow: (actor) => `${actor} started following you`,
   follow_request: (actor) => `${actor} requested to follow you`,
+  favourite: (actor) => `${actor} added you to their favourites`,
   share: (actor) => `${actor} shared your post`,
   mention: (actor) => `${actor} mentioned you`,
   repost: (actor) => `${actor} reposted your post`,
