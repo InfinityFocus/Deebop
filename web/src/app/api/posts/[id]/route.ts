@@ -242,14 +242,23 @@ export async function DELETE(
     }
 
     // Create pending deletion records (gracefully handle if table doesn't exist yet)
+    console.log('Post deletion - media URLs:', {
+      postId: id,
+      mediaUrl: post.mediaUrl,
+      mediaThumbnailUrl: post.mediaThumbnailUrl,
+      carouselCount: post.media.length,
+      pendingDeletionsCount: pendingDeletions.length,
+    });
+
     if (pendingDeletions.length > 0) {
       try {
         await prisma.pendingMediaDeletion.createMany({
           data: pendingDeletions,
         });
+        console.log('Scheduled media deletion:', pendingDeletions.map(d => d.storageKey));
       } catch (err) {
         // Table may not exist yet if migration hasn't been applied
-        console.warn('Failed to schedule media deletion (table may not exist yet):', err);
+        console.error('Failed to schedule media deletion:', err);
       }
     }
 

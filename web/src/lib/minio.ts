@@ -157,17 +157,26 @@ export async function deleteFromMinio(key: string): Promise<void> {
  * Extract the key from a full MinIO/Supabase URL
  */
 export function extractKeyFromUrl(url: string): string {
-  // Handle Supabase URLs
+  // Handle Supabase URLs by pattern (more robust than relying on env vars)
+  // Format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[key]
+  const supabaseMatch = url.match(/https:\/\/[^/]+\.supabase\.co\/storage\/v1\/object\/public\/[^/]+\/(.+)/);
+  if (supabaseMatch) {
+    return supabaseMatch[1];
+  }
+
+  // Handle Supabase URLs using env vars as fallback
   if (isSupabase && SUPABASE_PROJECT_URL) {
     const supabasePrefix = `${SUPABASE_PROJECT_URL}/storage/v1/object/public/${S3_BUCKET}/`;
     if (url.startsWith(supabasePrefix)) {
       return url.slice(supabasePrefix.length);
     }
   }
+
   // Handle MinIO URLs
   const bucketPrefix = `${S3_ENDPOINT}/${S3_BUCKET}/`;
   if (url.startsWith(bucketPrefix)) {
     return url.slice(bucketPrefix.length);
   }
+
   return url;
 }
