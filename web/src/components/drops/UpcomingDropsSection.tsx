@@ -28,7 +28,7 @@ interface Drop {
 }
 
 interface UpcomingDropsSectionProps {
-  mode?: 'discovery' | 'following';
+  mode?: 'discovery' | 'following' | 'favourites';
 }
 
 export function UpcomingDropsSection({ mode = 'following' }: UpcomingDropsSectionProps) {
@@ -38,7 +38,7 @@ export function UpcomingDropsSection({ mode = 'following' }: UpcomingDropsSectio
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  // Use public endpoint for discovery mode (all public drops), upcoming for following mode
+  // Use public endpoint for discovery mode (all public drops), upcoming for following/favourites mode
   const apiEndpoint = mode === 'discovery' ? '/api/drops/public' : '/api/drops/upcoming';
 
   // Fetch upcoming drops

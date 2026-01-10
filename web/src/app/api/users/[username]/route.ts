@@ -42,6 +42,7 @@ export async function GET(
     // Check if current user is following this user
     let isFollowing = false;
     let isFollowRequested = false;
+    let isFavourited = false;
 
     if (currentUser && currentUser.id !== user.id) {
       const follow = await prisma.follow.findUnique({
@@ -65,6 +66,17 @@ export async function GET(
         });
         isFollowRequested = !!request;
       }
+
+      // Check if current user has favourited this user
+      const favourite = await prisma.favourite.findUnique({
+        where: {
+          userId_favouriteId: {
+            userId: currentUser.id,
+            favouriteId: user.id,
+          },
+        },
+      });
+      isFavourited = !!favourite;
     }
 
     return NextResponse.json({
@@ -83,6 +95,7 @@ export async function GET(
         created_at: user.createdAt.toISOString(),
         is_following: isFollowing,
         is_follow_requested: isFollowRequested,
+        is_favourited: isFavourited,
         is_own_profile: currentUser?.id === user.id,
       },
     });

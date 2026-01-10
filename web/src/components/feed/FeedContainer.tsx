@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { Loader2, Users } from 'lucide-react';
+import { Loader2, Users, Star } from 'lucide-react';
 import Link from 'next/link';
 import { PostCard } from './PostCard';
 import { RepostedPostCard } from './RepostedPostCard';
@@ -345,7 +345,7 @@ export function FeedContainer({ contentType, userId, mode = 'discovery', highlig
   const emptyReason = data?.pages[0]?.empty_reason;
 
   if (posts.length === 0) {
-    // Different empty states for Following vs Discovery
+    // Different empty states for Following, Favourites, and Discovery
     if (mode === 'following') {
       if (emptyReason === 'not_following_anyone') {
         return (
@@ -365,6 +365,32 @@ export function FeedContainer({ contentType, userId, mode = 'discovery', highlig
         <div className="text-center py-16">
           <p className="text-gray-400 text-lg">No posts from people you follow yet</p>
           <p className="text-gray-500 text-sm mt-2">Check back later or explore more accounts</p>
+        </div>
+      );
+    }
+
+    if (mode === 'favourites') {
+      if (emptyReason === 'no_favourites') {
+        return (
+          <div className="text-center py-16">
+            <Star className="w-12 h-12 mx-auto text-yellow-500/50 mb-4" />
+            <p className="text-gray-400 text-lg">Star your favourite creators</p>
+            <p className="text-gray-500 text-sm mt-2 max-w-sm mx-auto">
+              Visit profiles and tap the star icon to add them to your Favourites feed
+            </p>
+            <Link
+              href="/explore"
+              className="inline-block mt-4 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-500 transition-colors"
+            >
+              Discover creators
+            </Link>
+          </div>
+        );
+      }
+      return (
+        <div className="text-center py-16">
+          <p className="text-gray-400 text-lg">No posts from your favourites yet</p>
+          <p className="text-gray-500 text-sm mt-2">Check back later for new content</p>
         </div>
       );
     }

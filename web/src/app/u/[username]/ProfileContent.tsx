@@ -3,7 +3,7 @@
 import { useState, use } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Settings, Grid, Bookmark, Crown, UserPlus, UserCheck, Clock, Loader2, ArrowLeft, Link2 } from 'lucide-react';
+import { Settings, Grid, Bookmark, Crown, UserPlus, UserCheck, Clock, Loader2, ArrowLeft, Link2, Star } from 'lucide-react';
 import Link from 'next/link';
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,6 +23,7 @@ interface UserProfile {
   posts_count: number;
   is_following: boolean;
   is_follow_requested: boolean;
+  is_favourited: boolean;
   is_own_profile: boolean;
 }
 
@@ -38,6 +39,12 @@ async function fetchUser(username: string): Promise<{ user: UserProfile }> {
     if (res.status === 404) throw new Error('User not found');
     throw new Error('Failed to fetch user');
   }
+  return res.json();
+}
+
+async function fetchFavouritesSettings(): Promise<{ isEnabled: boolean }> {
+  const res = await fetch('/api/favourites/settings');
+  if (!res.ok) return { isEnabled: false };
   return res.json();
 }
 
@@ -58,6 +65,26 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
     mutationFn: async () => {
       const res = await fetch(`/api/users/${username}/follow`, { method: 'POST' });
       if (!res.ok) throw new Error('Failed to follow');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', username] });
+    },
+  });
+
+  // Fetch favourites settings
+  const { data: favouritesSettings } = useQuery({
+    queryKey: ['favourites-settings'],
+    queryFn: fetchFavouritesSettings,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  const favouritesEnabled = favouritesSettings?.isEnabled ?? false;
+
+  const favouriteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/users/${username}/favourite`, { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to toggle favourite');
       return res.json();
     },
     onSuccess: () => {
@@ -214,37 +241,62 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
               )}
             </>
           ) : currentUser ? (
-            <button
-              onClick={() => followMutation.mutate()}
-              disabled={followMutation.isPending}
-              className={clsx(
-                'flex-1 py-2 font-semibold rounded-lg transition flex items-center justify-center gap-2',
-                user.is_following
-                  ? 'bg-gray-800 text-white hover:bg-gray-700'
-                  : user.is_follow_requested
-                  ? 'bg-gray-800 text-gray-400'
-                  : 'bg-white text-black hover:bg-gray-200'
+            <>
+              <button
+                onClick={() => followMutation.mutate()}
+                disabled={followMutation.isPending}
+                className={clsx(
+                  'flex-1 py-2 font-semibold rounded-lg transition flex items-center justify-center gap-2',
+                  user.is_following
+                    ? 'bg-gray-800 text-white hover:bg-gray-700'
+                    : user.is_follow_requested
+                    ? 'bg-gray-800 text-gray-400'
+                    : 'bg-white text-black hover:bg-gray-200'
+                )}
+              >
+                {followMutation.isPending ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : user.is_following ? (
+                  <>
+                    <UserCheck size={16} />
+                    Following
+                  </>
+                ) : user.is_follow_requested ? (
+                  <>
+                    <Clock size={16} />
+                    Requested
+                  </>
+                ) : (
+                  <>
+                    <UserPlus size={16} />
+                    Follow
+                  </>
+                )}
+              </button>
+              {/* Favourite/Star button - only show when feature is enabled */}
+              {favouritesEnabled && (
+                <button
+                  onClick={() => favouriteMutation.mutate()}
+                  disabled={favouriteMutation.isPending}
+                  title={user.is_favourited ? 'Remove from Favourites' : 'Add to Favourites'}
+                  className={clsx(
+                    'p-2 rounded-lg transition flex items-center justify-center',
+                    user.is_favourited
+                      ? 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-yellow-400'
+                  )}
+                >
+                  {favouriteMutation.isPending ? (
+                    <Loader2 size={20} className="animate-spin" />
+                  ) : (
+                    <Star
+                      size={20}
+                      className={clsx(user.is_favourited && 'fill-yellow-400')}
+                    />
+                  )}
+                </button>
               )}
-            >
-              {followMutation.isPending ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : user.is_following ? (
-                <>
-                  <UserCheck size={16} />
-                  Following
-                </>
-              ) : user.is_follow_requested ? (
-                <>
-                  <Clock size={16} />
-                  Requested
-                </>
-              ) : (
-                <>
-                  <UserPlus size={16} />
-                  Follow
-                </>
-              )}
-            </button>
+            </>
           ) : (
             <Link
               href="/login"

@@ -48,6 +48,9 @@ model User {
   followRequestsReceived   FollowRequest[]             @relation("Target")
   following                Follow[]                    @relation("Follower")
   followers                Follow[]                    @relation("Following")
+  favourites               Favourite[]                 @relation("UserFavourites")
+  favouritedBy             Favourite[]                 @relation("FavouritedBy")
+  favouritesCount          Int                         @default(0) @map("favourites_count")
   likes                    Like[]
   actorNotifications       Notification[]              @relation("NotificationActor")
   notifications            Notification[]              @relation("NotificationUser")
@@ -208,6 +211,19 @@ model Follow {
 
   @@id([followerId, followingId])
   @@map("follows")
+}
+
+model Favourite {
+  userId      String   @map("user_id")
+  favouriteId String   @map("favourite_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation("UserFavourites", fields: [userId], references: [id], onDelete: Cascade)
+  favourite   User     @relation("FavouritedBy", fields: [favouriteId], references: [id], onDelete: Cascade)
+
+  @@id([userId, favouriteId])
+  @@index([userId])
+  @@index([favouriteId])
+  @@map("favourites")
 }
 
 model FollowRequest {
@@ -917,6 +933,19 @@ model RepostSettings {
   updatedAt         DateTime @updatedAt @map("updated_at")
 
   @@map("repost_settings")
+}
+
+// ============================================
+// Favourites Feature Settings
+// ============================================
+
+model FavouritesSettings {
+  id        String   @id @default(cuid())
+  isEnabled Boolean  @default(true) @map("is_enabled")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("favourites_settings")
 }
 
 // ============================================

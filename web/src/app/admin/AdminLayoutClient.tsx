@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Flag, Megaphone, Users, ArrowLeft, FileText, Heart, Repeat } from 'lucide-react';
+import { LayoutDashboard, Flag, Megaphone, Users, ArrowLeft, FileText, Heart, Repeat, Star } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const adminNavItems = [
@@ -13,6 +13,7 @@ const adminNavItems = [
   { href: '/admin/ads', icon: Megaphone, label: 'Ads' },
   { href: '/admin/wellbeing', icon: Heart, label: 'Wellbeing' },
   { href: '/admin/reposts', icon: Repeat, label: 'Reposts' },
+  { href: '/admin/favourites', icon: Star, label: 'Favourites' },
 ];
 
 export default function AdminLayoutClient({

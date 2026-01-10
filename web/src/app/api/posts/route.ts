@@ -6,7 +6,7 @@ import { calculateTrendingScore, applyDiversityPass, applyFollowedPenalty } from
 import { matchPostToInterests } from '@/lib/post-interest-matcher';
 import type { ContentType } from '@prisma/client';
 
-type FeedMode = 'discovery' | 'following';
+type FeedMode = 'discovery' | 'following' | 'favourites';
 type ContentTypeFilter = { contentType?: ContentType };
 type SensitiveContentFilter = { isSensitiveContent?: boolean };
 
@@ -64,12 +64,20 @@ export async function GET(request: NextRequest) {
 
     // Get list of users the current user follows (needed for both modes)
     let followingIds: string[] = [];
+    let favouriteIds: string[] = [];
     if (user) {
       const following = await prisma.follow.findMany({
         where: { followerId: user.id },
         select: { followingId: true },
       });
       followingIds = following.map((f) => f.followingId);
+
+      // Get favourited users for favourites feed
+      const favourites = await prisma.favourite.findMany({
+        where: { userId: user.id },
+        select: { favouriteId: true },
+      });
+      favouriteIds = favourites.map((f) => f.favouriteId);
     }
 
     // Get repost settings for chain reposting behavior
@@ -89,6 +97,8 @@ export async function GET(request: NextRequest) {
     // Handle feed modes
     if (mode === 'following') {
       return await fetchFollowingFeed(user, contentTypeFilter, sensitiveContentFilter, cursor, limit, followingIds, allowChainReposts);
+    } else if (mode === 'favourites') {
+      return await fetchFavouritesFeed(user, contentTypeFilter, sensitiveContentFilter, cursor, limit, favouriteIds, followingIds, allowChainReposts);
     } else {
       return await fetchDiscoveryFeed(user, contentTypeFilter, sensitiveContentFilter, cursor, limit, followingIds, allowChainReposts);
     }
@@ -400,6 +410,239 @@ async function fetchFollowingFeed(
       const post = item.data;
       const userRepost = post.reposts?.[0];
       return formatPost(post, user, false, {
+        reposted: !!userRepost,
+        status: userRepost?.status || null,
+      });
+    } else {
+      const repost = item.data;
+      return formatRepost(repost, user, followingSet.has(repost.post.userId), allowChainReposts);
+    }
+  });
+
+  return NextResponse.json({
+    posts: formattedItems,
+    nextCursor,
+  });
+}
+
+// Favourites Feed: Posts from favourited users only, chronological
+async function fetchFavouritesFeed(
+  user: { id: string } | null,
+  contentTypeFilter: ContentTypeFilter,
+  sensitiveContentFilter: SensitiveContentFilter,
+  cursor: string | null,
+  limit: number,
+  favouriteIds: string[],
+  followingIds: string[],
+  allowChainReposts: boolean = true
+) {
+  if (!user) {
+    return NextResponse.json({ error: 'Must be logged in for Favourites feed' }, { status: 401 });
+  }
+
+  if (favouriteIds.length === 0) {
+    return NextResponse.json({
+      posts: [],
+      nextCursor: undefined,
+      empty_reason: 'no_favourites',
+    });
+  }
+
+  // Build set of followed users for visibility checks
+  const followingSet = new Set(followingIds);
+
+  // Build visibility filter for favourites feed
+  // Show public posts, followers-only posts (if also following), and private posts where user is in audience
+  const visibilityFilter = {
+    OR: [
+      { visibility: 'public' as const },
+      // Followers-only posts from favourited users we also follow
+      {
+        AND: [
+          { visibility: 'followers' as const },
+          { userId: { in: followingIds } },
+        ],
+      },
+      // Private posts where user is in audience
+      {
+        AND: [
+          { visibility: 'private' as const },
+          { audienceUsers: { some: { userId: user.id } } },
+        ],
+      },
+      {
+        AND: [
+          { visibility: 'private' as const },
+          {
+            audienceGroups: {
+              some: { group: { members: { some: { userId: user.id } } } },
+            },
+          },
+        ],
+      },
+    ],
+  };
+
+  // Fetch more posts than needed for diversity pass
+  const fetchLimit = Math.min(limit * 2, 100);
+
+  // Fetch posts from favourited users
+  const posts = await prisma.post.findMany({
+    where: {
+      ...contentTypeFilter,
+      ...sensitiveContentFilter,
+      ...visibilityFilter,
+      userId: { in: favouriteIds }, // Only from favourited users
+      status: 'published',
+    },
+    take: fetchLimit + 1,
+    cursor: cursor ? { id: cursor } : undefined,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
+          tier: true,
+          isPrivate: true,
+          allowReposts: true,
+        },
+      },
+      _count: {
+        select: {
+          likes: true,
+          saves: true,
+          shares: true,
+        },
+      },
+      media: {
+        orderBy: { sortOrder: 'asc' },
+        select: {
+          id: true,
+          mediaUrl: true,
+          thumbnailUrl: true,
+          altText: true,
+          sortOrder: true,
+        },
+      },
+      likes: { where: { userId: user.id }, select: { userId: true } },
+      saves: { where: { userId: user.id }, select: { userId: true } },
+      reposts: { where: { userId: user.id }, select: { status: true } },
+    },
+  });
+
+  // Fetch approved reposts from favourited users
+  const reposts = await prisma.repost.findMany({
+    where: {
+      userId: { in: favouriteIds },
+      status: 'approved',
+      // Apply content type filter if specified
+      ...(contentTypeFilter.contentType ? { post: { contentType: contentTypeFilter.contentType as 'shout' | 'image' | 'video' | 'audio' | 'panorama360' } } : {}),
+      ...(Object.keys(sensitiveContentFilter).length > 0 ? { post: sensitiveContentFilter } : {}),
+    },
+    take: fetchLimit,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
+        },
+      },
+      post: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatarUrl: true,
+              tier: true,
+              isPrivate: true,
+              allowReposts: true,
+            },
+          },
+          _count: {
+            select: {
+              likes: true,
+              saves: true,
+              shares: true,
+            },
+          },
+          media: {
+            orderBy: { sortOrder: 'asc' },
+            select: {
+              id: true,
+              mediaUrl: true,
+              thumbnailUrl: true,
+              altText: true,
+              sortOrder: true,
+            },
+          },
+          likes: { where: { userId: user.id }, select: { userId: true } },
+          saves: { where: { userId: user.id }, select: { userId: true } },
+          reposts: { where: { userId: user.id }, select: { status: true } },
+        },
+      },
+    },
+  });
+
+  // Create combined feed items with timestamps for sorting
+  type FeedItem = {
+    type: 'post' | 'repost';
+    timestamp: Date;
+    data: any;
+  };
+
+  const feedItems: FeedItem[] = [
+    ...posts.map((post) => ({
+      type: 'post' as const,
+      timestamp: post.createdAt,
+      data: post,
+    })),
+    ...reposts
+      .filter((r) => r.post.status === 'published')
+      .map((repost) => ({
+        type: 'repost' as const,
+        timestamp: repost.createdAt,
+        data: repost,
+      })),
+  ];
+
+  // Sort by timestamp descending (chronological)
+  feedItems.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+  // Deduplicate - if we have both a post and reposts of that post, keep only the post
+  const seenPostIds = new Set<string>();
+  const deduplicatedItems = feedItems.filter((item) => {
+    const postId = item.type === 'post' ? item.data.id : item.data.postId;
+    if (seenPostIds.has(postId)) {
+      return false;
+    }
+    seenPostIds.add(postId);
+    return true;
+  });
+
+  // Take only the limit we need
+  const limitedItems = deduplicatedItems.slice(0, limit + 1);
+
+  let nextCursor: string | undefined;
+  if (limitedItems.length > limit) {
+    limitedItems.pop();
+    // For cursor, use the timestamp of the last item
+    const lastItem = limitedItems[limitedItems.length - 1];
+    nextCursor = lastItem.type === 'post' ? lastItem.data.id : `repost-${lastItem.data.id}`;
+  }
+
+  const formattedItems = limitedItems.map((item) => {
+    if (item.type === 'post') {
+      const post = item.data;
+      const userRepost = post.reposts?.[0];
+      return formatPost(post, user, followingSet.has(post.userId), {
         reposted: !!userRepost,
         status: userRepost?.status || null,
       });
