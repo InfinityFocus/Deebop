@@ -196,7 +196,7 @@ export default function PrivacySettingsPage() {
             </div>
 
             {allowReposts && (
-              <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-xl border border-gray-700 ml-4">
+              <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-xl border border-gray-700">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
                     <Shield size={20} className={requireRepostApproval ? 'text-yellow-400' : 'text-gray-300'} />

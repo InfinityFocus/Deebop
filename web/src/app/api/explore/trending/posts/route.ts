@@ -68,6 +68,7 @@ export async function GET(request: NextRequest) {
         sharesCount: true,
         savesCount: true,
         viewsCount: true,
+        repostsCount: true,
         user: {
           select: {
             id: true,
@@ -105,7 +106,8 @@ export async function GET(request: NextRequest) {
         post.likesCount * 1 +
         post.sharesCount * 3 +
         post.savesCount * 2 +
-        post.viewsCount * 0.01;
+        post.viewsCount * 0.01 +
+        (post.repostsCount || 0) * 1.2;
       const recencyBonus = hoursOld < 6 ? 10 : hoursOld < 12 ? 5 : 0;
 
       // For multi-image posts, use first image from media array as thumbnail
