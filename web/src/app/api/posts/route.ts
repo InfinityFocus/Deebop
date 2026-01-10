@@ -749,70 +749,66 @@ async function fetchDiscoveryFeed(
   // Create set for quick lookup
   const followingSet = new Set(followingIds);
 
-  // Fetch approved reposts from followed users (if user is logged in and follows anyone)
-  let reposts: any[] = [];
-  if (user && followingIds.length > 0) {
-    reposts = await prisma.repost.findMany({
-      where: {
-        userId: { in: followingIds },
-        status: 'approved',
-        post: {
-          visibility: 'public',
-          status: 'published',
-          ...(contentTypeFilter.contentType ? { contentType: contentTypeFilter.contentType as 'shout' | 'image' | 'video' | 'audio' | 'panorama360' } : {}),
-          ...(Object.keys(sensitiveContentFilter).length > 0 ? sensitiveContentFilter : {}),
-          ...(Object.keys(contentPrefsFilter).length > 0 ? contentPrefsFilter : {}),
+  // Fetch approved reposts globally (brings posts back to top for everyone)
+  const reposts = await prisma.repost.findMany({
+    where: {
+      status: 'approved',
+      post: {
+        visibility: 'public',
+        status: 'published',
+        ...(contentTypeFilter.contentType ? { contentType: contentTypeFilter.contentType as 'shout' | 'image' | 'video' | 'audio' | 'panorama360' } : {}),
+        ...(Object.keys(sensitiveContentFilter).length > 0 ? sensitiveContentFilter : {}),
+        ...(Object.keys(contentPrefsFilter).length > 0 ? contentPrefsFilter : {}),
+      },
+    },
+    take: Math.min(limit * 2, 100),
+    orderBy: { createdAt: 'desc' },
+    include: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
         },
       },
-      take: Math.min(limit * 2, 100),
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            displayName: true,
-            avatarUrl: true,
+      post: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatarUrl: true,
+              tier: true,
+              isPrivate: true,
+              allowReposts: true,
+            },
           },
-        },
-        post: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                username: true,
-                displayName: true,
-                avatarUrl: true,
-                tier: true,
-                isPrivate: true,
-                allowReposts: true,
-              },
+          _count: {
+            select: {
+              likes: true,
+              saves: true,
+              shares: true,
             },
-            _count: {
-              select: {
-                likes: true,
-                saves: true,
-                shares: true,
-              },
-            },
-            media: {
-              orderBy: { sortOrder: 'asc' },
-              select: {
-                id: true,
-                mediaUrl: true,
-                thumbnailUrl: true,
-                altText: true,
-                sortOrder: true,
-              },
-            },
-            likes: { where: { userId: user.id }, select: { userId: true } },
-            saves: { where: { userId: user.id }, select: { userId: true } },
-            reposts: { where: { userId: user.id }, select: { status: true } },
           },
+          media: {
+            orderBy: { sortOrder: 'asc' },
+            select: {
+              id: true,
+              mediaUrl: true,
+              thumbnailUrl: true,
+              altText: true,
+              sortOrder: true,
+            },
+          },
+          likes: user ? { where: { userId: user.id }, select: { userId: true } } : false,
+          saves: user ? { where: { userId: user.id }, select: { userId: true } } : false,
+          reposts: user ? { where: { userId: user.id }, select: { status: true } } : false,
         },
       },
-    });
-  }
+    },
+  });
 
   // Create combined feed items - posts + reposts
   type FeedItem = {
