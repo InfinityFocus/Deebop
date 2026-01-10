@@ -273,12 +273,17 @@ export async function GET(
       }
     }
 
+    // Use first item as fallback cover if no cover image is set
+    const effectiveCoverUrl = album.coverImageUrl || album.items[0]?.thumbnailUrl || album.items[0]?.mediaUrl || null;
+
     return NextResponse.json({
       album: {
         id: album.id,
         title: album.title,
         description: album.description,
-        cover_image_url: album.coverImageUrl || album.items[0]?.thumbnailUrl || album.items[0]?.mediaUrl || null,
+        cover_image_url: effectiveCoverUrl,
+        // Also include camelCase for compatibility with FeaturedContentBlock
+        coverImageUrl: effectiveCoverUrl,
         visibility: album.visibility,
         status: album.status,
         scheduled_for: album.scheduledFor?.toISOString() || null,

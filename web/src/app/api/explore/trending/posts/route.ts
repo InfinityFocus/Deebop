@@ -76,6 +76,15 @@ export async function GET(request: NextRequest) {
             avatarUrl: true,
           },
         },
+        // Include media array for multi-image posts
+        media: {
+          orderBy: { sortOrder: 'asc' },
+          take: 1, // Only need first image for thumbnail
+          select: {
+            mediaUrl: true,
+            thumbnailUrl: true,
+          },
+        },
       },
       orderBy: [
         { likesCount: 'desc' },
@@ -99,13 +108,18 @@ export async function GET(request: NextRequest) {
         post.viewsCount * 0.01;
       const recencyBonus = hoursOld < 6 ? 10 : hoursOld < 12 ? 5 : 0;
 
+      // For multi-image posts, use first image from media array as thumbnail
+      const firstMedia = post.media?.[0];
+      const effectiveThumbnail = post.mediaThumbnailUrl || firstMedia?.thumbnailUrl || firstMedia?.mediaUrl || post.mediaUrl;
+      const effectiveMediaUrl = post.mediaUrl || firstMedia?.mediaUrl;
+
       return {
         id: post.id,
         headline: post.headline,
         textContent: post.description,
         contentType: post.contentType,
-        mediaUrl: post.mediaUrl,
-        thumbnailUrl: post.mediaThumbnailUrl,
+        mediaUrl: effectiveMediaUrl,
+        thumbnailUrl: effectiveThumbnail,
         createdAt: post.createdAt,
         likeCount: post.likesCount,
         shareCount: post.sharesCount,
@@ -118,6 +132,7 @@ export async function GET(request: NextRequest) {
           avatar: post.user.avatarUrl,
         },
         trendingScore: engagement * timeDecay + recencyBonus,
+        hasMultipleImages: (post.media?.length || 0) > 0,
       };
     });
 

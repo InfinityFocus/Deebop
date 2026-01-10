@@ -18,6 +18,11 @@ interface PublicPost {
     display_name: string | null;
     avatar_url: string | null;
   };
+  // Multi-image carousel support
+  media?: Array<{
+    media_url: string;
+    thumbnail_url?: string | null;
+  }>;
 }
 
 const interestChips = [
@@ -106,13 +111,15 @@ export default function ExplorePreview() {
               const displayName = post.author?.display_name || username;
               const avatarUrl = post.author?.avatar_url;
 
-              // Determine what image to show
+              // Determine what image to show (including multi-image carousel support)
+              const firstMedia = post.media?.[0];
               const thumbnailUrl = post.content_type === 'video'
                 ? post.media_thumbnail_url
-                : post.media_url;
+                : (post.media_url || firstMedia?.media_url || firstMedia?.thumbnail_url);
               const isVideo = post.content_type === 'video';
               const isShout = post.content_type === 'shout';
               const isAudio = post.content_type === 'audio';
+              const hasMultipleImages = (post.media?.length || 0) > 1;
 
               return (
                 <Link

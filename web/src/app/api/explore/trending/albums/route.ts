@@ -34,6 +34,15 @@ export async function GET(request: NextRequest) {
             avatarUrl: true,
           },
         },
+        // Get first item for fallback cover image
+        items: {
+          orderBy: { sortOrder: 'asc' },
+          take: 1,
+          select: {
+            mediaUrl: true,
+            thumbnailUrl: true,
+          },
+        },
         // Get recent saves
         saves: {
           where: {
@@ -63,11 +72,15 @@ export async function GET(request: NextRequest) {
       const trendingScore =
         recentSaves * 2 + recentLikes + memberCount + Math.min(itemCount, 10) * 0.5;
 
+      // Use first item as fallback cover if no cover image is set
+      const firstItem = album.items?.[0];
+      const coverUrl = album.coverImageUrl || firstItem?.thumbnailUrl || firstItem?.mediaUrl;
+
       return {
         id: album.id,
         name: album.title,
         description: album.description,
-        coverUrl: album.coverImageUrl,
+        coverUrl,
         createdAt: album.createdAt,
         itemCount,
         memberCount,

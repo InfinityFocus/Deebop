@@ -30,6 +30,16 @@ export async function GET(
             shares: true,
           },
         },
+        media: {
+          orderBy: { sortOrder: 'asc' },
+          select: {
+            id: true,
+            mediaUrl: true,
+            thumbnailUrl: true,
+            altText: true,
+            sortOrder: true,
+          },
+        },
         ...(user ? {
           likes: {
             where: { userId: user.id },
@@ -47,6 +57,11 @@ export async function GET(
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
 
+    // For multi-image posts, use first image from media array as thumbnail
+    const firstMedia = post.media?.[0];
+    const effectiveMediaUrl = post.mediaUrl || firstMedia?.mediaUrl;
+    const effectiveThumbnailUrl = post.mediaThumbnailUrl || firstMedia?.thumbnailUrl || firstMedia?.mediaUrl;
+
     return NextResponse.json({
       post: {
         id: post.id,
@@ -57,6 +72,9 @@ export async function GET(
         text_content: post.description,
         media_url: post.mediaUrl,
         media_thumbnail_url: post.mediaThumbnailUrl,
+        // Include effective URLs for multi-image post support
+        mediaUrl: effectiveMediaUrl,
+        mediaThumbnailUrl: effectiveThumbnailUrl,
         media_width: post.mediaWidth,
         media_height: post.mediaHeight,
         media_duration_seconds: post.mediaDurationSeconds,
@@ -80,6 +98,14 @@ export async function GET(
         },
         is_liked: user ? (post as any).likes?.length > 0 : false,
         is_saved: user ? (post as any).saves?.length > 0 : false,
+        // Include media array for carousel posts
+        media: post.media?.map((m) => ({
+          id: m.id,
+          media_url: m.mediaUrl,
+          thumbnail_url: m.thumbnailUrl,
+          alt_text: m.altText,
+          sort_order: m.sortOrder,
+        })) || null,
       },
     });
   } catch (error) {
