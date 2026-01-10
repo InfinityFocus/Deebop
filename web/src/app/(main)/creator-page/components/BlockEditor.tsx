@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { Plus, Trash2, GripVertical, Upload, Link2, Loader2, X, ImageIcon } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Upload, Link2, Loader2, X, ImageIcon, Search } from 'lucide-react';
+import { ContentPickerModal } from './ContentPickerModal';
 import type {
   CreatorPageBlock,
   HeroBlockData,
@@ -832,39 +833,49 @@ function FeaturedContentEditor({
   onUpdate: (data: Record<string, unknown>) => void;
 }) {
   const items = data.items || [];
-
-  const [newType, setNewType] = useState<'post' | 'album' | 'event' | 'drop'>('post');
-  const [newId, setNewId] = useState('');
-
-  const addItem = () => {
-    if (!newId.trim()) return;
-    if (items.length >= 6) return;
-    onUpdate({
-      ...data,
-      items: [...items, { type: newType, id: newId.trim() }],
-    });
-    setNewId('');
-  };
+  const [showPicker, setShowPicker] = useState(false);
 
   const deleteItem = (index: number) => {
     onUpdate({ ...data, items: items.filter((_, i) => i !== index) });
   };
 
+  const handlePickerSelect = (item: { type: 'post' | 'album' | 'event'; id: string }) => {
+    if (items.length >= 6) return;
+    // Check if already added
+    if (items.some((i) => i.id === item.id)) return;
+    onUpdate({
+      ...data,
+      items: [...items, item],
+    });
+  };
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-gray-400">
-        Add up to 6 pieces of content to feature. Enter the content ID.
+        Add up to 6 pieces of content to feature.
       </p>
+
+      {/* Browse Content Button */}
+      {items.length < 6 && (
+        <button
+          onClick={() => setShowPicker(true)}
+          className="w-full py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-emerald-500 text-white rounded-lg transition flex items-center justify-center gap-2"
+        >
+          <Search size={18} />
+          Browse My Content
+        </button>
+      )}
 
       {/* Existing items */}
       {items.length > 0 && (
         <div className="space-y-2">
+          <p className="text-xs text-gray-500 uppercase tracking-wider">Selected ({items.length}/6)</p>
           {items.map((item, i) => (
             <div
               key={i}
               className="flex items-center gap-2 p-2 bg-gray-800 rounded-lg"
             >
-              <span className="text-xs text-gray-500 uppercase w-12">{item.type}</span>
+              <span className="text-xs text-emerald-400 uppercase w-12">{item.type}</span>
               <span className="flex-1 text-sm text-white font-mono truncate">
                 {item.id}
               </span>
@@ -879,45 +890,18 @@ function FeaturedContentEditor({
         </div>
       )}
 
-      {/* Add new item */}
-      {items.length < 6 && (
-        <div className="flex items-end gap-2">
-          <div className="flex-1">
-            <label className="block text-xs text-gray-500 mb-1">Type</label>
-            <select
-              value={newType}
-              onChange={(e) => setNewType(e.target.value as typeof newType)}
-              className="w-full px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm"
-            >
-              <option value="post">Post</option>
-              <option value="album">Album</option>
-              <option value="event">Event</option>
-              <option value="drop">Drop</option>
-            </select>
-          </div>
-          <div className="flex-1">
-            <label className="block text-xs text-gray-500 mb-1">ID</label>
-            <input
-              type="text"
-              value={newId}
-              onChange={(e) => setNewId(e.target.value)}
-              placeholder="Content ID"
-              className="w-full px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm"
-            />
-          </div>
-          <button
-            onClick={addItem}
-            disabled={!newId.trim()}
-            className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-700 text-white rounded text-sm"
-          >
-            Add
-          </button>
-        </div>
-      )}
-
       {items.length >= 6 && (
         <p className="text-sm text-amber-400">Maximum 6 items reached</p>
       )}
+
+      {/* Content Picker Modal */}
+      <ContentPickerModal
+        isOpen={showPicker}
+        onClose={() => setShowPicker(false)}
+        onSelect={handlePickerSelect}
+        selectedIds={items.map((i) => i.id)}
+        maxItems={6}
+      />
     </div>
   );
 }
