@@ -24,7 +24,15 @@ const faqs = [
   },
   {
     question: 'Do I need a mobile app?',
-    answer: 'No, Deebop works in your browser on any device. A mobile app may come later.',
+    answer: 'No, Deebop works in your browser on any device. A mobile app is in development and will work with your existing user account when launched.',
+  },
+  {
+    question: 'Why no comments?',
+    answer: 'Comments can be lovely, but they also demand time and attention. They can create pressure to reply, and they can open the door to trolling and pile-ons. On Deebop, posts are meant to stand on their own, with support shown through likes, saves and reposts, plus sharing where it matters.',
+  },
+  {
+    question: 'Why no DMs?',
+    answer: 'Most people already have plenty of ways to communicate. Friends can reach you through the channels you already use, and businesses can share a preferred contact method on their profile or Creator Page. Removing DMs keeps Deebop focused on sharing, and means you are not juggling yet another inbox.',
   },
   {
     question: 'What is not allowed?',
