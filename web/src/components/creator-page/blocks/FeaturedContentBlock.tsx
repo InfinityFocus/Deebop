@@ -145,8 +145,14 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
             onClick={() => onItemClick?.(index)}
             className="aspect-square relative bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:border-emerald-500 transition group"
           >
-            {/* Thumbnail */}
-            {item.thumbnailUrl || item.mediaUrl ? (
+            {/* Thumbnail - special handling for audio posts */}
+            {item.contentType === 'audio' ? (
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-emerald-500/30 to-cyan-500/30 rounded-xl flex items-center justify-center">
+                  <Music size={32} className="text-emerald-400" />
+                </div>
+              </div>
+            ) : item.thumbnailUrl || item.mediaUrl ? (
               <Image
                 src={item.thumbnailUrl || item.mediaUrl!}
                 alt={item.title || 'Featured content'}
@@ -164,8 +170,8 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
               <Icon size={14} className="text-white" />
             </div>
 
-            {/* Title overlay (if no image) */}
-            {item.title && !item.thumbnailUrl && !item.mediaUrl && (
+            {/* Title overlay (if no image or audio post) */}
+            {item.title && (item.contentType === 'audio' || (!item.thumbnailUrl && !item.mediaUrl)) && (
               <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
                 <p className="text-xs text-white truncate">{item.title}</p>
               </div>
