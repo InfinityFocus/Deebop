@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { X, Image, Video, Globe, Type, Loader2, Upload, Crown, Lock, Newspaper, Clock, Calendar, Eye, EyeOff, AlertCircle, CheckCircle, Music, Mic, FileAudio, GripVertical, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { clsx } from 'clsx';
+import * as tus from 'tus-js-client';
 import { useAuth } from '@/hooks/useAuth';
 import { getTierLimits } from '@/stores/authStore';
 import { UpgradePrompt } from '@/components/subscription/UpgradePrompt';
@@ -162,13 +163,14 @@ export function CreatePostForm() {
   const uploadAudioFile = async (file: File | Blob): Promise<string> => {
     setIsUploadingAudio(true);
     setAudioJobError(null);
+    setUploadProgress(0);
 
     try {
       // Convert Blob to File if needed
       const audioFile = file instanceof File ? file : new File([file], 'recording.webm', { type: file.type || 'audio/webm' });
 
-      // Step 1: Get presigned URL
-      const presignedRes = await fetch('/api/upload/presigned', {
+      // Step 1: Get TUS upload configuration
+      const configRes = await fetch('/api/upload/resumable', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -179,25 +181,52 @@ export function CreatePostForm() {
         }),
       });
 
-      if (!presignedRes.ok) {
-        const data = await presignedRes.json();
-        throw new Error(data.error || 'Failed to get upload URL');
+      if (!configRes.ok) {
+        const data = await configRes.json();
+        throw new Error(data.error || 'Failed to get upload configuration');
       }
 
-      const { uploadUrl, key } = await presignedRes.json();
+      const { tusEndpoint, authToken, bucket, key } = await configRes.json();
 
-      // Step 2: Upload directly to storage
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: audioFile,
-        headers: {
-          'Content-Type': audioFile.type,
-        },
+      // Step 2: Upload using TUS resumable protocol
+      await new Promise<void>((resolve, reject) => {
+        const upload = new tus.Upload(audioFile, {
+          endpoint: tusEndpoint,
+          retryDelays: [0, 1000, 3000, 5000],
+          headers: {
+            authorization: `Bearer ${authToken}`,
+            'x-upsert': 'true',
+          },
+          uploadDataDuringCreation: true,
+          removeFingerprintOnSuccess: true,
+          metadata: {
+            bucketName: bucket,
+            objectName: key,
+            contentType: audioFile.type,
+            cacheControl: '3600',
+          },
+          chunkSize: 6 * 1024 * 1024, // 6MB chunks
+          onError: (error) => {
+            console.error('TUS upload error:', error);
+            reject(new Error(error.message || 'Upload failed'));
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
+            setUploadProgress(percentage);
+          },
+          onSuccess: () => {
+            console.log('TUS upload complete:', key);
+            resolve();
+          },
+        });
+
+        upload.findPreviousUploads().then((previousUploads) => {
+          if (previousUploads.length) {
+            upload.resumeFromPreviousUpload(previousUploads[0]);
+          }
+          upload.start();
+        });
       });
-
-      if (!uploadRes.ok) {
-        throw new Error('Failed to upload file to storage');
-      }
 
       // Step 3: Finalize upload to create processing job
       const finalizeRes = await fetch('/api/upload/finalize', {
@@ -484,10 +513,11 @@ export function CreatePostForm() {
   const uploadVideoFile = async (file: File): Promise<string> => {
     setIsUploadingVideo(true);
     setVideoJobError(null);
+    setUploadProgress(0);
 
     try {
-      // Step 1: Get presigned URL
-      const presignedRes = await fetch('/api/upload/presigned', {
+      // Step 1: Get TUS upload configuration
+      const configRes = await fetch('/api/upload/resumable', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -498,25 +528,53 @@ export function CreatePostForm() {
         }),
       });
 
-      if (!presignedRes.ok) {
-        const data = await presignedRes.json();
-        throw new Error(data.error || 'Failed to get upload URL');
+      if (!configRes.ok) {
+        const data = await configRes.json();
+        throw new Error(data.error || 'Failed to get upload configuration');
       }
 
-      const { uploadUrl, key } = await presignedRes.json();
+      const { tusEndpoint, authToken, bucket, key } = await configRes.json();
 
-      // Step 2: Upload directly to storage
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
+      // Step 2: Upload using TUS resumable protocol
+      await new Promise<void>((resolve, reject) => {
+        const upload = new tus.Upload(file, {
+          endpoint: tusEndpoint,
+          retryDelays: [0, 1000, 3000, 5000],
+          headers: {
+            authorization: `Bearer ${authToken}`,
+            'x-upsert': 'true',
+          },
+          uploadDataDuringCreation: true,
+          removeFingerprintOnSuccess: true,
+          metadata: {
+            bucketName: bucket,
+            objectName: key,
+            contentType: file.type,
+            cacheControl: '3600',
+          },
+          chunkSize: 6 * 1024 * 1024, // 6MB chunks
+          onError: (error) => {
+            console.error('TUS upload error:', error);
+            reject(new Error(error.message || 'Upload failed'));
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
+            setUploadProgress(percentage);
+          },
+          onSuccess: () => {
+            console.log('TUS upload complete:', key);
+            resolve();
+          },
+        });
+
+        // Check for previous uploads to resume
+        upload.findPreviousUploads().then((previousUploads) => {
+          if (previousUploads.length) {
+            upload.resumeFromPreviousUpload(previousUploads[0]);
+          }
+          upload.start();
+        });
       });
-
-      if (!uploadRes.ok) {
-        throw new Error('Failed to upload file to storage');
-      }
 
       // Step 3: Finalize upload to create processing job
       const finalizeRes = await fetch('/api/upload/finalize', {
