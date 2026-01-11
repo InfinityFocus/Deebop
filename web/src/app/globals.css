@@ -237,6 +237,16 @@ body {
   animation: logo-shimmer 8s linear infinite;
 }
 
+/* Icon hue-rotate animation - used for social icons on hover */
+@keyframes icon-hue-cycle {
+  0% {
+    filter: hue-rotate(0deg) saturate(1.2);
+  }
+  100% {
+    filter: hue-rotate(360deg) saturate(1.2);
+  }
+}
+
 /* Reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
   *,
