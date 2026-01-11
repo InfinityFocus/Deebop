@@ -42,14 +42,14 @@ const PLATFORM_COLORS: Record<SocialPlatform, string> = {
   youtube: 'text-red-500',
   tiktok: 'text-cyan-400',
   linkedin: 'text-blue-500',
-  x: 'text-gray-200',
+  x: 'text-sky-400',
   website: 'text-emerald-400',
   spotify: 'text-green-500',
   soundcloud: 'text-orange-500',
   twitch: 'text-purple-500',
   discord: 'text-indigo-400',
-  github: 'text-gray-200',
-  email: 'text-gray-300',
+  github: 'text-violet-400',
+  email: 'text-amber-400',
 };
 
 export function SocialLinksBlock({ data, onLinkClick }: SocialLinksBlockProps) {
