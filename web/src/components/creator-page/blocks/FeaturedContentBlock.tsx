@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Image as ImageIcon, Film, Lock, Calendar, Music } from 'lucide-react';
+import { Image as ImageIcon, Film, Lock, Calendar, Music, Globe } from 'lucide-react';
 import type { FeaturedContentBlockData } from '@/types/creator-page';
 
 interface FeaturedContentBlockProps {
@@ -118,6 +118,7 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
     if (type === 'album') return ImageIcon;
     if (contentType === 'video') return Film;
     if (contentType === 'audio') return Music;
+    if (contentType === 'panorama') return Globe;
     return ImageIcon;
   };
 
@@ -145,13 +146,32 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
             onClick={() => onItemClick?.(index)}
             className="aspect-square relative bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:border-emerald-500 transition group"
           >
-            {/* Thumbnail - special handling for audio posts */}
+            {/* Thumbnail - special handling for audio and panorama posts */}
             {item.contentType === 'audio' ? (
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-emerald-500/30 to-cyan-500/30 rounded-xl flex items-center justify-center">
                   <Music size={32} className="text-emerald-400" />
                 </div>
               </div>
+            ) : item.contentType === 'panorama' ? (
+              // Panorama - show thumbnail if available, otherwise styled placeholder
+              item.thumbnailUrl ? (
+                <Image
+                  src={item.thumbnailUrl}
+                  alt={item.title || '360° Panorama'}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 flex items-center justify-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 rounded-xl flex items-center justify-center">
+                    <Globe size={32} className="text-cyan-400" />
+                  </div>
+                  <div className="absolute bottom-2 left-2 right-2 text-center">
+                    <span className="text-xs text-white/80 bg-black/40 px-2 py-1 rounded">360°</span>
+                  </div>
+                </div>
+              )
             ) : item.thumbnailUrl || item.mediaUrl ? (
               <Image
                 src={item.thumbnailUrl || item.mediaUrl!}
@@ -170,8 +190,8 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
               <Icon size={14} className="text-white" />
             </div>
 
-            {/* Title overlay (if no image or audio post) */}
-            {item.title && (item.contentType === 'audio' || (!item.thumbnailUrl && !item.mediaUrl)) && (
+            {/* Title overlay (if no image, audio post, or panorama without thumbnail) */}
+            {item.title && (item.contentType === 'audio' || (item.contentType === 'panorama' && !item.thumbnailUrl) || (!item.thumbnailUrl && !item.mediaUrl)) && (
               <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
                 <p className="text-xs text-white truncate">{item.title}</p>
               </div>
