@@ -10,7 +10,8 @@ export type BlockType =
   | 'affiliate_card'
   | 'email_capture'
   | 'divider'
-  | 'booking';
+  | 'booking'
+  | 'intro_video';
 
 // Hero Block - Avatar, name, bio, and primary CTA
 export interface HeroBlockData {
@@ -104,6 +105,19 @@ export interface BookingBlockData {
   highlight?: boolean;             // Visual emphasis toggle
 }
 
+// Intro Video Block - Video card with optional CTA
+export interface IntroVideoBlockData {
+  videoUrl: string;                // Direct video URL or uploaded video
+  posterUrl?: string;              // Thumbnail/poster image
+  title?: string;                  // Optional title below video
+  description?: string;            // Optional description
+  ctaLabel?: string;               // Optional CTA button label
+  ctaUrl?: string;                 // CTA button URL
+  autoplay?: boolean;              // Autoplay (muted) on load
+  loop?: boolean;                  // Loop video
+  highlight?: boolean;             // Visual emphasis toggle
+}
+
 // Union type for all block data
 export type BlockData =
   | HeroBlockData
@@ -114,7 +128,8 @@ export type BlockData =
   | AffiliateCardBlockData
   | EmailCaptureBlockData
   | DividerBlockData
-  | BookingBlockData;
+  | BookingBlockData
+  | IntroVideoBlockData;
 
 // Block with type discriminator
 export interface CreatorPageBlock {

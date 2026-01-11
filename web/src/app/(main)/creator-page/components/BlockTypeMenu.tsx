@@ -11,6 +11,7 @@ import {
   Grid,
   X,
   Calendar,
+  Video,
 } from 'lucide-react';
 import type { BlockType } from '@/types/creator-page';
 import { getLimitsForTier } from '@/lib/creator-page-limits';
@@ -81,6 +82,12 @@ const BLOCK_TYPES: Array<{
     label: 'Booking',
     description: 'Booking link or embed (Calendly, Acuity, etc.)',
     icon: Calendar,
+  },
+  {
+    type: 'intro_video',
+    label: 'Intro Video',
+    description: 'Video card with optional title and CTA',
+    icon: Video,
   },
 ];
 

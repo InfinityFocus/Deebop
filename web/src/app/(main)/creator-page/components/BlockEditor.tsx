@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { Plus, Trash2, GripVertical, Upload, Link2, Loader2, X, ImageIcon, Search } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Upload, Link2, Loader2, X, ImageIcon, Search, Video } from 'lucide-react';
 import { ContentPickerModal } from './ContentPickerModal';
 import type {
   CreatorPageBlock,
@@ -17,6 +17,7 @@ import type {
   BookingPlatform,
   SocialPlatform,
   SOCIAL_PLATFORMS,
+  IntroVideoBlockData,
 } from '@/types/creator-page';
 import { BOOKING_PLATFORMS } from '@/types/creator-page';
 
@@ -45,6 +46,8 @@ export function BlockEditor({ block, onUpdate }: BlockEditorProps) {
       return <FeaturedContentEditor data={block.data as FeaturedContentBlockData} onUpdate={onUpdate} />;
     case 'booking':
       return <BookingEditor data={block.data as BookingBlockData} onUpdate={onUpdate} />;
+    case 'intro_video':
+      return <IntroVideoEditor data={block.data as IntroVideoBlockData} onUpdate={onUpdate} />;
     default:
       return <div className="text-gray-500">No editor available</div>;
   }
@@ -171,10 +174,12 @@ function ImageUpload({
   label,
   value,
   onChange,
+  maxWidth = 800,
 }: {
   label: string;
   value: string;
   onChange: (url: string) => void;
+  maxWidth?: number;
 }) {
   const [mode, setMode] = useState<'upload' | 'url'>(value ? 'url' : 'upload');
   const [isUploading, setIsUploading] = useState(false);
@@ -183,8 +188,9 @@ function ImageUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = useCallback(async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setError('Please select an image file');
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please select a PNG, JPG, or WebP image');
       return;
     }
 
@@ -194,6 +200,7 @@ function ImageUpload({
     try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('maxWidth', maxWidth.toString());
 
       const res = await fetch('/api/creator-page/upload', {
         method: 'POST',
@@ -326,14 +333,14 @@ function ImageUpload({
                   Click to upload or drag & drop
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  PNG, JPG up to 5MB (auto-compressed)
+                  PNG, JPG, or WebP (auto-resized)
                 </p>
               </>
             )}
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               onChange={handleFileSelect}
               className="hidden"
             />
@@ -367,6 +374,261 @@ function ImageUpload({
               className="max-h-32 rounded-lg"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          )}
+        </div>
+      )}
+
+      {error && (
+        <p className="mt-2 text-sm text-red-400">{error}</p>
+      )}
+    </div>
+  );
+}
+
+// Video Upload component with drag-and-drop
+function VideoUpload({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const [mode, setMode] = useState<'upload' | 'url'>(value ? 'url' : 'upload');
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = useCallback(async (file: File) => {
+    const allowedTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please select an MP4, WebM, or MOV video');
+      return;
+    }
+
+    // Check file size (50MB limit)
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError('Video must be under 50MB');
+      return;
+    }
+
+    setIsUploading(true);
+    setError(null);
+    setUploadProgress(0);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Use XMLHttpRequest for progress tracking
+      const xhr = new XMLHttpRequest();
+
+      await new Promise<void>((resolve, reject) => {
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            setUploadProgress(Math.round((e.loaded / e.total) * 100));
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              onChange(data.url);
+              setMode('url');
+              resolve();
+            } catch {
+              reject(new Error('Invalid response'));
+            }
+          } else {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              reject(new Error(data.error || 'Upload failed'));
+            } catch {
+              reject(new Error('Upload failed'));
+            }
+          }
+        });
+
+        xhr.addEventListener('error', () => reject(new Error('Upload failed')));
+        xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
+
+        xhr.open('POST', '/api/creator-page/upload-video');
+        xhr.send(formData);
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  }, [onChange]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleUpload(file);
+    }
+  }, [handleUpload]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleUpload(file);
+    }
+  }, [handleUpload]);
+
+  const handleClear = useCallback(() => {
+    onChange('');
+    setMode('upload');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [onChange]);
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-400 mb-1">{label}</label>
+
+      {/* Mode toggle */}
+      <div className="flex gap-2 mb-2">
+        <button
+          type="button"
+          onClick={() => setMode('upload')}
+          className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg transition ${
+            mode === 'upload'
+              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+              : 'bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-600'
+          }`}
+        >
+          <Upload size={12} />
+          Upload
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode('url')}
+          className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg transition ${
+            mode === 'url'
+              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+              : 'bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-600'
+          }`}
+        >
+          <Link2 size={12} />
+          URL
+        </button>
+      </div>
+
+      {mode === 'upload' ? (
+        <>
+          {/* Drop zone */}
+          <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onClick={() => !isUploading && fileInputRef.current?.click()}
+            className={`relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${
+              isDragging
+                ? 'border-emerald-500 bg-emerald-500/10'
+                : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
+            } ${isUploading ? 'cursor-wait' : ''}`}
+          >
+            {isUploading ? (
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
+                <p className="text-sm text-gray-400">Uploading... {uploadProgress}%</p>
+                <div className="w-full bg-gray-700 rounded-full h-2 mt-1">
+                  <div
+                    className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            ) : value ? (
+              <div className="relative">
+                <video
+                  src={value}
+                  className="max-h-32 mx-auto rounded-lg"
+                  muted
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClear();
+                  }}
+                  className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <>
+                <Video className="w-8 h-8 mx-auto text-gray-600 mb-2" />
+                <p className="text-sm text-gray-400">
+                  Click to upload or drag & drop
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  MP4, WebM, or MOV (max 50MB)
+                </p>
+              </>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="video/mp4,video/webm,video/quicktime"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+          </div>
+        </>
+      ) : (
+        /* URL input mode */
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <input
+              type="url"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder="https://..."
+              className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+            {value && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="p-2 text-gray-400 hover:text-red-400"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+          {value && (
+            <video
+              src={value}
+              className="max-h-32 rounded-lg"
+              muted
+              controls
+              onError={(e) => {
+                (e.target as HTMLVideoElement).style.display = 'none';
               }}
             />
           )}
@@ -447,6 +709,7 @@ function CardEditor({
         label="Card Image"
         value={data.imageUrl || ''}
         onChange={(v) => onUpdate({ ...data, imageUrl: v })}
+        maxWidth={600}
       />
       <Input
         label="Title"
@@ -705,6 +968,7 @@ function AffiliateCardEditor({
         label="Product Image"
         value={data.imageUrl || ''}
         onChange={(v) => onUpdate({ ...data, imageUrl: v })}
+        maxWidth={600}
       />
       <Input
         label="Product Title"
@@ -1041,6 +1305,91 @@ function BookingEditor({
       {/* Highlight Toggle */}
       <Toggle
         label="Highlight (Accent Border)"
+        checked={data.highlight || false}
+        onChange={(v) => onUpdate({ ...data, highlight: v })}
+      />
+    </div>
+  );
+}
+
+// Intro Video Editor
+function IntroVideoEditor({
+  data,
+  onUpdate,
+}: {
+  data: IntroVideoBlockData;
+  onUpdate: (data: Record<string, unknown>) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      {/* Video Upload */}
+      <VideoUpload
+        label="Intro Video"
+        value={data.videoUrl || ''}
+        onChange={(v) => onUpdate({ ...data, videoUrl: v })}
+      />
+
+      {/* Poster/Thumbnail */}
+      <ImageUpload
+        label="Poster Image (optional)"
+        value={data.posterUrl || ''}
+        onChange={(v) => onUpdate({ ...data, posterUrl: v })}
+        maxWidth={600}
+      />
+      <p className="text-xs text-gray-500 -mt-2">
+        Shown before video plays and while loading
+      </p>
+
+      {/* Playback Options */}
+      <div className="p-3 bg-gray-800 rounded-lg border border-gray-700 space-y-3">
+        <p className="text-sm font-medium text-gray-300">Playback Options</p>
+        <Toggle
+          label="Autoplay (muted)"
+          checked={data.autoplay ?? false}
+          onChange={(v) => onUpdate({ ...data, autoplay: v })}
+        />
+        <Toggle
+          label="Loop video"
+          checked={data.loop ?? true}
+          onChange={(v) => onUpdate({ ...data, loop: v })}
+        />
+      </div>
+
+      {/* Title */}
+      <Input
+        label="Title (optional)"
+        value={data.title || ''}
+        onChange={(v) => onUpdate({ ...data, title: v })}
+        placeholder="Video title"
+      />
+
+      {/* Description */}
+      <Textarea
+        label="Description (optional)"
+        value={data.description || ''}
+        onChange={(v) => onUpdate({ ...data, description: v })}
+        placeholder="Short description"
+        rows={2}
+      />
+
+      {/* CTA Button */}
+      <Input
+        label="Button Label (optional)"
+        value={data.ctaLabel || ''}
+        onChange={(v) => onUpdate({ ...data, ctaLabel: v })}
+        placeholder="e.g., Watch More"
+      />
+      <Input
+        label="Button URL"
+        value={data.ctaUrl || ''}
+        onChange={(v) => onUpdate({ ...data, ctaUrl: v })}
+        placeholder="https://..."
+        type="url"
+      />
+
+      {/* Highlight */}
+      <Toggle
+        label="Highlight (Accent Color)"
         checked={data.highlight || false}
         onChange={(v) => onUpdate({ ...data, highlight: v })}
       />

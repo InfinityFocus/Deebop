@@ -12,6 +12,7 @@ import { EmailCaptureBlock } from './blocks/EmailCaptureBlock';
 import { DividerBlock } from './blocks/DividerBlock';
 import { FeaturedContentBlock } from './blocks/FeaturedContentBlock';
 import { BookingBlock } from './blocks/BookingBlock';
+import { IntroVideoBlock } from './blocks/IntroVideoBlock';
 import type { BlockType, BlockData } from '@/types/creator-page';
 
 interface CreatorPageBlock {
@@ -187,6 +188,15 @@ export function CreatorPageRenderer({ user, page }: CreatorPageRendererProps) {
       case 'booking':
         return (
           <BookingBlock
+            key={block.id}
+            data={data}
+            onClick={() => handleClick(block.id)}
+          />
+        );
+
+      case 'intro_video':
+        return (
+          <IntroVideoBlock
             key={block.id}
             data={data}
             onClick={() => handleClick(block.id)}

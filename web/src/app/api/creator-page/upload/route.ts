@@ -3,8 +3,8 @@ import sharp from 'sharp';
 import { getCurrentUser } from '@/lib/auth';
 import { uploadToMinio } from '@/lib/minio';
 
-// Creator Page images are resized to max viewable width (cards display at ~400px, 800px is plenty)
-const IMAGE_MAX_WIDTH = 800;
+// Default max width for Creator Page images
+const DEFAULT_MAX_WIDTH = 800;
 const IMAGE_QUALITY = 85;
 
 export async function POST(request: NextRequest) {
@@ -24,18 +24,24 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
+    const maxWidthParam = formData.get('maxWidth') as string | null;
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    // Validate file type (PNG, JPG, WebP)
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Only image files are allowed' },
+        { error: 'Only PNG, JPG, and WebP images are allowed' },
         { status: 400 }
       );
     }
+
+    // Parse max width from param or use default
+    const maxWidth = maxWidthParam ? parseInt(maxWidthParam, 10) : DEFAULT_MAX_WIDTH;
+    const effectiveMaxWidth = maxWidth > 0 && maxWidth <= 2000 ? maxWidth : DEFAULT_MAX_WIDTH;
 
     // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer();
@@ -45,9 +51,9 @@ export async function POST(request: NextRequest) {
     const metadata = await sharp(buffer).metadata();
     let processedBuffer: Buffer;
 
-    if (metadata.width && metadata.width > IMAGE_MAX_WIDTH) {
+    if (metadata.width && metadata.width > effectiveMaxWidth) {
       processedBuffer = await sharp(buffer)
-        .resize(IMAGE_MAX_WIDTH, null, { withoutEnlargement: true })
+        .resize(effectiveMaxWidth, null, { withoutEnlargement: true })
         .jpeg({ quality: IMAGE_QUALITY })
         .toBuffer();
     } else {
