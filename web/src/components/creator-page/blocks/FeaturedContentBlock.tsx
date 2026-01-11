@@ -154,15 +154,26 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
                 </div>
               </div>
             ) : item.contentType === 'panorama360' ? (
-              // Panorama - always show styled placeholder (panorama images don't work well as thumbnails)
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 flex items-center justify-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 rounded-xl flex items-center justify-center">
-                  <Globe size={32} className="text-cyan-400" />
+              // Panorama - show image thumbnail with 360° badge overlay
+              <>
+                {item.thumbnailUrl || item.mediaUrl ? (
+                  <Image
+                    src={item.thumbnailUrl || item.mediaUrl!}
+                    alt={item.title || '360° Panorama'}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-emerald-500/20" />
+                )}
+                {/* 360° badge */}
+                <div className="absolute bottom-2 right-2">
+                  <span className="text-xs font-medium text-white bg-black/60 px-2 py-1 rounded flex items-center gap-1">
+                    <Globe size={12} />
+                    360°
+                  </span>
                 </div>
-                <div className="absolute bottom-2 left-2 right-2 text-center">
-                  <span className="text-xs text-white/80 bg-black/40 px-2 py-1 rounded">360°</span>
-                </div>
-              </div>
+              </>
             ) : item.thumbnailUrl || item.mediaUrl ? (
               <Image
                 src={item.thumbnailUrl || item.mediaUrl!}
@@ -181,8 +192,8 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
               <Icon size={14} className="text-white" />
             </div>
 
-            {/* Title overlay (if no image, audio post, or panorama without thumbnail) */}
-            {item.title && (item.contentType === 'audio' || item.contentType === 'panorama360' || (!item.thumbnailUrl && !item.mediaUrl)) && (
+            {/* Title overlay (for audio posts or items without images) */}
+            {item.title && (item.contentType === 'audio' || (!item.thumbnailUrl && !item.mediaUrl)) && (
               <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
                 <p className="text-xs text-white truncate">{item.title}</p>
               </div>
