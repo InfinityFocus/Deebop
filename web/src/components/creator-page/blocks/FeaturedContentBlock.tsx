@@ -155,12 +155,14 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
               </div>
             ) : item.contentType === 'panorama360' ? (
               // Panorama - show image thumbnail with 360° badge overlay
+              // Use unoptimized to avoid Next.js optimization timeout on large panorama images
               <>
                 {item.thumbnailUrl || item.mediaUrl ? (
                   <Image
                     src={item.thumbnailUrl || item.mediaUrl!}
                     alt={item.title || '360° Panorama'}
                     fill
+                    unoptimized
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
