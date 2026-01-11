@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Image as ImageIcon, Film, Lock, Calendar, Music, Globe } from 'lucide-react';
+import { Image as ImageIcon, Film, Lock, Calendar, Podcast, Globe } from 'lucide-react';
 import type { FeaturedContentBlockData } from '@/types/creator-page';
 
 interface FeaturedContentBlockProps {
@@ -117,7 +117,7 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
     if (type === 'event') return Calendar;
     if (type === 'album') return ImageIcon;
     if (contentType === 'video') return Film;
-    if (contentType === 'audio') return Music;
+    if (contentType === 'audio') return Podcast;
     if (contentType === 'panorama360') return Globe;
     return ImageIcon;
   };
@@ -150,7 +150,7 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
             {item.contentType === 'audio' ? (
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-emerald-500/30 to-cyan-500/30 rounded-xl flex items-center justify-center">
-                  <Music size={32} className="text-emerald-400" />
+                  <Podcast size={32} className="text-emerald-400" />
                 </div>
               </div>
             ) : item.contentType === 'panorama360' ? (

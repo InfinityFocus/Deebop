@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, Image, Video, Globe, Type, Loader2, Upload, Crown, Lock, Newspaper, Clock, Calendar, Eye, EyeOff, AlertCircle, CheckCircle, Music, Mic, FileAudio, GripVertical, Plus } from 'lucide-react';
+import { X, Image, Video, Globe, Type, Loader2, Upload, Crown, Lock, Newspaper, Clock, Calendar, Eye, EyeOff, AlertCircle, CheckCircle, Podcast, Mic, FileAudio, GripVertical, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { clsx } from 'clsx';
 import * as tus from 'tus-js-client';
@@ -22,7 +22,7 @@ const contentTypes = [
   { id: 'shout' as ContentType, label: 'Shout', icon: Type, description: 'Short text post' },
   { id: 'image' as ContentType, label: 'Image', icon: Image, description: 'Photo with caption' },
   { id: 'video' as ContentType, label: 'Video', icon: Video, description: 'Short video clip' },
-  { id: 'audio' as ContentType, label: 'Audio', icon: Music, description: 'Record or upload audio' },
+  { id: 'audio' as ContentType, label: 'Audio', icon: Podcast, description: 'Record or upload audio' },
   { id: 'panorama360' as ContentType, label: '360°', icon: Globe, description: 'Immersive panorama', proOnly: true },
 ];
 
@@ -1225,7 +1225,7 @@ export function CreatePostForm() {
                       <div className="relative bg-gray-900 rounded-xl p-6">
                         <div className="flex items-center gap-4">
                           <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                            <Music className="w-8 h-8 text-white" />
+                            <Podcast className="w-8 h-8 text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-white font-medium truncate">

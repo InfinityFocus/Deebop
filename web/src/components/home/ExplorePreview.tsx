@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Sparkles, TrendingUp, Shield, Play, MessageCircle, Music } from 'lucide-react';
+import { ArrowRight, Sparkles, TrendingUp, Shield, Play, MessageCircle, Podcast } from 'lucide-react';
 import { useHomepageAnalytics } from '@/hooks/useHomepageAnalytics';
 
 interface PublicPost {
@@ -157,7 +157,7 @@ export default function ExplorePreview() {
                         ))}
                       </div>
                       <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-500 to-purple-500 flex items-center justify-center mb-3 shadow-lg z-10">
-                        <Music size={28} className="text-white" />
+                        <Podcast size={28} className="text-white" />
                       </div>
                       <p className="text-white text-sm font-medium text-center line-clamp-2 z-10">
                         {post.headline || post.text_content || 'Audio'}

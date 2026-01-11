@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { Heart, Bookmark, Share2, MoreHorizontal, Sparkles, Crown, Rocket, Flag, Pencil, Loader2, Music, Trash2, Repeat } from 'lucide-react';
+import { Heart, Bookmark, Share2, MoreHorizontal, Sparkles, Crown, Rocket, Flag, Pencil, Loader2, Podcast, Trash2, Repeat } from 'lucide-react';
 import { PanoramaViewer } from '@/components/viewers/PanoramaViewer';
 import { AudioPlayer } from '@/components/audio';
 import { ImageCarousel } from '@/components/post/ImageCarousel';

@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, Eye, Play, Music, MessageCircle, Video } from 'lucide-react';
+import { Heart, Eye, Play, Podcast, MessageCircle, Video } from 'lucide-react';
 import type { PostResult } from '@/types/explore';
 
 interface TrendingPostCardProps {
@@ -48,7 +48,7 @@ export default function TrendingPostCard({ post }: TrendingPostCardProps) {
               ))}
             </div>
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-500 to-purple-500 flex items-center justify-center mb-3 shadow-lg z-10">
-              <Music size={24} className="text-white" />
+              <Podcast size={24} className="text-white" />
             </div>
             <p className="text-white text-sm font-medium text-center line-clamp-2 z-10">
               {post.headline || post.textContent || 'Audio'}

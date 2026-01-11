@@ -1,7 +1,7 @@
 'use client';
 
 import { clsx } from 'clsx';
-import { Type, Image, Video, Globe, Music } from 'lucide-react';
+import { Type, Image, Video, Globe, Podcast } from 'lucide-react';
 import type { ContentType } from '@/types/database';
 
 interface ContentTypeFilterProps {
@@ -14,7 +14,7 @@ const filterOptions: { type: ContentType | null; label: string; icon: React.Comp
   { type: 'shout', label: 'Shouts', icon: Type },
   { type: 'image', label: 'Images', icon: Image },
   { type: 'video', label: 'Videos', icon: Video },
-  { type: 'audio', label: 'Audio', icon: Music },
+  { type: 'audio', label: 'Audio', icon: Podcast },
   { type: 'panorama360', label: '360°', icon: Globe },
 ];
 

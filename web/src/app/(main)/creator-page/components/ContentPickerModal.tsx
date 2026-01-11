@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Search, Image, Film, Music, Calendar, Loader2, Check, Plus } from 'lucide-react';
+import { X, Search, Image, Film, Podcast, Calendar, Loader2, Check, Plus } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface ContentItem {
@@ -103,7 +103,7 @@ export function ContentPickerModal({
     if (item.type === 'album') return <Image size={14} />;
     if (item.type === 'event') return <Calendar size={14} />;
     if (item.contentType === 'video') return <Film size={14} />;
-    if (item.contentType === 'audio') return <Music size={14} />;
+    if (item.contentType === 'audio') return <Podcast size={14} />;
     return <Image size={14} />;
   };
 
