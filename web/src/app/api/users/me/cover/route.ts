@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { uploadToMinio, generateFileKey } from '@/lib/minio';
+import sharp from 'sharp';
+
+const COVER_MAX_WIDTH = 750;
+const IMAGE_QUALITY = 85;
 
 // POST /api/users/me/cover - Upload cover image
 export async function POST(request: NextRequest) {
@@ -19,27 +23,33 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
+    if (!file.type.startsWith('image/')) {
       return NextResponse.json(
-        { error: 'Invalid file type. Allowed: JPEG, PNG, GIF, WebP' },
+        { error: 'Only image files are allowed' },
         { status: 400 }
       );
     }
 
-    // Validate file size (max 10MB for cover images)
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: 'File too large. Maximum size is 10MB' },
-        { status: 400 }
-      );
+    // Convert to buffer and resize to max width
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const metadata = await sharp(buffer).metadata();
+
+    let processedBuffer: Buffer;
+    if (metadata.width && metadata.width > COVER_MAX_WIDTH) {
+      processedBuffer = await sharp(buffer)
+        .resize(COVER_MAX_WIDTH, null, { withoutEnlargement: true })
+        .jpeg({ quality: IMAGE_QUALITY })
+        .toBuffer();
+    } else {
+      processedBuffer = await sharp(buffer)
+        .jpeg({ quality: IMAGE_QUALITY })
+        .toBuffer();
     }
 
     // Generate unique key and upload to MinIO
-    const key = generateFileKey(user.id, 'covers', file.name);
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const coverImageUrl = await uploadToMinio(key, buffer, file.type);
+    const baseName = file.name.replace(/\.[^.]+$/, '');
+    const key = generateFileKey(user.id, 'covers', `${baseName}.jpg`);
+    const coverImageUrl = await uploadToMinio(key, processedBuffer, 'image/jpeg');
 
     // Update user's cover image URL in database
     const updatedUser = await prisma.user.update({
