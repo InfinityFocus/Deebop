@@ -17,7 +17,7 @@ const tiers = [
     period: '/month',
     description: 'Get started with the basics',
     features: [
-      { text: 'Images up to 500KB compressed', included: true },
+      { text: 'Unlimited images', included: true },
       { text: 'Videos up to 30s @ 720p', included: true },
       { text: 'Audio up to 1min', included: true },
       { text: 'Unlimited shouts', included: true },
@@ -42,7 +42,7 @@ const tiers = [
     period: '/month',
     description: 'For serious creators',
     features: [
-      { text: 'Images up to 10MB original quality', included: true },
+      { text: 'Unlimited images', included: true },
       { text: 'Videos up to 1min @ 1080p', included: true },
       { text: 'Audio up to 5min', included: true },
       { text: 'Unlimited shouts', included: true },
@@ -68,7 +68,7 @@ const tiers = [
     period: '/month',
     description: 'Everything, unlocked',
     features: [
-      { text: 'Images up to 50MB original quality', included: true },
+      { text: 'Unlimited images', included: true },
       { text: 'Videos up to 5min @ 4K', included: true },
       { text: 'Audio up to 30min', included: true },
       { text: 'Unlimited shouts', included: true },

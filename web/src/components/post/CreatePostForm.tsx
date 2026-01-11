@@ -1365,7 +1365,7 @@ export function CreatePostForm() {
                     <Upload size={32} className="mx-auto mb-3 text-gray-500" />
                     <p className="font-semibold mb-1">Click to upload images</p>
                     <p className="text-sm text-gray-500">
-                      Select 1-8 images (max {user.tier === 'free' ? '500KB' : user.tier === 'standard' ? '10MB' : '50MB'} each)
+                      Select 1-8 images
                     </p>
                   </label>
                 ) : (

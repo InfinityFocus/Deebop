@@ -29,7 +29,7 @@ const TIERS = {
     description: 'Get started with basic features',
     icon: Sparkles,
     features: [
-      'Images up to 500KB (compressed)',
+      'Unlimited images',
       'Videos up to 30s @ 720p',
       'Audio up to 1min',
       'Unlimited shouts',
@@ -53,7 +53,7 @@ const TIERS = {
     description: 'For content creators',
     icon: Zap,
     features: [
-      'Images up to 10MB (original quality)',
+      'Unlimited images',
       'Videos up to 1min @ 1080p',
       'Audio up to 5min',
       'Unlimited shouts',
@@ -81,7 +81,7 @@ const TIERS = {
     icon: Crown,
     popular: true,
     features: [
-      'Images up to 50MB (original quality)',
+      'Unlimited images',
       'Videos up to 5min @ 4K',
       'Audio up to 30min',
       'Unlimited shouts',

@@ -2,24 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { generateFileKey, uploadToMinio } from '@/lib/minio';
 import prisma from '@/lib/db';
+import sharp from 'sharp';
 
 import { triggerVideoProcessing } from '@/lib/video-job-processor';
-// Tier-based file size limits
+
+// Max upload size before processing (50MB for all image uploads)
+const MAX_IMAGE_UPLOAD_SIZE = 50 * 1024 * 1024;
+const IMAGE_MAX_WIDTH = 750;
+const IMAGE_QUALITY = 85;
+
+// Tier-based file size limits for non-image media
 const FILE_LIMITS = {
   free: {
-    image: 500 * 1024, // 500KB
     video: 10 * 1024 * 1024, // 10MB
     audio: 10 * 1024 * 1024, // 10MB
     panorama360: 0, // Not allowed
   },
   standard: {
-    image: 10 * 1024 * 1024, // 10MB
     video: 50 * 1024 * 1024, // 50MB
     audio: 50 * 1024 * 1024, // 50MB
     panorama360: 0, // Not allowed
   },
   pro: {
-    image: 50 * 1024 * 1024, // 50MB
     video: 500 * 1024 * 1024, // 500MB
     audio: 200 * 1024 * 1024, // 200MB
     panorama360: 100 * 1024 * 1024, // 100MB
@@ -59,22 +63,33 @@ export async function POST(request: NextRequest) {
     }
 
     // Check file size limit
-    const limits = FILE_LIMITS[user.tier as keyof typeof FILE_LIMITS];
-    const maxSize = limits[mediaType as keyof typeof limits];
+    if (mediaType === 'image') {
+      // Images have a universal upload limit (will be resized/compressed)
+      if (file.size > MAX_IMAGE_UPLOAD_SIZE) {
+        return NextResponse.json(
+          { error: 'Image file too large. Max upload size: 50MB' },
+          { status: 400 }
+        );
+      }
+    } else {
+      // Other media types have tier-based limits
+      const limits = FILE_LIMITS[user.tier as keyof typeof FILE_LIMITS];
+      const maxSize = limits[mediaType as keyof typeof limits];
 
-    if (maxSize === 0) {
-      return NextResponse.json(
-        { error: `${mediaType} uploads are not available for your tier` },
-        { status: 403 }
-      );
-    }
+      if (maxSize === 0) {
+        return NextResponse.json(
+          { error: `${mediaType} uploads are not available for your tier` },
+          { status: 403 }
+        );
+      }
 
-    if (file.size > maxSize) {
-      const maxMB = Math.round(maxSize / 1024 / 1024);
-      return NextResponse.json(
-        { error: `File too large. Max size for ${mediaType}: ${maxMB}MB` },
-        { status: 400 }
-      );
+      if (file.size > maxSize) {
+        const maxMB = Math.round(maxSize / 1024 / 1024);
+        return NextResponse.json(
+          { error: `File too large. Max size for ${mediaType}: ${maxMB}MB` },
+          { status: 400 }
+        );
+      }
     }
 
     // Generate file key and upload to MinIO
@@ -142,7 +157,46 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // For images and panoramas, upload directly and return URL
+    // For images, resize/compress to max width before upload
+    if (mediaType === 'image') {
+      try {
+        // Get image metadata
+        const metadata = await sharp(buffer).metadata();
+
+        let processedBuffer: Buffer;
+        let outputMimeType = 'image/jpeg';
+
+        // Resize if wider than max width, always compress
+        if (metadata.width && metadata.width > IMAGE_MAX_WIDTH) {
+          processedBuffer = await sharp(buffer)
+            .resize(IMAGE_MAX_WIDTH, null, { withoutEnlargement: true })
+            .jpeg({ quality: IMAGE_QUALITY })
+            .toBuffer();
+        } else {
+          // Just compress without resizing
+          processedBuffer = await sharp(buffer)
+            .jpeg({ quality: IMAGE_QUALITY })
+            .toBuffer();
+        }
+
+        // Generate key with .jpg extension since we're converting to JPEG
+        const baseName = file.name.replace(/\.[^.]+$/, '');
+        const key = generateFileKey(user.id, mediaType, `${baseName}.jpg`);
+        const publicUrl = await uploadToMinio(key, processedBuffer, outputMimeType);
+
+        return NextResponse.json({
+          url: publicUrl,
+        });
+      } catch (imageError) {
+        console.error('Image processing error:', imageError);
+        return NextResponse.json(
+          { error: 'Failed to process image' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // For panoramas, upload directly without resizing (they need full resolution)
     const key = generateFileKey(user.id, mediaType, file.name);
     const publicUrl = await uploadToMinio(key, buffer, file.type);
 

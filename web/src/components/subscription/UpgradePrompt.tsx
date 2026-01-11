@@ -20,10 +20,10 @@ const TIER_INFO = {
     icon: Zap,
     color: 'blue',
     features: [
-      '10MB image uploads',
       '1 minute videos @ 1080p',
       '10GB album storage',
       'Profile link',
+      'Creator Page',
       'Reduced ads',
     ],
   },
@@ -33,10 +33,10 @@ const TIER_INFO = {
     icon: Crown,
     color: 'emerald',
     features: [
-      '50MB image uploads',
       '5 minute videos @ 4K',
       '360 Panorama uploads',
       '50GB album storage',
+      'Full Creator Page',
       'No ads',
       'Priority support',
     ],

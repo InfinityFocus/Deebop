@@ -34,7 +34,7 @@ export const SUBSCRIPTION_TIERS = {
     name: 'Free',
     price: 0,
     features: [
-      'Images up to 500KB (compressed)',
+      'Unlimited images',
       'Videos up to 30s @ 720p',
       'Basic feed access',
       'Full ads',
@@ -45,7 +45,7 @@ export const SUBSCRIPTION_TIERS = {
     price: 399, // £3.99 in pence
     priceId: process.env.STRIPE_STANDARD_PRICE_ID,
     features: [
-      'Images up to 10MB (original quality)',
+      'Unlimited images',
       'Videos up to 1min @ 1080p',
       'Album storage up to 10GB',
       'Reduced ads',
@@ -57,7 +57,7 @@ export const SUBSCRIPTION_TIERS = {
     price: 999, // £9.99 in pence
     priceId: process.env.STRIPE_PRO_PRICE_ID,
     features: [
-      'Images up to 50MB (original quality)',
+      'Unlimited images',
       'Videos up to 5min @ 4K',
       '360 Panorama uploads (100MB)',
       'Album storage up to 50GB',
@@ -89,7 +89,7 @@ export function canAccessFeature(
 export function getUploadLimits(tier: SubscriptionTier) {
   const limits = {
     free: {
-      maxImageSize: 500 * 1024, // 500KB
+      maxImageSize: 50 * 1024 * 1024, // 50MB (images are resized/compressed server-side)
       maxVideoSize: 50 * 1024 * 1024, // 50MB
       maxVideoDuration: 30, // seconds
       maxVideoResolution: 720,
@@ -98,7 +98,7 @@ export function getUploadLimits(tier: SubscriptionTier) {
       maxAlbumStorage: 2 * 1024 * 1024 * 1024, // 2GB
     },
     standard: {
-      maxImageSize: 10 * 1024 * 1024, // 10MB
+      maxImageSize: 50 * 1024 * 1024, // 50MB (images are resized/compressed server-side)
       maxVideoSize: 200 * 1024 * 1024, // 200MB
       maxVideoDuration: 60, // seconds
       maxVideoResolution: 1080,
@@ -107,7 +107,7 @@ export function getUploadLimits(tier: SubscriptionTier) {
       maxAlbumStorage: 10 * 1024 * 1024 * 1024, // 10GB
     },
     pro: {
-      maxImageSize: 50 * 1024 * 1024, // 50MB
+      maxImageSize: 50 * 1024 * 1024, // 50MB (images are resized/compressed server-side)
       maxVideoSize: 500 * 1024 * 1024, // 500MB
       maxVideoDuration: 300, // 5 minutes
       maxVideoResolution: 2160, // 4K
