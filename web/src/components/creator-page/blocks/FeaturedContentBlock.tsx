@@ -154,24 +154,15 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
                 </div>
               </div>
             ) : item.contentType === 'panorama' ? (
-              // Panorama - show thumbnail if available, otherwise styled placeholder
-              item.thumbnailUrl ? (
-                <Image
-                  src={item.thumbnailUrl}
-                  alt={item.title || '360° Panorama'}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 flex items-center justify-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 rounded-xl flex items-center justify-center">
-                    <Globe size={32} className="text-cyan-400" />
-                  </div>
-                  <div className="absolute bottom-2 left-2 right-2 text-center">
-                    <span className="text-xs text-white/80 bg-black/40 px-2 py-1 rounded">360°</span>
-                  </div>
+              // Panorama - always show styled placeholder (panorama images don't work well as thumbnails)
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 flex items-center justify-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 rounded-xl flex items-center justify-center">
+                  <Globe size={32} className="text-cyan-400" />
                 </div>
-              )
+                <div className="absolute bottom-2 left-2 right-2 text-center">
+                  <span className="text-xs text-white/80 bg-black/40 px-2 py-1 rounded">360°</span>
+                </div>
+              </div>
             ) : item.thumbnailUrl || item.mediaUrl ? (
               <Image
                 src={item.thumbnailUrl || item.mediaUrl!}
