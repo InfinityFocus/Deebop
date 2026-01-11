@@ -12,6 +12,12 @@
   "functions": {
     "app/api/upload/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/creator-page/upload/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/creator-page/upload-video/route.ts": {
+      "maxDuration": 120
     }
   }
 }

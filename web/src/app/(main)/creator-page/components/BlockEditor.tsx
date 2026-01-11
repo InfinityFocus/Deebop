@@ -169,6 +169,51 @@ function Select({
   );
 }
 
+// Client-side image compression to avoid 413 errors
+async function compressImage(file: File, maxWidth: number, quality = 0.85): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // Calculate new dimensions
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+
+      // Create canvas and draw resized image
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Convert to blob
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to compress image'));
+          }
+        },
+        'image/jpeg',
+        quality
+      );
+    };
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 // Image Upload component with drag-and-drop
 function ImageUpload({
   label,
@@ -198,8 +243,14 @@ function ImageUpload({
     setError(null);
 
     try {
+      // Compress image on client side to avoid 413 errors (Vercel 4.5MB limit)
+      const compressedBlob = await compressImage(file, maxWidth);
+      const compressedFile = new File([compressedBlob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+        type: 'image/jpeg',
+      });
+
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', compressedFile);
       formData.append('maxWidth', maxWidth.toString());
 
       const res = await fetch('/api/creator-page/upload', {
@@ -220,7 +271,7 @@ function ImageUpload({
     } finally {
       setIsUploading(false);
     }
-  }, [onChange]);
+  }, [onChange, maxWidth]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
