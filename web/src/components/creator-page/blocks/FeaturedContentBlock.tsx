@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Image as ImageIcon, Film, Lock, Calendar, Podcast, Globe } from 'lucide-react';
+import { Image as ImageIcon, Film, Lock, Calendar, Podcast, Globe, MessageCircle } from 'lucide-react';
 import type { FeaturedContentBlockData } from '@/types/creator-page';
 
 interface FeaturedContentBlockProps {
@@ -15,6 +15,7 @@ interface FeaturedItem {
   type: 'post' | 'album' | 'event' | 'drop';
   id: string;
   title?: string;
+  textContent?: string;
   thumbnailUrl?: string;
   mediaUrl?: string;
   contentType?: string;
@@ -67,6 +68,7 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
               type: item.type,
               id: item.id,
               title: content.title || content.headline || content.description?.slice(0, 50),
+              textContent: content.textContent || content.text_content,
               thumbnailUrl: content.mediaThumbnailUrl || content.media_thumbnail_url || content.coverImageUrl,
               mediaUrl: content.mediaUrl || content.media_url,
               contentType: content.contentType || content.content_type,
@@ -119,6 +121,7 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
     if (contentType === 'video') return Film;
     if (contentType === 'audio') return Podcast;
     if (contentType === 'panorama360') return Globe;
+    if (contentType === 'shout') return MessageCircle;
     return ImageIcon;
   };
 
@@ -176,6 +179,14 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
                   </span>
                 </div>
               </>
+            ) : item.contentType === 'shout' ? (
+              // Styled shout card
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/80 via-gray-900 to-cyan-900/80 flex flex-col items-center justify-center p-3">
+                <MessageCircle size={16} className="text-emerald-400/50 absolute top-2 right-2" />
+                <p className="text-white text-xs font-medium text-center line-clamp-4 leading-relaxed">
+                  &ldquo;{item.textContent || item.title}&rdquo;
+                </p>
+              </div>
             ) : item.thumbnailUrl || item.mediaUrl ? (
               <Image
                 src={item.thumbnailUrl || item.mediaUrl!}
