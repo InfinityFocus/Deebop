@@ -118,7 +118,18 @@ export function validateBlockLimits(
 
 // Validate a single URL
 export function validateUrl(url: string): { valid: boolean; error?: string } {
-  // Must be HTTPS
+  // Allow mailto: protocol for email links
+  if (url.startsWith('mailto:')) {
+    // Basic email format validation
+    const email = url.replace('mailto:', '').split('?')[0]; // Remove query params like ?subject=
+    const emailRegex = /^[^s@]+@[^s@]+.[^s@]+$/;
+    if (!emailRegex.test(email)) {
+      return { valid: false, error: 'Invalid email address format' };
+    }
+    return { valid: true };
+  }
+
+  // Must be HTTPS for web URLs
   if (!url.startsWith('https://')) {
     return { valid: false, error: 'URLs must use HTTPS' };
   }

@@ -40,15 +40,15 @@ const PLATFORM_ICONS: Record<SocialPlatform, React.ComponentType<{ size?: number
 const PLATFORM_COLORS: Record<SocialPlatform, string> = {
   instagram: 'text-pink-400',
   youtube: 'text-red-500',
-  tiktok: 'text-white',
+  tiktok: 'text-cyan-400',
   linkedin: 'text-blue-500',
-  x: 'text-white',
+  x: 'text-gray-200',
   website: 'text-emerald-400',
   spotify: 'text-green-500',
   soundcloud: 'text-orange-500',
   twitch: 'text-purple-500',
   discord: 'text-indigo-400',
-  github: 'text-white',
+  github: 'text-gray-200',
   email: 'text-gray-300',
 };
 
