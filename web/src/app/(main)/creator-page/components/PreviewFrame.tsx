@@ -387,6 +387,106 @@ function BlockPreview({
       );
     }
 
+    case 'booking':
+      return (
+        <div
+          className={`bg-gray-800 rounded-xl p-4 border ${
+            data.highlight ? 'border-emerald-500' : 'border-gray-700'
+          }`}
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-semibold text-white">
+                {String(data.title || 'Book a Session')}
+              </h3>
+              {data.description && (
+                <p className="text-gray-400 text-sm">{String(data.description)}</p>
+              )}
+            </div>
+          </div>
+          {data.mode === 'embed' ? (
+            <div className="bg-gray-900 rounded-lg p-4 text-center text-gray-500 text-sm">
+              Booking widget preview
+            </div>
+          ) : (
+            <button
+              className={`w-full py-2 rounded-lg font-medium ${
+                data.highlight
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-gray-700 text-white'
+              }`}
+            >
+              {String(data.ctaLabel || 'Book Now')}
+            </button>
+          )}
+        </div>
+      );
+
+    case 'intro_video':
+      return (
+        <div
+          className={`bg-gray-800 rounded-xl overflow-hidden border ${
+            data.highlight ? 'border-emerald-500' : 'border-gray-700'
+          }`}
+        >
+          {/* Video Preview */}
+          <div className="relative w-full aspect-video bg-gray-900 flex items-center justify-center">
+            {data.videoUrl ? (
+              <video
+                src={String(data.videoUrl)}
+                poster={data.posterUrl ? String(data.posterUrl) : undefined}
+                className="w-full h-full object-cover"
+                muted
+              />
+            ) : (
+              <div className="text-center">
+                <svg className="w-12 h-12 mx-auto text-gray-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-sm text-gray-500">No video uploaded</span>
+              </div>
+            )}
+            {data.videoUrl && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
+              </div>
+            )}
+          </div>
+          {/* Content */}
+          {(data.title || data.description || data.ctaLabel) && (
+            <div className="p-4">
+              {data.title && (
+                <h3 className="font-semibold text-white">{String(data.title)}</h3>
+              )}
+              {data.description && (
+                <p className="text-gray-400 text-sm mt-1">{String(data.description)}</p>
+              )}
+              {data.ctaLabel && data.ctaUrl && (
+                <button
+                  className={`mt-3 w-full py-2 rounded-lg font-medium ${
+                    data.highlight
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-gray-700 text-white'
+                  }`}
+                >
+                  {String(data.ctaLabel)}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      );
+
     default:
       return (
         <div className="p-4 bg-gray-800 rounded-lg text-gray-500 text-center">
