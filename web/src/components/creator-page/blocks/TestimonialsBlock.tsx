@@ -118,12 +118,12 @@ export function TestimonialsBlock({ data }: TestimonialsBlockProps) {
         </h3>
       )}
 
-      <div className="relative">
+      <div className="relative overflow-hidden">
         {/* Scroll buttons */}
         {canScrollLeft && (
           <button
             onClick={() => { scrollLeft(); handleInteraction(); }}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white transition -ml-2"
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white transition"
             aria-label="Previous testimonial"
           >
             <ChevronLeft size={24} />
@@ -133,7 +133,7 @@ export function TestimonialsBlock({ data }: TestimonialsBlockProps) {
         {canScrollRight && (
           <button
             onClick={() => { scrollRight(); handleInteraction(); }}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white transition -mr-2"
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white transition"
             aria-label="Next testimonial"
           >
             <ChevronRight size={24} />

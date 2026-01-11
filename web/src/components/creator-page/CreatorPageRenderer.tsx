@@ -233,9 +233,9 @@ export function CreatorPageRenderer({ user, page }: CreatorPageRendererProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-gray-900 overflow-x-hidden">
       {/* Main content - centered, matches user profile width */}
-      <div className="max-w-2xl mx-auto px-4 py-8 pb-24">
+      <div className="max-w-2xl mx-auto px-4 py-8 pb-24 overflow-x-hidden">
         {/* View Profile Link */}
         <div className="flex justify-end mb-4">
           <Link
