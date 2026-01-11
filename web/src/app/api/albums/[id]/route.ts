@@ -38,6 +38,32 @@ async function canViewAlbum(album: any, userId: string | null, isAdmin: boolean)
   });
   if (isMember) return true;
 
+  // Event-linked albums: check if user is event host, invited, or attending
+  if (album.linkedEvent) {
+    const eventId = album.linkedEvent.id;
+
+    // Event host can always view
+    if (album.linkedEvent.hostId === userId) return true;
+
+    // Check if user is an attendee (RSVP'd as attending or maybe)
+    const rsvp = await prisma.eventRsvp.findUnique({
+      where: { eventId_userId: { eventId, userId } },
+    });
+    if (rsvp && ['attending', 'maybe'].includes(rsvp.status)) return true;
+
+    // Check if user was invited
+    const invite = await prisma.eventInvite.findFirst({
+      where: { eventId, inviteeId: userId },
+    });
+    if (invite) return true;
+
+    // Check if user redeemed an invite link
+    const linkRedemption = await prisma.eventInviteLinkRedemption.findFirst({
+      where: { inviteLink: { eventId }, userId },
+    });
+    if (linkRedemption) return true;
+  }
+
   // Followers visibility
   if (album.visibility === 'followers') {
     const isFollower = await prisma.follow.findUnique({

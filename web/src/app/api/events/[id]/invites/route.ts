@@ -142,16 +142,6 @@ export async function POST(
           skipDuplicates: true,
         });
 
-        // Create notifications for invited users
-        await tx.notification.createMany({
-          data: validUserIds.map((inviteeId) => ({
-            userId: inviteeId,
-            type: 'event_invite',
-            actorId: user.id,
-            eventId: id,
-          })),
-        });
-
         userInviteCount = validUserIds.length;
       }
 
@@ -180,6 +170,23 @@ export async function POST(
 
       return { userInviteCount, emailInviteCount };
     });
+
+    // Create notifications for invited users (outside transaction so invites work even if notifications fail)
+    if (validUserIds.length > 0) {
+      try {
+        await prisma.notification.createMany({
+          data: validUserIds.map((inviteeId) => ({
+            userId: inviteeId,
+            type: 'event_invite',
+            actorId: user.id,
+            eventId: id,
+          })),
+        });
+      } catch (notificationError) {
+        // Log but don't fail the invite - notifications are non-critical
+        console.error('Failed to create invite notifications:', notificationError);
+      }
+    }
 
     const total = result.userInviteCount + result.emailInviteCount;
 
