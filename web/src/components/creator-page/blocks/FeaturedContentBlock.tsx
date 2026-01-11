@@ -28,43 +28,41 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
   const [items, setItems] = useState<FeaturedItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Fetch item details for each featured item
+    useEffect(() => {
+    // Fetch item details for each featured item in parallel
     const fetchItems = async () => {
-      const fetchedItems: FeaturedItem[] = [];
+      const itemPromises = (blockData.items || []).map(async (item) => {
+        let endpoint = '';
+        let link = '';
 
-      for (const item of blockData.items || []) {
+        switch (item.type) {
+          case 'post':
+            endpoint = `/api/posts/${item.id}`;
+            link = `/p/${item.id}`;
+            break;
+          case 'album':
+            endpoint = `/api/albums/${item.id}`;
+            link = `/albums/${item.id}`;
+            break;
+          case 'event':
+            endpoint = `/api/events/${item.id}`;
+            link = `/events/${item.id}`;
+            break;
+          case 'drop':
+            // Drops are posts with scheduled status
+            endpoint = `/api/posts/${item.id}`;
+            link = `/p/${item.id}`;
+            break;
+        }
+
         try {
-          let endpoint = '';
-          let link = '';
-
-          switch (item.type) {
-            case 'post':
-              endpoint = `/api/posts/${item.id}`;
-              link = `/p/${item.id}`;
-              break;
-            case 'album':
-              endpoint = `/api/albums/${item.id}`;
-              link = `/albums/${item.id}`;
-              break;
-            case 'event':
-              endpoint = `/api/events/${item.id}`;
-              link = `/events/${item.id}`;
-              break;
-            case 'drop':
-              // Drops are posts with scheduled status
-              endpoint = `/api/posts/${item.id}`;
-              link = `/p/${item.id}`;
-              break;
-          }
-
           const res = await fetch(endpoint);
 
           if (res.ok) {
             const data = await res.json();
             const content = data.post || data.album || data.event || data;
 
-            fetchedItems.push({
+            return {
               type: item.type,
               id: item.id,
               title: content.title || content.headline || content.description?.slice(0, 50),
@@ -74,27 +72,28 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
               contentType: content.contentType || content.content_type,
               accessible: true,
               link,
-            });
+            } as FeaturedItem;
           } else {
             // Not accessible - show locked placeholder
-            fetchedItems.push({
+            return {
               type: item.type,
               id: item.id,
               accessible: false,
               link,
-            });
+            } as FeaturedItem;
           }
         } catch {
           // Error fetching - show locked placeholder
-          fetchedItems.push({
+          return {
             type: item.type,
             id: item.id,
             accessible: false,
             link: '#',
-          });
+          } as FeaturedItem;
         }
-      }
+      });
 
+      const fetchedItems = await Promise.all(itemPromises);
       setItems(fetchedItems);
       setLoading(false);
     };

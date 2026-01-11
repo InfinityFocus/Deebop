@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 
-// GET /api/explore/trending/posts - Get trending posts (24h window)
+// GET /api/explore/trending/posts - Get trending posts (7 day window)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
     const hideSensitiveContent = searchParams.get('hideSensitiveContent') === 'true';
 
     // 24 hour window
-    const windowStart = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    // 7 day window (expanded from 24h for more results)
+    const windowStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     // Build provenance filter based on content preferences
     const provenanceFilter: string[] = [];
@@ -155,7 +156,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       posts: limitedPosts,
-      window: '24h',
+      window: '7d',
     });
   } catch (error) {
     console.error('Error fetching trending posts:', error);
