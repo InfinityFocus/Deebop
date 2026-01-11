@@ -233,9 +233,9 @@ export function CreatorPageRenderer({ user, page }: CreatorPageRendererProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 overflow-x-hidden">
+    <div className="bg-gray-900 overflow-x-hidden">
       {/* Main content - centered, matches user profile width */}
-      <div className="max-w-2xl mx-auto px-4 py-8 pb-24 overflow-x-hidden">
+      <div className="max-w-2xl mx-auto px-4 py-6 overflow-x-hidden">
         {/* View Profile Link */}
         <div className="flex justify-end mb-4">
           <Link
@@ -264,12 +264,10 @@ export function CreatorPageRenderer({ user, page }: CreatorPageRendererProps) {
             return renderBlock(group.blocks[0]);
           })}
         </div>
-      </div>
 
-      {/* Platform branding footer (unless hidden by Pro) */}
-      {!page.hideBranding && (
-        <div className="fixed bottom-0 left-0 right-0 py-4 bg-gradient-to-t from-gray-900 via-gray-900/90 to-transparent pointer-events-none">
-          <div className="text-center pointer-events-auto">
+        {/* Platform branding footer (unless hidden by Pro) */}
+        {!page.hideBranding && (
+          <div className="py-8 text-center">
             <a
               href="https://deebop.com"
               target="_blank"
@@ -279,8 +277,8 @@ export function CreatorPageRenderer({ user, page }: CreatorPageRendererProps) {
               Made with Deebop
             </a>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
