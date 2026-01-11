@@ -487,6 +487,169 @@ function BlockPreview({
         </div>
       );
 
+    case 'testimonials': {
+      const items = (data.items || []) as Array<{ authorName: string; quote: string; rating?: number }>;
+      if (items.length === 0) {
+        return (
+          <div className="py-6 text-center text-gray-500 text-sm border border-dashed border-gray-700 rounded-xl">
+            No testimonials yet
+          </div>
+        );
+      }
+      return (
+        <div className="space-y-4">
+          {data.heading && (
+            <h3 className="text-lg font-semibold text-white text-center">{String(data.heading)}</h3>
+          )}
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {items.slice(0, 3).map((item, i) => (
+              <div key={i} className="flex-shrink-0 w-64 bg-gray-800 border border-gray-700 rounded-xl p-4 text-center">
+                <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                  {item.authorName?.[0]?.toUpperCase() || '?'}
+                </div>
+                <div className="text-sm font-medium text-white">{item.authorName}</div>
+                {item.rating && (
+                  <div className="flex justify-center gap-0.5 my-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <span key={star} className={star <= item.rating! ? 'text-yellow-400' : 'text-gray-600'}>★</span>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-gray-400 italic line-clamp-3">&quot;{item.quote}&quot;</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    case 'faq': {
+      const items = (data.items || []) as Array<{ question: string; answer: string }>;
+      if (items.length === 0) {
+        return (
+          <div className="py-6 text-center text-gray-500 text-sm border border-dashed border-gray-700 rounded-xl">
+            No FAQ items yet
+          </div>
+        );
+      }
+      return (
+        <div className="space-y-4">
+          {data.heading && (
+            <h3 className="text-lg font-semibold text-white text-center">{String(data.heading)}</h3>
+          )}
+          <div className="space-y-2">
+            {items.slice(0, 3).map((item, i) => (
+              <div key={i} className="bg-gray-800/50 border border-gray-700 rounded-xl">
+                <div className="px-4 py-3 flex items-center justify-between">
+                  <span className="text-sm font-medium text-white">{item.question}</span>
+                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            ))}
+            {items.length > 3 && (
+              <div className="text-center text-xs text-gray-500">+{items.length - 3} more</div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    case 'text':
+      return (
+        <div className="space-y-3">
+          {data.heading && (
+            <h3 className={`text-lg font-semibold text-white ${data.alignment === 'center' ? 'text-center' : ''}`}>
+              {String(data.heading)}
+            </h3>
+          )}
+          <div className={`text-gray-300 text-sm leading-relaxed ${data.alignment === 'center' ? 'text-center' : ''}`}>
+            {data.content ? (
+              <p className="line-clamp-4">{String(data.content)}</p>
+            ) : (
+              <p className="text-gray-500 italic">No content yet</p>
+            )}
+          </div>
+        </div>
+      );
+
+    case 'stats': {
+      const items = (data.items || []) as Array<{ value: string; label: string }>;
+      const columns = (data.columns as number) || 3;
+      if (items.length === 0) {
+        return (
+          <div className="py-6 text-center text-gray-500 text-sm border border-dashed border-gray-700 rounded-xl">
+            No stats yet
+          </div>
+        );
+      }
+      return (
+        <div className="space-y-4">
+          {data.heading && (
+            <h3 className="text-lg font-semibold text-white text-center">{String(data.heading)}</h3>
+          )}
+          <div className={`grid gap-4 ${columns === 2 ? 'grid-cols-2' : columns === 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
+            {items.map((item, i) => (
+              <div key={i} className="text-center py-3">
+                <div className="text-2xl font-bold text-white">{item.value}</div>
+                <div className="text-xs text-gray-400 mt-1">{item.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    case 'countdown':
+      return (
+        <div className="text-center py-4">
+          {data.heading && (
+            <h3 className="text-lg font-semibold text-white mb-4">{String(data.heading)}</h3>
+          )}
+          {data.targetDate ? (
+            <div className="flex justify-center gap-3">
+              {['Days', 'Hours', 'Mins', 'Secs'].map((label) => (
+                <div key={label} className="bg-gray-800 border border-gray-700 rounded-xl p-3 min-w-[60px]">
+                  <div className="text-xl font-bold text-white">00</div>
+                  <div className="text-xs text-gray-400">{label}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-4 text-center text-gray-500 text-sm border border-dashed border-gray-700 rounded-xl">
+              Set a target date
+            </div>
+          )}
+        </div>
+      );
+
+    case 'spotify_embed':
+      return (
+        <div className="space-y-4">
+          {data.heading && (
+            <h3 className="text-lg font-semibold text-white text-center">{String(data.heading)}</h3>
+          )}
+          {data.spotifyUrl ? (
+            <div className="bg-gray-800 rounded-xl p-4 flex items-center gap-3 border border-gray-700">
+              <div className="w-12 h-12 bg-[#1DB954] rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-black" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                </svg>
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-white">Spotify Embed</div>
+                <div className="text-xs text-gray-400 truncate">{String(data.spotifyUrl)}</div>
+              </div>
+            </div>
+          ) : (
+            <div className="py-6 text-center text-gray-500 text-sm border border-dashed border-gray-700 rounded-xl">
+              Add a Spotify link
+            </div>
+          )}
+        </div>
+      );
+
     default:
       return (
         <div className="p-4 bg-gray-800 rounded-lg text-gray-500 text-center">

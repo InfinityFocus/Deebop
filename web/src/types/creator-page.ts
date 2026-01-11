@@ -11,7 +11,13 @@ export type BlockType =
   | 'email_capture'
   | 'divider'
   | 'booking'
-  | 'intro_video';
+  | 'intro_video'
+  | 'testimonials'
+  | 'faq'
+  | 'text'
+  | 'stats'
+  | 'countdown'
+  | 'spotify_embed';
 
 // Hero Block - Avatar, name, bio, and primary CTA
 export interface HeroBlockData {
@@ -118,6 +124,75 @@ export interface IntroVideoBlockData {
   highlight?: boolean;             // Visual emphasis toggle
 }
 
+// Testimonials Block - Review/testimonial carousel
+export interface TestimonialItem {
+  id: string;
+  quote: string;                   // The testimonial text
+  authorName: string;
+  authorRole?: string;             // "Actor", "Musician", etc.
+  authorImageUrl?: string;         // Avatar image URL
+  rating?: number;                 // 1-5 stars (optional)
+}
+
+export interface TestimonialsBlockData {
+  heading?: string;                // "What People Say"
+  items: TestimonialItem[];
+  showRating?: boolean;            // Display star ratings
+  autoRotate?: boolean;            // Auto-scroll carousel
+  rotationSpeed?: number;          // Seconds between rotations (default: 5)
+}
+
+// FAQ Block - Collapsible Q&A accordion
+export interface FAQItem {
+  id: string;
+  question: string;
+  answer: string;                  // Plain text
+}
+
+export interface FAQBlockData {
+  heading?: string;                // "Frequently Asked Questions"
+  items: FAQItem[];
+}
+
+// Text Block - Rich text content section
+export interface TextBlockData {
+  heading?: string;
+  content: string;                 // Markdown supported
+  alignment?: 'left' | 'center';   // Text alignment
+}
+
+// Stats Block - Achievement numbers grid
+export interface StatItem {
+  id: string;
+  value: string;                   // "500+", "10", "$1M"
+  label: string;                   // "Projects", "Years", "Earned"
+}
+
+export interface StatsBlockData {
+  heading?: string;
+  items: StatItem[];
+  columns?: 2 | 3 | 4;             // Grid columns (default: 3)
+}
+
+// Countdown Block - Timer for launches/events
+export interface CountdownBlockData {
+  heading?: string;                // "Launching In..."
+  targetDate: string;              // ISO date string
+  expiredMessage?: string;         // "Available Now!"
+  showDays?: boolean;              // Default: true
+  showHours?: boolean;             // Default: true
+  showMinutes?: boolean;           // Default: true
+  showSeconds?: boolean;           // Default: true
+}
+
+// Spotify Embed Block - Embed tracks/albums/playlists
+export interface SpotifyEmbedBlockData {
+  heading?: string;
+  spotifyUrl: string;              // Any Spotify share URL
+  height?: 'compact' | 'full';     // 80px vs 352px
+  theme?: 'dark' | 'light';        // Embed theme (default: dark)
+}
+
 // Union type for all block data
 export type BlockData =
   | HeroBlockData
@@ -129,7 +204,13 @@ export type BlockData =
   | EmailCaptureBlockData
   | DividerBlockData
   | BookingBlockData
-  | IntroVideoBlockData;
+  | IntroVideoBlockData
+  | TestimonialsBlockData
+  | FAQBlockData
+  | TextBlockData
+  | StatsBlockData
+  | CountdownBlockData
+  | SpotifyEmbedBlockData;
 
 // Block with type discriminator
 export interface CreatorPageBlock {

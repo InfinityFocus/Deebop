@@ -13,6 +13,12 @@ import { DividerBlock } from './blocks/DividerBlock';
 import { FeaturedContentBlock } from './blocks/FeaturedContentBlock';
 import { BookingBlock } from './blocks/BookingBlock';
 import { IntroVideoBlock } from './blocks/IntroVideoBlock';
+import { TestimonialsBlock } from './blocks/TestimonialsBlock';
+import { FAQBlock } from './blocks/FAQBlock';
+import { TextBlock } from './blocks/TextBlock';
+import { StatsBlock } from './blocks/StatsBlock';
+import { CountdownBlock } from './blocks/CountdownBlock';
+import { SpotifyEmbedBlock } from './blocks/SpotifyEmbedBlock';
 import type { BlockType, BlockData } from '@/types/creator-page';
 
 interface CreatorPageBlock {
@@ -202,6 +208,24 @@ export function CreatorPageRenderer({ user, page }: CreatorPageRendererProps) {
             onClick={() => handleClick(block.id)}
           />
         );
+
+      case 'testimonials':
+        return <TestimonialsBlock key={block.id} data={data} />;
+
+      case 'faq':
+        return <FAQBlock key={block.id} data={data} />;
+
+      case 'text':
+        return <TextBlock key={block.id} data={data} />;
+
+      case 'stats':
+        return <StatsBlock key={block.id} data={data} />;
+
+      case 'countdown':
+        return <CountdownBlock key={block.id} data={data} />;
+
+      case 'spotify_embed':
+        return <SpotifyEmbedBlock key={block.id} data={data} />;
 
       default:
         return null;

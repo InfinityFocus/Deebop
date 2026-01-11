@@ -12,6 +12,12 @@ import {
   X,
   Calendar,
   Video,
+  Quote,
+  HelpCircle,
+  FileText,
+  BarChart3,
+  Timer,
+  Music,
 } from 'lucide-react';
 import type { BlockType } from '@/types/creator-page';
 import { getLimitsForTier } from '@/lib/creator-page-limits';
@@ -88,6 +94,42 @@ const BLOCK_TYPES: Array<{
     label: 'Intro Video',
     description: 'Video card with optional title and CTA',
     icon: Video,
+  },
+  {
+    type: 'testimonials',
+    label: 'Testimonials',
+    description: 'Showcase reviews and testimonials',
+    icon: Quote,
+  },
+  {
+    type: 'faq',
+    label: 'FAQ',
+    description: 'Collapsible Q&A accordion',
+    icon: HelpCircle,
+  },
+  {
+    type: 'text',
+    label: 'Text',
+    description: 'Rich text content section',
+    icon: FileText,
+  },
+  {
+    type: 'stats',
+    label: 'Stats',
+    description: 'Display achievement numbers',
+    icon: BarChart3,
+  },
+  {
+    type: 'countdown',
+    label: 'Countdown',
+    description: 'Timer for launches or events',
+    icon: Timer,
+  },
+  {
+    type: 'spotify_embed',
+    label: 'Spotify',
+    description: 'Embed tracks, albums, or playlists',
+    icon: Music,
   },
 ];
 

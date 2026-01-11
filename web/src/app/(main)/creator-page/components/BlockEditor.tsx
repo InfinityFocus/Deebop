@@ -18,6 +18,15 @@ import type {
   SocialPlatform,
   SOCIAL_PLATFORMS,
   IntroVideoBlockData,
+  TestimonialsBlockData,
+  TestimonialItem,
+  FAQBlockData,
+  FAQItem,
+  TextBlockData,
+  StatsBlockData,
+  StatItem,
+  CountdownBlockData,
+  SpotifyEmbedBlockData,
 } from '@/types/creator-page';
 import { BOOKING_PLATFORMS } from '@/types/creator-page';
 
@@ -48,6 +57,18 @@ export function BlockEditor({ block, onUpdate }: BlockEditorProps) {
       return <BookingEditor data={block.data as BookingBlockData} onUpdate={onUpdate} />;
     case 'intro_video':
       return <IntroVideoEditor data={block.data as IntroVideoBlockData} onUpdate={onUpdate} />;
+    case 'testimonials':
+      return <TestimonialsEditor data={block.data as TestimonialsBlockData} onUpdate={onUpdate} />;
+    case 'faq':
+      return <FAQEditor data={block.data as FAQBlockData} onUpdate={onUpdate} />;
+    case 'text':
+      return <TextEditor data={block.data as TextBlockData} onUpdate={onUpdate} />;
+    case 'stats':
+      return <StatsEditor data={block.data as StatsBlockData} onUpdate={onUpdate} />;
+    case 'countdown':
+      return <CountdownEditor data={block.data as CountdownBlockData} onUpdate={onUpdate} />;
+    case 'spotify_embed':
+      return <SpotifyEmbedEditor data={block.data as SpotifyEmbedBlockData} onUpdate={onUpdate} />;
     default:
       return <div className="text-gray-500">No editor available</div>;
   }
@@ -1449,6 +1470,469 @@ function IntroVideoEditor({
         label="Highlight (Accent Color)"
         checked={data.highlight || false}
         onChange={(v) => onUpdate({ ...data, highlight: v })}
+      />
+    </div>
+  );
+}
+
+// Testimonials Editor
+function TestimonialsEditor({
+  data,
+  onUpdate,
+}: {
+  data: TestimonialsBlockData;
+  onUpdate: (data: Record<string, unknown>) => void;
+}) {
+  const items = data.items || [];
+
+  const addItem = () => {
+    const newItem: TestimonialItem = {
+      id: crypto.randomUUID(),
+      quote: '',
+      authorName: '',
+      authorRole: '',
+      rating: 5,
+    };
+    onUpdate({ ...data, items: [...items, newItem] });
+  };
+
+  const updateItem = (index: number, updates: Partial<TestimonialItem>) => {
+    const newItems = [...items];
+    newItems[index] = { ...newItems[index], ...updates };
+    onUpdate({ ...data, items: newItems });
+  };
+
+  const removeItem = (index: number) => {
+    onUpdate({ ...data, items: items.filter((_, i) => i !== index) });
+  };
+
+  return (
+    <div className="space-y-4">
+      <Input
+        label="Heading"
+        value={data.heading || ''}
+        onChange={(v) => onUpdate({ ...data, heading: v })}
+        placeholder="What People Say"
+      />
+
+      {/* Settings */}
+      <div className="p-3 bg-gray-800 rounded-lg border border-gray-700 space-y-3">
+        <p className="text-sm font-medium text-gray-300">Settings</p>
+        <Toggle
+          label="Show star ratings"
+          checked={data.showRating !== false}
+          onChange={(v) => onUpdate({ ...data, showRating: v })}
+        />
+        <Toggle
+          label="Auto-rotate"
+          checked={data.autoRotate || false}
+          onChange={(v) => onUpdate({ ...data, autoRotate: v })}
+        />
+        {data.autoRotate && (
+          <Select
+            label="Rotation Speed"
+            value={String(data.rotationSpeed || 5)}
+            onChange={(v) => onUpdate({ ...data, rotationSpeed: Number(v) })}
+            options={[
+              { value: '3', label: '3 seconds' },
+              { value: '5', label: '5 seconds' },
+              { value: '7', label: '7 seconds' },
+              { value: '10', label: '10 seconds' },
+            ]}
+          />
+        )}
+      </div>
+
+      {/* Testimonials List */}
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-gray-400">Testimonials</p>
+        {items.map((item, index) => (
+          <div key={item.id} className="p-3 bg-gray-800 rounded-lg border border-gray-700 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-400">#{index + 1}</span>
+              <button
+                onClick={() => removeItem(index)}
+                className="text-gray-500 hover:text-red-400"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+            <Textarea
+              label="Quote"
+              value={item.quote}
+              onChange={(v) => updateItem(index, { quote: v })}
+              placeholder="What they said..."
+              rows={2}
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                label="Name"
+                value={item.authorName}
+                onChange={(v) => updateItem(index, { authorName: v })}
+                placeholder="John Doe"
+              />
+              <Input
+                label="Role (optional)"
+                value={item.authorRole || ''}
+                onChange={(v) => updateItem(index, { authorRole: v })}
+                placeholder="Musician"
+              />
+            </div>
+            <Select
+              label="Rating"
+              value={String(item.rating || 5)}
+              onChange={(v) => updateItem(index, { rating: Number(v) })}
+              options={[
+                { value: '5', label: '5 stars' },
+                { value: '4', label: '4 stars' },
+                { value: '3', label: '3 stars' },
+                { value: '2', label: '2 stars' },
+                { value: '1', label: '1 star' },
+              ]}
+            />
+            <ImageUpload
+              label="Photo (optional)"
+              value={item.authorImageUrl || ''}
+              onChange={(v) => updateItem(index, { authorImageUrl: v })}
+              maxWidth={200}
+            />
+          </div>
+        ))}
+        <button
+          onClick={addItem}
+          className="w-full py-2 border border-dashed border-gray-600 rounded-lg text-gray-400 hover:text-white hover:border-gray-500 flex items-center justify-center gap-2"
+        >
+          <Plus size={16} />
+          Add Testimonial
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// FAQ Editor
+function FAQEditor({
+  data,
+  onUpdate,
+}: {
+  data: FAQBlockData;
+  onUpdate: (data: Record<string, unknown>) => void;
+}) {
+  const items = data.items || [];
+
+  const addItem = () => {
+    const newItem: FAQItem = {
+      id: crypto.randomUUID(),
+      question: '',
+      answer: '',
+    };
+    onUpdate({ ...data, items: [...items, newItem] });
+  };
+
+  const updateItem = (index: number, updates: Partial<FAQItem>) => {
+    const newItems = [...items];
+    newItems[index] = { ...newItems[index], ...updates };
+    onUpdate({ ...data, items: newItems });
+  };
+
+  const removeItem = (index: number) => {
+    onUpdate({ ...data, items: items.filter((_, i) => i !== index) });
+  };
+
+  return (
+    <div className="space-y-4">
+      <Input
+        label="Heading"
+        value={data.heading || ''}
+        onChange={(v) => onUpdate({ ...data, heading: v })}
+        placeholder="Frequently Asked Questions"
+      />
+
+      {/* FAQ Items */}
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-gray-400">Questions</p>
+        {items.map((item, index) => (
+          <div key={item.id} className="p-3 bg-gray-800 rounded-lg border border-gray-700 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-400">Q{index + 1}</span>
+              <button
+                onClick={() => removeItem(index)}
+                className="text-gray-500 hover:text-red-400"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+            <Input
+              label="Question"
+              value={item.question}
+              onChange={(v) => updateItem(index, { question: v })}
+              placeholder="What do you offer?"
+            />
+            <Textarea
+              label="Answer"
+              value={item.answer}
+              onChange={(v) => updateItem(index, { answer: v })}
+              placeholder="Your answer here..."
+              rows={3}
+            />
+          </div>
+        ))}
+        <button
+          onClick={addItem}
+          className="w-full py-2 border border-dashed border-gray-600 rounded-lg text-gray-400 hover:text-white hover:border-gray-500 flex items-center justify-center gap-2"
+        >
+          <Plus size={16} />
+          Add Question
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Text Editor
+function TextEditor({
+  data,
+  onUpdate,
+}: {
+  data: TextBlockData;
+  onUpdate: (data: Record<string, unknown>) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <Input
+        label="Heading (optional)"
+        value={data.heading || ''}
+        onChange={(v) => onUpdate({ ...data, heading: v })}
+        placeholder="About Me"
+      />
+
+      <Textarea
+        label="Content"
+        value={data.content || ''}
+        onChange={(v) => onUpdate({ ...data, content: v })}
+        placeholder="Write your content here...
+
+Supports **bold**, *italic*, and [links](https://example.com)"
+        rows={6}
+      />
+
+      <Select
+        label="Alignment"
+        value={data.alignment || 'left'}
+        onChange={(v) => onUpdate({ ...data, alignment: v })}
+        options={[
+          { value: 'left', label: 'Left' },
+          { value: 'center', label: 'Center' },
+        ]}
+      />
+
+      <p className="text-xs text-gray-500">
+        Tip: Use **text** for bold, *text* for italic, [text](url) for links
+      </p>
+    </div>
+  );
+}
+
+// Stats Editor
+function StatsEditor({
+  data,
+  onUpdate,
+}: {
+  data: StatsBlockData;
+  onUpdate: (data: Record<string, unknown>) => void;
+}) {
+  const items = data.items || [];
+
+  const addItem = () => {
+    const newItem: StatItem = {
+      id: crypto.randomUUID(),
+      value: '',
+      label: '',
+    };
+    onUpdate({ ...data, items: [...items, newItem] });
+  };
+
+  const updateItem = (index: number, updates: Partial<StatItem>) => {
+    const newItems = [...items];
+    newItems[index] = { ...newItems[index], ...updates };
+    onUpdate({ ...data, items: newItems });
+  };
+
+  const removeItem = (index: number) => {
+    onUpdate({ ...data, items: items.filter((_, i) => i !== index) });
+  };
+
+  return (
+    <div className="space-y-4">
+      <Input
+        label="Heading (optional)"
+        value={data.heading || ''}
+        onChange={(v) => onUpdate({ ...data, heading: v })}
+        placeholder="By the Numbers"
+      />
+
+      <Select
+        label="Columns"
+        value={String(data.columns || 3)}
+        onChange={(v) => onUpdate({ ...data, columns: Number(v) })}
+        options={[
+          { value: '2', label: '2 columns' },
+          { value: '3', label: '3 columns' },
+          { value: '4', label: '4 columns' },
+        ]}
+      />
+
+      {/* Stats Items */}
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-gray-400">Stats</p>
+        {items.map((item, index) => (
+          <div key={item.id} className="p-3 bg-gray-800 rounded-lg border border-gray-700 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-400">#{index + 1}</span>
+              <button
+                onClick={() => removeItem(index)}
+                className="text-gray-500 hover:text-red-400"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                label="Value"
+                value={item.value}
+                onChange={(v) => updateItem(index, { value: v })}
+                placeholder="500+"
+              />
+              <Input
+                label="Label"
+                value={item.label}
+                onChange={(v) => updateItem(index, { label: v })}
+                placeholder="Projects"
+              />
+            </div>
+          </div>
+        ))}
+        <button
+          onClick={addItem}
+          className="w-full py-2 border border-dashed border-gray-600 rounded-lg text-gray-400 hover:text-white hover:border-gray-500 flex items-center justify-center gap-2"
+        >
+          <Plus size={16} />
+          Add Stat
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Countdown Editor
+function CountdownEditor({
+  data,
+  onUpdate,
+}: {
+  data: CountdownBlockData;
+  onUpdate: (data: Record<string, unknown>) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <Input
+        label="Heading"
+        value={data.heading || ''}
+        onChange={(v) => onUpdate({ ...data, heading: v })}
+        placeholder="Launching In..."
+      />
+
+      <div>
+        <label className="block text-sm font-medium text-gray-400 mb-1">Target Date & Time</label>
+        <input
+          type="datetime-local"
+          value={data.targetDate ? data.targetDate.slice(0, 16) : ''}
+          onChange={(e) => onUpdate({ ...data, targetDate: new Date(e.target.value).toISOString() })}
+          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        />
+      </div>
+
+      <Input
+        label="Message when expired"
+        value={data.expiredMessage || ''}
+        onChange={(v) => onUpdate({ ...data, expiredMessage: v })}
+        placeholder="Available Now!"
+      />
+
+      {/* Display Options */}
+      <div className="p-3 bg-gray-800 rounded-lg border border-gray-700 space-y-3">
+        <p className="text-sm font-medium text-gray-300">Show</p>
+        <Toggle
+          label="Days"
+          checked={data.showDays !== false}
+          onChange={(v) => onUpdate({ ...data, showDays: v })}
+        />
+        <Toggle
+          label="Hours"
+          checked={data.showHours !== false}
+          onChange={(v) => onUpdate({ ...data, showHours: v })}
+        />
+        <Toggle
+          label="Minutes"
+          checked={data.showMinutes !== false}
+          onChange={(v) => onUpdate({ ...data, showMinutes: v })}
+        />
+        <Toggle
+          label="Seconds"
+          checked={data.showSeconds !== false}
+          onChange={(v) => onUpdate({ ...data, showSeconds: v })}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Spotify Embed Editor
+function SpotifyEmbedEditor({
+  data,
+  onUpdate,
+}: {
+  data: SpotifyEmbedBlockData;
+  onUpdate: (data: Record<string, unknown>) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <Input
+        label="Heading (optional)"
+        value={data.heading || ''}
+        onChange={(v) => onUpdate({ ...data, heading: v })}
+        placeholder="Now Playing"
+      />
+
+      <Input
+        label="Spotify URL"
+        value={data.spotifyUrl || ''}
+        onChange={(v) => onUpdate({ ...data, spotifyUrl: v })}
+        placeholder="https://open.spotify.com/track/..."
+        type="url"
+      />
+
+      <p className="text-xs text-gray-500">
+        Paste any Spotify link: track, album, playlist, or artist
+      </p>
+
+      <Select
+        label="Size"
+        value={data.height || 'full'}
+        onChange={(v) => onUpdate({ ...data, height: v })}
+        options={[
+          { value: 'compact', label: 'Compact (single track bar)' },
+          { value: 'full', label: 'Full (with artwork)' },
+        ]}
+      />
+
+      <Select
+        label="Theme"
+        value={data.theme || 'dark'}
+        onChange={(v) => onUpdate({ ...data, theme: v })}
+        options={[
+          { value: 'dark', label: 'Dark' },
+          { value: 'light', label: 'Light' },
+        ]}
       />
     </div>
   );
