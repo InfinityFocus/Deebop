@@ -118,7 +118,7 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
     if (type === 'album') return ImageIcon;
     if (contentType === 'video') return Film;
     if (contentType === 'audio') return Music;
-    if (contentType === 'panorama') return Globe;
+    if (contentType === 'panorama360') return Globe;
     return ImageIcon;
   };
 
@@ -153,7 +153,7 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
                   <Music size={32} className="text-emerald-400" />
                 </div>
               </div>
-            ) : item.contentType === 'panorama' ? (
+            ) : item.contentType === 'panorama360' ? (
               // Panorama - always show styled placeholder (panorama images don't work well as thumbnails)
               <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 flex items-center justify-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 rounded-xl flex items-center justify-center">
@@ -182,7 +182,7 @@ export function FeaturedContentBlock({ data, onItemClick }: FeaturedContentBlock
             </div>
 
             {/* Title overlay (if no image, audio post, or panorama without thumbnail) */}
-            {item.title && (item.contentType === 'audio' || (item.contentType === 'panorama' && !item.thumbnailUrl) || (!item.thumbnailUrl && !item.mediaUrl)) && (
+            {item.title && (item.contentType === 'audio' || item.contentType === 'panorama360' || (!item.thumbnailUrl && !item.mediaUrl)) && (
               <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
                 <p className="text-xs text-white truncate">{item.title}</p>
               </div>
