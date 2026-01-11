@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { uploadToMinio } from '@/lib/minio';
+import { generateUploadUrl, getPublicUrl } from '@/lib/minio';
 
 // Max video size: 50MB for Creator Page intro videos
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
+
+// Allowed video types
+const ALLOWED_TYPES: Record<string, string> = {
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+  'video/quicktime': 'mov',
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,57 +27,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const formData = await request.formData();
-    const file = formData.get('file') as File | null;
+    const body = await request.json();
+    const { contentType, fileSize, filename } = body;
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
-    }
-
-    // Validate file type (MP4, WebM, MOV)
-    const allowedTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
-    if (!allowedTypes.includes(file.type)) {
+    // Validate content type
+    if (!contentType || !ALLOWED_TYPES[contentType]) {
       return NextResponse.json(
         { error: 'Only MP4, WebM, and MOV videos are allowed' },
         { status: 400 }
       );
     }
 
-    // Check file size
-    if (file.size > MAX_VIDEO_SIZE) {
+    // Validate file size
+    if (!fileSize || fileSize > MAX_VIDEO_SIZE) {
       return NextResponse.json(
         { error: `Video must be under ${MAX_VIDEO_SIZE / 1024 / 1024}MB` },
         { status: 400 }
       );
     }
 
-    // Convert file to buffer
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // Determine file extension from mime type
-    const extMap: Record<string, string> = {
-      'video/mp4': 'mp4',
-      'video/webm': 'webm',
-      'video/quicktime': 'mov',
-    };
-    const ext = extMap[file.type] || 'mp4';
-
     // Generate unique file key
     const timestamp = Date.now();
     const random = Math.random().toString(36).slice(2);
+    const ext = ALLOWED_TYPES[contentType];
     const key = `creator-page/${user.id}/videos/${timestamp}-${random}.${ext}`;
 
-    // Upload to MinIO
-    const publicUrl = await uploadToMinio(key, buffer, file.type);
+    // Generate presigned URL (valid for 10 minutes)
+    const uploadUrl = await generateUploadUrl({
+      key,
+      contentType,
+      expiresIn: 600,
+    });
+
+    // Get the public URL for after upload completes
+    const publicUrl = getPublicUrl(key);
 
     return NextResponse.json({
-      url: publicUrl,
+      uploadUrl,
+      publicUrl,
+      key,
     });
   } catch (error) {
-    console.error('Creator page video upload error:', error);
+    console.error('Presign video error:', error);
     return NextResponse.json(
-      { error: 'Failed to upload video' },
+      { error: 'Failed to generate upload URL' },
       { status: 500 }
     );
   }

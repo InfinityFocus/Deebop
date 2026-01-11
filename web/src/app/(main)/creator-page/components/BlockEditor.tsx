@@ -474,10 +474,25 @@ function VideoUpload({
     setUploadProgress(0);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      // Step 1: Get presigned URL from our API
+      const presignRes = await fetch('/api/creator-page/presign-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contentType: file.type,
+          fileSize: file.size,
+          filename: file.name,
+        }),
+      });
 
-      // Use XMLHttpRequest for progress tracking
+      if (!presignRes.ok) {
+        const data = await presignRes.json();
+        throw new Error(data.error || 'Failed to get upload URL');
+      }
+
+      const { uploadUrl, publicUrl } = await presignRes.json();
+
+      // Step 2: Upload directly to S3/MinIO using presigned URL
       const xhr = new XMLHttpRequest();
 
       await new Promise<void>((resolve, reject) => {
@@ -489,29 +504,20 @@ function VideoUpload({
 
         xhr.addEventListener('load', () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const data = JSON.parse(xhr.responseText);
-              onChange(data.url);
-              setMode('url');
-              resolve();
-            } catch {
-              reject(new Error('Invalid response'));
-            }
+            onChange(publicUrl);
+            setMode('url');
+            resolve();
           } else {
-            try {
-              const data = JSON.parse(xhr.responseText);
-              reject(new Error(data.error || 'Upload failed'));
-            } catch {
-              reject(new Error('Upload failed'));
-            }
+            reject(new Error('Upload failed'));
           }
         });
 
         xhr.addEventListener('error', () => reject(new Error('Upload failed')));
         xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
 
-        xhr.open('POST', '/api/creator-page/upload-video');
-        xhr.send(formData);
+        xhr.open('PUT', uploadUrl);
+        xhr.setRequestHeader('Content-Type', file.type);
+        xhr.send(file);
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
