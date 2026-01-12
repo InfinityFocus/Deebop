@@ -139,6 +139,203 @@ export async function GET(
   }
 }
 
+// PUT /api/drops/[id] - Update a scheduled drop
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { type = 'post', scheduledFor, hideTeaser, headline, description } = body;
+
+    if (type === 'album') {
+      // Update album drop
+      const album = await prisma.album.findUnique({
+        where: { id },
+      });
+
+      if (!album) {
+        return NextResponse.json({ error: 'Drop not found' }, { status: 404 });
+      }
+
+      if (album.ownerId !== user.id) {
+        return NextResponse.json({ error: 'You can only edit your own drops' }, { status: 403 });
+      }
+
+      if (album.status !== 'scheduled') {
+        return NextResponse.json({ error: 'Can only edit scheduled drops' }, { status: 400 });
+      }
+
+      // Validate scheduled time if provided
+      let newScheduledFor = album.scheduledFor;
+      if (scheduledFor) {
+        newScheduledFor = new Date(scheduledFor);
+        if (isNaN(newScheduledFor.getTime())) {
+          return NextResponse.json({ error: 'Invalid scheduled time' }, { status: 400 });
+        }
+        // Must be at least 5 minutes in the future
+        const minScheduleTime = new Date(Date.now() + 5 * 60 * 1000);
+        if (newScheduledFor < minScheduleTime) {
+          return NextResponse.json(
+            { error: 'Scheduled time must be at least 5 minutes in the future' },
+            { status: 400 }
+          );
+        }
+      }
+
+      const updatedAlbum = await prisma.album.update({
+        where: { id },
+        data: {
+          scheduledFor: newScheduledFor,
+          hideTeaser: hideTeaser !== undefined ? hideTeaser : album.hideTeaser,
+          title: headline?.trim() || album.title,
+          description: description !== undefined ? description?.trim() || null : album.description,
+        },
+      });
+
+      return NextResponse.json({
+        message: 'Drop updated',
+        drop: {
+          id: updatedAlbum.id,
+          type: 'album',
+          scheduled_for: updatedAlbum.scheduledFor?.toISOString(),
+          hide_teaser: updatedAlbum.hideTeaser,
+        },
+      });
+    }
+
+    // Default: update post drop
+    const post = await prisma.post.findUnique({
+      where: { id },
+    });
+
+    if (!post) {
+      return NextResponse.json({ error: 'Drop not found' }, { status: 404 });
+    }
+
+    if (post.userId !== user.id) {
+      return NextResponse.json({ error: 'You can only edit your own drops' }, { status: 403 });
+    }
+
+    if (post.status !== 'scheduled') {
+      return NextResponse.json({ error: 'Can only edit scheduled drops' }, { status: 400 });
+    }
+
+    // Validate scheduled time if provided
+    let newScheduledFor = post.scheduledFor;
+    if (scheduledFor) {
+      newScheduledFor = new Date(scheduledFor);
+      if (isNaN(newScheduledFor.getTime())) {
+        return NextResponse.json({ error: 'Invalid scheduled time' }, { status: 400 });
+      }
+      // Must be at least 5 minutes in the future
+      const minScheduleTime = new Date(Date.now() + 5 * 60 * 1000);
+      if (newScheduledFor < minScheduleTime) {
+        return NextResponse.json(
+          { error: 'Scheduled time must be at least 5 minutes in the future' },
+          { status: 400 }
+        );
+      }
+    }
+
+    const updatedPost = await prisma.post.update({
+      where: { id },
+      data: {
+        scheduledFor: newScheduledFor,
+        hideTeaser: hideTeaser !== undefined ? hideTeaser : post.hideTeaser,
+        headline: headline !== undefined ? headline?.trim() || null : post.headline,
+        description: description !== undefined ? description?.trim() || null : post.description,
+      },
+    });
+
+    return NextResponse.json({
+      message: 'Drop updated',
+      drop: {
+        id: updatedPost.id,
+        type: 'post',
+        scheduled_for: updatedPost.scheduledFor?.toISOString(),
+        hide_teaser: updatedPost.hideTeaser,
+      },
+    });
+  } catch (error) {
+    console.error('Update drop error:', error);
+    return NextResponse.json({ error: 'Failed to update drop' }, { status: 500 });
+  }
+}
+
+// DELETE /api/drops/[id] - Delete/cancel a scheduled drop
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get('type') || 'post';
+
+    if (type === 'album') {
+      const album = await prisma.album.findUnique({
+        where: { id },
+      });
+
+      if (!album) {
+        return NextResponse.json({ error: 'Drop not found' }, { status: 404 });
+      }
+
+      if (album.ownerId !== user.id) {
+        return NextResponse.json({ error: 'You can only delete your own drops' }, { status: 403 });
+      }
+
+      if (album.status !== 'scheduled') {
+        return NextResponse.json({ error: 'Can only delete scheduled drops' }, { status: 400 });
+      }
+
+      await prisma.album.delete({
+        where: { id },
+      });
+
+      return NextResponse.json({ message: 'Drop cancelled' });
+    }
+
+    // Default: delete post drop
+    const post = await prisma.post.findUnique({
+      where: { id },
+    });
+
+    if (!post) {
+      return NextResponse.json({ error: 'Drop not found' }, { status: 404 });
+    }
+
+    if (post.userId !== user.id) {
+      return NextResponse.json({ error: 'You can only delete your own drops' }, { status: 403 });
+    }
+
+    if (post.status !== 'scheduled') {
+      return NextResponse.json({ error: 'Can only delete scheduled drops' }, { status: 400 });
+    }
+
+    await prisma.post.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ message: 'Drop cancelled' });
+  } catch (error) {
+    console.error('Delete drop error:', error);
+    return NextResponse.json({ error: 'Failed to delete drop' }, { status: 500 });
+  }
+}
+
 // Helper to check if user can view a scheduled post
 async function canViewScheduledPost(post: any, userId: string): Promise<boolean> {
   // Owner can always view

@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Settings, Grid, Bookmark, Crown, Users } from 'lucide-react';
+import { Settings, Grid, Bookmark, Crown, Users, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { clsx } from 'clsx';
 import { FeedContainer } from '@/components/feed';
 import { SavedFeedContainer } from '@/components/feed/SavedFeedContainer';
+import { MyScheduledDrops } from '@/components/drops/MyScheduledDrops';
 
 const TIER_BADGES = {
   free: { label: 'Free', color: 'bg-gray-600' },
@@ -16,7 +17,7 @@ const TIER_BADGES = {
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'saved' | 'scheduled'>('posts');
 
   if (isLoading) {
     return (
@@ -152,6 +153,18 @@ export default function ProfilePage() {
             Posts
           </button>
           <button
+            onClick={() => setActiveTab('scheduled')}
+            className={clsx(
+              'flex-1 py-3 flex items-center justify-center gap-2 transition',
+              activeTab === 'scheduled'
+                ? 'text-white border-b-2 border-emerald-500'
+                : 'text-gray-500 hover:text-gray-300'
+            )}
+          >
+            <Clock size={18} />
+            Scheduled
+          </button>
+          <button
             onClick={() => setActiveTab('saved')}
             className={clsx(
               'flex-1 py-3 flex items-center justify-center gap-2 transition',
@@ -167,11 +180,9 @@ export default function ProfilePage() {
 
         {/* Content */}
         <div className="mt-4">
-          {activeTab === 'posts' ? (
-            <FeedContainer userId={user.id} />
-          ) : (
-            <SavedFeedContainer />
-          )}
+          {activeTab === 'posts' && <FeedContainer userId={user.id} />}
+          {activeTab === 'scheduled' && <MyScheduledDrops />}
+          {activeTab === 'saved' && <SavedFeedContainer />}
         </div>
       </div>
     </div>
