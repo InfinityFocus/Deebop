@@ -51,7 +51,7 @@ export default function VideoPreview() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | null>(null);
   const [currentClipId, setCurrentClipId] = useState<string | null>(null);
 
   const clips = useClips();
