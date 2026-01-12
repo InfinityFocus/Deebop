@@ -79,17 +79,17 @@ export function ProfileSwitcher({ className, showAddProfile = true }: ProfileSwi
         />
       </button>
 
-      {/* Dropdown */}
+      {/* Dropdown - opens upward since it's at bottom of sidebar */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-gray-900 border border-gray-800 rounded-xl shadow-xl z-50 overflow-hidden">
+        <div className="absolute left-0 bottom-full mb-2 w-64 bg-gray-900 border border-gray-800 rounded-xl shadow-xl z-50 overflow-hidden">
           {/* Current profile header */}
           <div className="px-4 py-3 border-b border-gray-800">
             <p className="text-xs text-gray-500 uppercase tracking-wider">Current Profile</p>
             <p className="font-semibold text-white truncate">@{user?.username}</p>
           </div>
 
-          {/* Profile list */}
-          <div className="py-2">
+          {/* Profile list - scrollable with max height */}
+          <div className="py-2 max-h-48 overflow-y-auto scrollbar-thin">
             {profiles.map((profile) => (
               <button
                 key={profile.id}

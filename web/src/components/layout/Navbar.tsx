@@ -6,11 +6,12 @@ import { usePathname } from 'next/navigation';
 import {
   Home, Search, PlaySquare, PlusSquare, User,
   Bell, Bookmark, Images, Calendar, Link2, Crown, Settings, LogOut, X,
-  MoreHorizontal, ChevronDown
+  MoreHorizontal, ChevronDown, Check, Plus, Loader2, Users
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnreadNotificationCount } from '@/hooks/useNotifications';
+import type { ProfileSummary } from '@/types/database';
 
 const navItems = [
   { href: '/home', icon: Home, label: 'Home' },
@@ -36,11 +37,29 @@ const secondaryMenuItems = [
 
 export function Navbar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, profiles, canAddProfile, switchProfile } = useAuth();
   const unreadCount = useUnreadNotificationCount();
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [profilesOpen, setProfilesOpen] = useState(false);
+  const [switchingProfile, setSwitchingProfile] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const handleSwitchProfile = async (profile: ProfileSummary) => {
+    if (profile.id === user?.id || profile.is_suspended) return;
+    setSwitchingProfile(profile.id);
+    try {
+      await switchProfile(profile.id);
+      setMenuOpen(false);
+      setProfilesOpen(false);
+    } catch (error) {
+      console.error('Failed to switch profile:', error);
+    } finally {
+      setSwitchingProfile(null);
+    }
+  };
+
+  const showProfileSwitcher = profiles.length > 1 || canAddProfile;
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -78,29 +97,104 @@ export function Navbar() {
         >
           {/* User Info Header */}
           {user && (
-            <div className="flex items-center gap-3 p-4 border-b border-gray-800">
-              {user.avatar_url ? (
-                <img
-                  src={user.avatar_url}
-                  alt={user.display_name || user.username}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-white font-semibold">
-                  {user.display_name?.[0]?.toUpperCase() || user.username?.[0]?.toUpperCase() || '?'}
+            <div className="border-b border-gray-800">
+              <div className="flex items-center gap-3 p-4">
+                {user.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.display_name || user.username}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-white font-semibold">
+                    {user.display_name?.[0]?.toUpperCase() || user.username?.[0]?.toUpperCase() || '?'}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-white truncate">{user.display_name || user.username}</p>
+                  <p className="text-sm text-gray-500 truncate">@{user.username}</p>
+                </div>
+                <button
+                  onClick={() => setMenuOpen(false)}
+                  className="p-2 text-gray-400 hover:text-white"
+                  aria-label="Close menu"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Profile Switcher */}
+              {showProfileSwitcher && (
+                <div className="px-4 pb-3">
+                  <button
+                    onClick={() => setProfilesOpen(!profilesOpen)}
+                    className="flex items-center gap-2 w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300 transition"
+                  >
+                    <Users size={16} />
+                    <span>Switch Profile</span>
+                    <ChevronDown
+                      size={14}
+                      className={clsx('ml-auto transition-transform', profilesOpen && 'rotate-180')}
+                    />
+                  </button>
+
+                  {profilesOpen && (
+                    <div className="mt-2 bg-gray-800/50 rounded-lg overflow-hidden">
+                      {/* Profile list */}
+                      <div className="max-h-40 overflow-y-auto scrollbar-thin">
+                        {profiles.map((profile) => (
+                          <button
+                            key={profile.id}
+                            onClick={() => handleSwitchProfile(profile)}
+                            disabled={profile.id === user?.id || profile.is_suspended || switchingProfile !== null}
+                            className={clsx(
+                              'w-full px-3 py-2 flex items-center gap-3 transition',
+                              profile.id === user?.id
+                                ? 'bg-emerald-500/10'
+                                : profile.is_suspended
+                                ? 'opacity-50 cursor-not-allowed'
+                                : 'hover:bg-gray-700 cursor-pointer'
+                            )}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-xs font-bold text-white overflow-hidden flex-shrink-0">
+                              {profile.avatar_url ? (
+                                <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
+                              ) : (
+                                profile.display_name?.[0]?.toUpperCase() || profile.username[0].toUpperCase()
+                              )}
+                            </div>
+                            <div className="flex-1 text-left min-w-0">
+                              <p className="text-sm font-medium text-white truncate">{profile.display_name || profile.username}</p>
+                              <p className="text-xs text-gray-400 truncate">@{profile.username}</p>
+                            </div>
+                            {switchingProfile === profile.id ? (
+                              <Loader2 size={16} className="text-emerald-400 animate-spin" />
+                            ) : profile.id === user?.id ? (
+                              <Check size={16} className="text-emerald-400" />
+                            ) : profile.is_suspended ? (
+                              <span className="text-xs text-red-400">Suspended</span>
+                            ) : null}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Add profile */}
+                      {canAddProfile && (
+                        <Link
+                          href="/settings/profiles/new"
+                          onClick={() => { setMenuOpen(false); setProfilesOpen(false); }}
+                          className="flex items-center gap-3 px-3 py-2 border-t border-gray-700 hover:bg-gray-700 transition"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+                            <Plus size={16} className="text-gray-400" />
+                          </div>
+                          <span className="text-sm text-gray-300">Add Profile</span>
+                        </Link>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-white truncate">{user.display_name || user.username}</p>
-                <p className="text-sm text-gray-500 truncate">@{user.username}</p>
-              </div>
-              <button
-                onClick={() => setMenuOpen(false)}
-                className="p-2 text-gray-400 hover:text-white"
-                aria-label="Close menu"
-              >
-                <X size={20} />
-              </button>
             </div>
           )}
 
