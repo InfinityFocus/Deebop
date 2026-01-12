@@ -90,6 +90,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
+  // Handle donation payment (one-time)
+  if (type === 'donation') {
+    const userId = session.metadata?.userId;
+    const amountPence = parseInt(session.metadata?.amountPence || '0');
+    console.log(`[Donation] User ${userId} donated ${amountPence} pence`);
+    // No tier change needed for donations - just a thank you
+    return;
+  }
+
   // Handle subscription payment
   const userId = session.metadata?.userId;
   const tier = session.metadata?.tier as 'standard' | 'pro';

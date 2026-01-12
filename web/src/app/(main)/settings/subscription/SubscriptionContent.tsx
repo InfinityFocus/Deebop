@@ -6,6 +6,7 @@ import { Check, Crown, Zap, Sparkles, Loader2, ExternalLink } from 'lucide-react
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
 import { StorageUsageBar } from '@/components/subscription/StorageUsageBar';
+import { SupportUsCard } from '@/components/subscription/SupportUsCard';
 
 interface SubscriptionStatus {
   tier: 'free' | 'standard' | 'pro';
@@ -369,6 +370,11 @@ export function SubscriptionContent() {
             );
           }
         )}
+      </div>
+
+      {/* Support Us */}
+      <div className="mt-12 pt-8 border-t border-gray-800">
+        <SupportUsCard />
       </div>
 
       {/* FAQ */}
