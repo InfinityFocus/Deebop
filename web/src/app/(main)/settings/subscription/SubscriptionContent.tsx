@@ -32,7 +32,7 @@ const TIERS = {
     features: [
       '1 Profile',
       'Unlimited images',
-      'Videos up to 30s @ 720p',
+      'Videos up to 1min @ 1080p',
       'Audio up to 1min',
       'Unlimited shouts',
       'Collaborative Albums (2GB)',
@@ -58,8 +58,8 @@ const TIERS = {
     features: [
       '2 Profiles',
       'Unlimited images',
-      'Videos up to 1min @ 1080p',
-      'Audio up to 5min',
+      'Videos up to 3min @ 1080p',
+      'Audio up to 3min',
       'Unlimited shouts',
       'Collaborative Albums (10GB)',
       'Scheduled Drops',
@@ -89,8 +89,8 @@ const TIERS = {
     features: [
       '5 Profiles',
       'Unlimited images',
-      'Videos up to 5min @ 4K',
-      'Audio up to 30min',
+      'Videos up to 10min @ 1080p',
+      'Audio up to 10min',
       'Unlimited shouts',
       'Collaborative Albums (50GB)',
       'Scheduled Drops',

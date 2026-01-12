@@ -21,10 +21,11 @@ const FFPROBE_PATH = process.env.FFPROBE_PATH ||
     : "ffprobe");
 
 // Tier-based transcoding settings
+// All tiers cap at 1080p for consistent quality and storage efficiency
 const TRANSCODE_SETTINGS = {
-  free: { maxDuration: 30, scale: "720", bitrate: "1500k" },
-  standard: { maxDuration: 60, scale: "1080", bitrate: "4000k" },
-  pro: { maxDuration: 300, scale: null as string | null, bitrate: "12000k" },
+  free: { maxDuration: 60, scale: "1080", bitrate: "3000k" },       // 1 minute
+  standard: { maxDuration: 180, scale: "1080", bitrate: "4000k" },  // 3 minutes
+  pro: { maxDuration: 600, scale: "1080", bitrate: "5000k" },       // 10 minutes
 };
 
 // Audio duration limits per tier (in seconds)
@@ -97,7 +98,11 @@ async function getAudioMetadataCli(inputPath: string): Promise<{ duration: numbe
 async function transcodeVideoCli(inputPath: string, outputPath: string, settings: { maxDuration: number; scale: string | null; bitrate: string }): Promise<void> {
   return new Promise((resolve, reject) => {
     const args = ["-i", inputPath, "-c:v", "libx264", "-preset", "fast", "-b:v", settings.bitrate, "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", "-pix_fmt", "yuv420p"];
-    if (settings.scale) args.push("-vf", "scale=-2:" + settings.scale);
+    // Scale to max 1080p height, but don't upscale smaller videos
+    // The filter: if height > 1080, scale to 1080p; otherwise keep original size
+    if (settings.scale) {
+      args.push("-vf", `scale=-2:'min(${settings.scale},ih)'`);
+    }
     args.push("-y", outputPath);
     const proc = spawn(FFMPEG_PATH, args);
     let stderr = "";

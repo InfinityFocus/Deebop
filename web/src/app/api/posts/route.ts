@@ -10,6 +10,7 @@ import type { ContentType } from '@prisma/client';
 type FeedMode = 'discovery' | 'following' | 'favourites';
 type ContentTypeFilter = { contentType?: ContentType };
 type SensitiveContentFilter = { isSensitiveContent?: boolean };
+type DurationFilter = { mediaDurationSeconds?: { lt: number } };
 
 // Auto-publish overdue scheduled posts (fallback for when cron doesn't run)
 async function publishOverdueDrops() {
@@ -45,6 +46,7 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId'); // For profile feeds
     const mode = (searchParams.get('mode') as FeedMode) || 'discovery'; // 'discovery' or 'following'
     const savedOnly = searchParams.get('saved') === 'true'; // For saved posts page
+    const maxDuration = searchParams.get('maxDuration'); // Max video duration in seconds (for reels)
 
     // Calculate if user is under 16 (for sensitive content filtering)
     // Users without birthYear (existing/test users) see all content
@@ -59,6 +61,11 @@ export async function GET(request: NextRequest) {
 
     // Build sensitive content filter (hide sensitive posts from users under 16)
     const sensitiveContentFilter: SensitiveContentFilter = isUnder16 ? { isSensitiveContent: false } : {};
+
+    // Build duration filter (for reels - videos under 60 seconds)
+    const durationFilter: DurationFilter = maxDuration
+      ? { mediaDurationSeconds: { lt: parseInt(maxDuration) } }
+      : {};
 
     // Build user filter (for profile pages)
     const userFilter = userId ? { userId } : {};
@@ -87,21 +94,21 @@ export async function GET(request: NextRequest) {
 
     // If saved posts requested
     if (savedOnly) {
-      return await fetchSavedFeed(user, contentTypeFilter, sensitiveContentFilter, cursor, limit);
+      return await fetchSavedFeed(user, contentTypeFilter, sensitiveContentFilter, durationFilter, cursor, limit);
     }
 
     // If profile page (userId specified), use legacy behavior (no mode filtering)
     if (userId) {
-      return await fetchProfileFeed(user, userId, contentTypeFilter, sensitiveContentFilter, cursor, limit, followingIds);
+      return await fetchProfileFeed(user, userId, contentTypeFilter, sensitiveContentFilter, durationFilter, cursor, limit, followingIds);
     }
 
     // Handle feed modes
     if (mode === 'following') {
-      return await fetchFollowingFeed(user, contentTypeFilter, sensitiveContentFilter, cursor, limit, followingIds, allowChainReposts);
+      return await fetchFollowingFeed(user, contentTypeFilter, sensitiveContentFilter, durationFilter, cursor, limit, followingIds, allowChainReposts);
     } else if (mode === 'favourites') {
-      return await fetchFavouritesFeed(user, contentTypeFilter, sensitiveContentFilter, cursor, limit, favouriteIds, followingIds, allowChainReposts);
+      return await fetchFavouritesFeed(user, contentTypeFilter, sensitiveContentFilter, durationFilter, cursor, limit, favouriteIds, followingIds, allowChainReposts);
     } else {
-      return await fetchDiscoveryFeed(user, contentTypeFilter, sensitiveContentFilter, cursor, limit, followingIds, allowChainReposts);
+      return await fetchDiscoveryFeed(user, contentTypeFilter, sensitiveContentFilter, durationFilter, cursor, limit, followingIds, allowChainReposts);
     }
   } catch (error) {
     console.error('Get posts error:', error);
@@ -114,6 +121,7 @@ async function fetchSavedFeed(
   user: { id: string } | null,
   contentTypeFilter: ContentTypeFilter,
   sensitiveContentFilter: SensitiveContentFilter,
+  durationFilter: DurationFilter,
   cursor: string | null,
   limit: number
 ) {
@@ -142,6 +150,7 @@ async function fetchSavedFeed(
       id: { in: savedPostIds },
       ...contentTypeFilter,
       ...sensitiveContentFilter,
+      ...durationFilter,
       status: 'published',
     },
     take: limit + 1,
@@ -207,6 +216,7 @@ async function fetchFollowingFeed(
   user: { id: string } | null,
   contentTypeFilter: ContentTypeFilter,
   sensitiveContentFilter: SensitiveContentFilter,
+  durationFilter: DurationFilter,
   cursor: string | null,
   limit: number,
   followingIds: string[],
@@ -258,6 +268,7 @@ async function fetchFollowingFeed(
     where: {
       ...contentTypeFilter,
       ...sensitiveContentFilter,
+      ...durationFilter,
       ...visibilityFilter,
       userId: { in: followingIds }, // Only from followed users
       status: 'published',
@@ -431,6 +442,7 @@ async function fetchFavouritesFeed(
   user: { id: string } | null,
   contentTypeFilter: ContentTypeFilter,
   sensitiveContentFilter: SensitiveContentFilter,
+  durationFilter: DurationFilter,
   cursor: string | null,
   limit: number,
   favouriteIds: string[],
@@ -492,6 +504,7 @@ async function fetchFavouritesFeed(
     where: {
       ...contentTypeFilter,
       ...sensitiveContentFilter,
+      ...durationFilter,
       ...visibilityFilter,
       userId: { in: favouriteIds }, // Only from favourited users
       status: 'published',
@@ -665,6 +678,7 @@ async function fetchDiscoveryFeed(
   user: { id: string } | null,
   contentTypeFilter: ContentTypeFilter,
   sensitiveContentFilter: SensitiveContentFilter,
+  durationFilter: DurationFilter,
   cursor: string | null,
   limit: number,
   followingIds: string[],
@@ -701,6 +715,7 @@ async function fetchDiscoveryFeed(
     where: {
       ...contentTypeFilter,
       ...sensitiveContentFilter,
+      ...durationFilter,
       ...contentPrefsFilter,
       visibility: 'public',
       status: 'published',
@@ -884,6 +899,7 @@ async function fetchProfileFeed(
   profileUserId: string,
   contentTypeFilter: ContentTypeFilter,
   sensitiveContentFilter: SensitiveContentFilter,
+  durationFilter: DurationFilter,
   cursor: string | null,
   limit: number,
   followingIds: string[]
@@ -924,6 +940,7 @@ async function fetchProfileFeed(
     where: {
       ...contentTypeFilter,
       ...sensitiveContentFilter,
+      ...durationFilter,
       userId: profileUserId,
       ...visibilityFilter,
       status: 'published',

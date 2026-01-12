@@ -45,7 +45,7 @@ const contentTypes = [
   {
     icon: Mic,
     title: 'Audio',
-    description: 'Record and share audio clips with waveform visualization. Tier-based recording from 1 to 30 minutes.',
+    description: 'Record and share audio clips with waveform visualization. Tier-based recording from 1 to 10 minutes.',
     color: 'text-orange-400',
     bgColor: 'bg-orange-500/10',
   },

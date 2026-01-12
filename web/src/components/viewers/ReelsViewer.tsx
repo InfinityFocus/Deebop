@@ -29,6 +29,7 @@ interface Reel {
 async function fetchReels({ pageParam }: { pageParam?: string }) {
   const params = new URLSearchParams();
   params.set('type', 'video');
+  params.set('maxDuration', '60'); // Reels are short-form videos (< 60 seconds)
   if (pageParam) params.set('cursor', pageParam);
 
   const res = await fetch(`/api/posts?${params.toString()}`);

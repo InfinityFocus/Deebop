@@ -19,10 +19,11 @@ A social media platform combining Shouts (Twitter-like), Images (Instagram-like)
 | Queue | Redis (port 6379) |
 
 ## Account Tiers
-| Feature | Free | Standard (£5.99/mo) | Pro (£14.99/mo) |
+| Feature | Free | Standard (£3.99/mo) | Pro (£9.99/mo) |
 |---------|------|---------------------|-----------------|
 | Images | 500KB compressed | 10MB original | 50MB original |
-| Video | 30s @ 720p | 1min @ 1080p | 5min @ 4K |
+| Video | 1min @ 1080p | 3min @ 1080p | 10min @ 1080p |
+| Audio | 1min | 3min | 10min |
 | 360 Panorama | No | No | Yes (100MB) |
 | Ads | Full | Reduced | None |
 | Profile Link | No | Yes | Yes |
@@ -147,9 +148,9 @@ The platform includes automatic video transcoding using FFmpeg CLI. Videos are p
 ### Tier-Based Settings
 | Tier | Max Duration | Resolution | Bitrate |
 |------|--------------|------------|---------|
-| Free | 30 seconds | 720p | 1500k |
-| Standard | 60 seconds | 1080p | 4000k |
-| Pro | 5 minutes | Original (4K) | 12000k |
+| Free | 60 seconds | 1080p | 3000k |
+| Standard | 3 minutes | 1080p | 4000k |
+| Pro | 10 minutes | 1080p | 5000k |
 
 ### Key Files
 | File | Purpose |

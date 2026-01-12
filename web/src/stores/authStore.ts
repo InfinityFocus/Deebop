@@ -128,8 +128,8 @@ export const useUserTier = (): AccountTier => useAuthStore((state) => state.iden
 export const TIER_LIMITS = {
   free: {
     maxImageSizeKB: 500,
-    maxVideoSeconds: 30,
-    maxVideoResolution: '720p',
+    maxVideoSeconds: 60,
+    maxVideoResolution: '1080p',
     canUploadPanorama: false,
     canAddProfileLink: false,
     hasAds: true,
@@ -137,7 +137,7 @@ export const TIER_LIMITS = {
   },
   standard: {
     maxImageSizeMB: 10,
-    maxVideoSeconds: 60,
+    maxVideoSeconds: 180,
     maxVideoResolution: '1080p',
     canUploadPanorama: false,
     canAddProfileLink: true,
@@ -146,8 +146,8 @@ export const TIER_LIMITS = {
   },
   pro: {
     maxImageSizeMB: 50,
-    maxVideoSeconds: 300,
-    maxVideoResolution: '4k',
+    maxVideoSeconds: 600,
+    maxVideoResolution: '1080p',
     canUploadPanorama: true,
     canAddProfileLink: true,
     hasAds: false,
