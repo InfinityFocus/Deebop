@@ -17,6 +17,7 @@ const tiers = [
     period: '/month',
     description: 'Get started with the basics',
     features: [
+      { text: '1 Profile', included: true },
       { text: 'Unlimited images', included: true },
       { text: 'Videos up to 30s @ 720p', included: true },
       { text: 'Audio up to 1min', included: true },
@@ -42,6 +43,7 @@ const tiers = [
     period: '/month',
     description: 'For serious creators',
     features: [
+      { text: '2 Profiles', included: true },
       { text: 'Unlimited images', included: true },
       { text: 'Videos up to 1min @ 1080p', included: true },
       { text: 'Audio up to 5min', included: true },
@@ -68,6 +70,7 @@ const tiers = [
     period: '/month',
     description: 'Everything, unlocked',
     features: [
+      { text: '5 Profiles', included: true },
       { text: 'Unlimited images', included: true },
       { text: 'Videos up to 5min @ 4K', included: true },
       { text: 'Audio up to 30min', included: true },
@@ -119,12 +122,12 @@ export default function PricingPage() {
               className={clsx(
                 'rounded-2xl border p-8 relative',
                 tier.highlighted
-                  ? 'border-purple-500 bg-purple-500/5'
+                  ? 'border-emerald-500 bg-emerald-500/5'
                   : 'border-gray-800 bg-gray-900/50'
               )}
             >
               {tier.highlighted && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-purple-500 rounded-full text-sm font-medium">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full text-sm font-medium">
                   Most Popular
                 </div>
               )}
@@ -164,7 +167,7 @@ export default function PricingPage() {
                 className={clsx(
                   'block w-full text-center py-3 rounded-full font-semibold transition',
                   tier.highlighted
-                    ? 'bg-purple-500 hover:bg-purple-600 text-white'
+                    ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:opacity-90 text-white'
                     : 'bg-gray-800 hover:bg-gray-700 text-white'
                 )}
               >

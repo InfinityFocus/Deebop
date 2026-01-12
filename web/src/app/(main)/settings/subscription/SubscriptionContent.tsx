@@ -30,6 +30,7 @@ const TIERS = {
     description: 'Get started with basic features',
     icon: Sparkles,
     features: [
+      '1 Profile',
       'Unlimited images',
       'Videos up to 30s @ 720p',
       'Audio up to 1min',
@@ -43,6 +44,7 @@ const TIERS = {
       'Ads in feed',
     ],
     notIncluded: [
+      'Multiple Profiles',
       '360 Panoramas',
       'Profile link',
       'Creator Page',
@@ -54,6 +56,7 @@ const TIERS = {
     description: 'For content creators',
     icon: Zap,
     features: [
+      '2 Profiles',
       'Unlimited images',
       'Videos up to 1min @ 1080p',
       'Audio up to 5min',
@@ -69,6 +72,7 @@ const TIERS = {
       'Reduced ads',
     ],
     notIncluded: [
+      '5 Profiles',
       '360 Panoramas',
       'Priority Post Boosts',
       'Creator Page (full)',
@@ -83,6 +87,7 @@ const TIERS = {
     icon: Crown,
     popular: true,
     features: [
+      '5 Profiles',
       'Unlimited images',
       'Videos up to 5min @ 4K',
       'Audio up to 30min',
@@ -189,7 +194,7 @@ export function SubscriptionContent() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
       </div>
     );
   }
@@ -233,7 +238,7 @@ export function SubscriptionContent() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white font-medium">
-                Current Plan: <span className="text-purple-400 capitalize">{currentTier}</span>
+                Current Plan: <span className="text-emerald-400 capitalize">{currentTier}</span>
               </p>
               <p className="text-sm text-gray-300">
                 {status.subscription.cancelAtPeriodEnd
@@ -266,9 +271,9 @@ export function SubscriptionContent() {
                 className={clsx(
                   'relative rounded-2xl border p-6 transition',
                   isPopular
-                    ? 'border-purple-500 bg-purple-500/10'
+                    ? 'border-emerald-500 bg-emerald-500/10'
                     : 'border-gray-700 bg-gray-800/50',
-                  isCurrentTier && 'ring-2 ring-purple-500'
+                  isCurrentTier && 'ring-2 ring-emerald-500'
                 )}
               >
                 {isPopular && (
@@ -282,7 +287,7 @@ export function SubscriptionContent() {
                     className={clsx(
                       'w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-3',
                       tierKey === 'pro'
-                        ? 'bg-gradient-to-r from-purple-500 to-pink-500'
+                        ? 'bg-gradient-to-r from-emerald-500 to-cyan-500'
                         : tierKey === 'standard'
                         ? 'bg-blue-500'
                         : 'bg-gray-600'
@@ -354,7 +359,7 @@ export function SubscriptionContent() {
                     className={clsx(
                       'w-full py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2',
                       isPopular
-                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
+                        ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:opacity-90 text-white'
                         : 'bg-white hover:bg-gray-100 text-black'
                     )}
                   >
@@ -385,7 +390,7 @@ export function SubscriptionContent() {
         </p>
         <p className="text-sm mt-2">
           Questions? Contact us at{' '}
-          <a href="mailto:support@deebop.com" className="text-purple-400 hover:underline">
+          <a href="mailto:support@deebop.com" className="text-emerald-400 hover:underline">
             support@deebop.com
           </a>
         </p>

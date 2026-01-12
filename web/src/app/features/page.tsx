@@ -5,7 +5,7 @@ import { BackButton } from '@/components/shared/BackButton';
 import {
   Image, Video, Compass, MessageSquare, Heart, Bookmark, Share2, Shield,
   FolderOpen, Clock, Rocket, BadgeCheck, Users, Hash, Bell, Mic, Calendar,
-  Layout, DollarSign, ShieldAlert, Repeat
+  Layout, DollarSign, ShieldAlert, Repeat, UserCircle2
 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -52,6 +52,13 @@ const contentTypes = [
 ];
 
 const creatorTools = [
+  {
+    icon: UserCircle2,
+    title: 'Multiple Profiles',
+    description: 'Manage up to 5 separate profiles under one account. Keep personal, professional, and creative identities distinct with their own followers and content.',
+    color: 'text-emerald-400',
+    bgColor: 'bg-emerald-500/10',
+  },
   {
     icon: FolderOpen,
     title: 'Collaborative Albums',
