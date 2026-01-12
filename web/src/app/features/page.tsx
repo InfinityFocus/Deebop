@@ -5,7 +5,7 @@ import { BackButton } from '@/components/shared/BackButton';
 import {
   Image, Video, Compass, MessageSquare, Heart, Bookmark, Share2, Shield,
   FolderOpen, Clock, Rocket, BadgeCheck, Users, Hash, Bell, Mic, Calendar,
-  Layout, DollarSign, ShieldAlert
+  Layout, DollarSign, ShieldAlert, Repeat
 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -141,6 +141,11 @@ const engagement = [
     description: 'Show appreciation for content you enjoy with a simple like.',
   },
   {
+    icon: Repeat,
+    title: 'Reposts',
+    description: 'Amplify content you love by sharing it directly to your followers' feeds.',
+  },
+  {
     icon: Bookmark,
     title: 'Saves',
     description: 'Bookmark posts to revisit later in your personal collection.',
@@ -148,7 +153,7 @@ const engagement = [
   {
     icon: Share2,
     title: 'Shares',
-    description: 'Share content with your network and beyond.',
+    description: 'Share content externally via link or to other platforms.',
   },
 ];
 
@@ -243,7 +248,7 @@ export default function FeaturesPage() {
           <p className="text-gray-400 mb-6">
             No comments, no drama. Simple, focused engagement:
           </p>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {engagement.map((item) => {
               const Icon = item.icon;
               return (
