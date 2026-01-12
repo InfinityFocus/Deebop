@@ -31,6 +31,7 @@ export async function GET(
     // Get posts with this hashtag - query posts directly
     const posts = await prisma.post.findMany({
       where: {
+        status: 'published',
         visibility: 'public',
         hashtags: {
           some: { hashtagId: hashtag.id },

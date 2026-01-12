@@ -119,6 +119,7 @@ export async function GET(request: NextRequest) {
             { title: { contains: searchQuery, mode: 'insensitive' } },
             { description: { contains: searchQuery, mode: 'insensitive' } },
           ],
+          status: 'published',
           visibility: 'public',
         },
         select: {
@@ -189,6 +190,7 @@ export async function GET(request: NextRequest) {
         where: {
           description: { contains: searchQuery, mode: 'insensitive' },
           contentType: 'shout',
+          status: 'published',
           visibility: 'public',
         },
         select: {

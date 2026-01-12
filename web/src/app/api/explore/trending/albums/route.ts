@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     // Get public albums with engagement metrics
     const albums = await prisma.album.findMany({
       where: {
+        status: 'published',
         visibility: 'public',
       },
       select: {

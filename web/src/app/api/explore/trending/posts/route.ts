@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
     if (hideAiAssisted) provenanceFilter.push('ai_assisted');
 
     const where: Record<string, unknown> = {
+      status: 'published',
       visibility: 'public',
       createdAt: { gte: windowStart },
     };
