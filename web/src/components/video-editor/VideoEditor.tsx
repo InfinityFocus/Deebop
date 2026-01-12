@@ -43,7 +43,7 @@ export default function VideoEditor({
   const addClip = useVideoEditorStore((s) => s.addClip);
   const selectedClipId = useVideoEditorStore((s) => s.selectedClipId);
 
-  // Handle file upload
+  // Handle file upload using presigned URLs (bypasses Vercel's 4.5MB limit)
   const handleFileSelect = useCallback(
     async (files: FileList | null) => {
       if (!files || files.length === 0) return;
@@ -57,44 +57,52 @@ export default function VideoEditor({
           continue;
         }
 
-        // Check file size (100MB limit for now)
-        if (file.size > 100 * 1024 * 1024) {
-          setUploadError('File size must be less than 100MB');
-          continue;
-        }
-
         try {
-          // Create form data
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('mediaType', 'video');
-
-          // Upload to our upload API
-          const res = await fetch('/api/upload', {
+          // Step 1: Get presigned URL from our API
+          const presignRes = await fetch('/api/upload/presigned', {
             method: 'POST',
-            body: formData,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              filename: file.name,
+              contentType: file.type,
+              mediaType: 'video',
+              fileSize: file.size,
+            }),
           });
 
-          if (!res.ok) {
-            const data = await res.json();
-            throw new Error(data.error || 'Upload failed');
+          if (!presignRes.ok) {
+            const data = await presignRes.json();
+            throw new Error(data.error || 'Failed to get upload URL');
           }
 
-          const data = await res.json();
+          const { uploadUrl, publicUrl } = await presignRes.json();
 
-          // Get video metadata
+          // Step 2: Upload directly to S3/MinIO using presigned URL
+          const uploadRes = await fetch(uploadUrl, {
+            method: 'PUT',
+            body: file,
+            headers: {
+              'Content-Type': file.type,
+            },
+          });
+
+          if (!uploadRes.ok) {
+            throw new Error('Upload failed');
+          }
+
+          // Step 3: Get video metadata from the uploaded file
           const video = document.createElement('video');
           video.preload = 'metadata';
 
           await new Promise<void>((resolve, reject) => {
             video.onloadedmetadata = () => resolve();
             video.onerror = () => reject(new Error('Failed to load video'));
-            video.src = data.url;
+            video.src = publicUrl;
           });
 
           // Add clip to store
           addClip({
-            sourceUrl: data.url,
+            sourceUrl: publicUrl,
             sourceDuration: video.duration,
             sourceWidth: video.videoWidth,
             sourceHeight: video.videoHeight,
