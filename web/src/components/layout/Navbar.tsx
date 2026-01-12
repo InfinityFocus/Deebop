@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   Home, Search, PlaySquare, PlusSquare, User,
   Bell, Bookmark, Images, Calendar, Link2, Crown, Settings, LogOut, X,
-  MoreHorizontal, ChevronDown, Check, Plus, Loader2, Users
+  MoreHorizontal, ChevronDown, Check, Plus, Loader2, Users, Film
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,6 +30,7 @@ const menuItems = [
 ];
 
 const secondaryMenuItems = [
+  { href: '/create/video', icon: Film, label: 'Video Studio' },
   { href: '/creator-page', icon: Link2, label: 'Creator Page' },
   { href: '/settings/subscription', icon: Crown, label: 'Upgrade' },
   { href: '/settings', icon: Settings, label: 'Settings' },
@@ -84,6 +85,7 @@ export function Navbar() {
     pathname.startsWith('/saved') ||
     pathname.startsWith('/albums') ||
     pathname.startsWith('/events') ||
+    pathname.startsWith('/create/video') ||
     pathname.startsWith('/creator-page') ||
     pathname.startsWith('/settings');
 

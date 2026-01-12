@@ -10,6 +10,7 @@ const COOKIE_NAME = 'deebop-auth';
 // Routes that require authentication
 const protectedRoutes = [
   '/post',
+  '/create',
   '/notifications',
   '/profile',
   '/saved',
