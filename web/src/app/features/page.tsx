@@ -143,7 +143,7 @@ const engagement = [
   {
     icon: Repeat,
     title: 'Reposts',
-    description: 'Amplify content you love by sharing it directly to your followers' feeds.',
+    description: 'Amplify content you love by sharing it directly to follower feeds.',
   },
   {
     icon: Bookmark,
