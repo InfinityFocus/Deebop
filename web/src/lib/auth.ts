@@ -440,11 +440,15 @@ export async function createProfile(username: string, displayName?: string) {
   }
 
   // Create new profile
+  // Use a unique placeholder email for additional profiles (User.email has @unique constraint)
+  // Format: username+identityId@profile.local ensures uniqueness
+  const profileEmail = `${username.toLowerCase()}+${identity.id}@profile.local`;
+
   const profile = await prisma.user.create({
     data: {
       identityId: identity.id,
       isDefault: false,
-      email: identity.email, // Share email for backward compat
+      email: profileEmail,
       passwordHash: '', // Not used for additional profiles
       username: username.toLowerCase(),
       displayName: displayName || username,
