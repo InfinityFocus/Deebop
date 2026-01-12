@@ -1226,10 +1226,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate media types have media (video/audio can use jobId instead, panorama can use pre-uploaded URL)
-    // Image posts need either a single media file OR multiple media_urls
-    if (contentType === 'image' && !media && multiImageUrls.length === 0) {
-      return NextResponse.json({ error: 'Image file or media_urls is required' }, { status: 400 });
+    // Validate media types have media (video/audio can use jobId instead, panorama/images can use pre-uploaded URL)
+    // Image posts need either a single media file OR multiple media_urls OR a pre-uploaded media_url
+    if (contentType === 'image' && !media && multiImageUrls.length === 0 && !mediaUrlFromClient) {
+      return NextResponse.json({ error: 'Image file, media_url, or media_urls is required' }, { status: 400 });
     }
     if (contentType === 'panorama360' && !media && !mediaUrlFromClient) {
       return NextResponse.json({ error: 'Panorama file or URL is required' }, { status: 400 });
@@ -1352,8 +1352,8 @@ export async function POST(request: NextRequest) {
         mediaDurationSeconds = audioJob.durationSeconds;
         // Note: waveformUrl is stored on the job, accessible via the post's linked job
       }
-    } else if (mediaUrlFromClient && contentType === 'panorama360') {
-      // Pre-uploaded panorama via presigned URL
+    } else if (mediaUrlFromClient && (contentType === 'panorama360' || contentType === 'image')) {
+      // Pre-uploaded media via presigned URL (panoramas and single images)
       mediaUrl = mediaUrlFromClient;
     } else if (media) {
       // Direct media upload (images or legacy video path)

@@ -672,60 +672,43 @@ export function CreatePostForm() {
 
   const uploadFile = async (file: File): Promise<string | null> => {
     try {
-      // Use presigned URLs for panoramas (large files) to bypass serverless limits
-      if (selectedType === 'panorama360') {
-        // Step 1: Get presigned URL
-        const presignedRes = await fetch('/api/upload/presigned', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            filename: file.name,
-            contentType: file.type,
-            mediaType: 'panorama360',
-            fileSize: file.size,
-          }),
-        });
+      // Use presigned URLs for all media uploads to bypass serverless body size limits (4.5MB on Vercel)
+      // This applies to panoramas and single images
+      const mediaType = selectedType === 'panorama360' ? 'panorama360' : 'image';
 
-        if (!presignedRes.ok) {
-          const data = await presignedRes.json();
-          throw new Error(data.error || 'Failed to get upload URL');
-        }
-
-        const { uploadUrl, publicUrl } = await presignedRes.json();
-
-        // Step 2: Upload directly to storage
-        const uploadRes = await fetch(uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: {
-            'Content-Type': file.type,
-          },
-        });
-
-        if (!uploadRes.ok) {
-          throw new Error('Failed to upload file to storage');
-        }
-
-        return publicUrl;
-      }
-
-      // For images, use the regular upload endpoint (smaller files)
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('mediaType', selectedType as string);
-
-      const res = await fetch('/api/upload', {
+      // Step 1: Get presigned URL
+      const presignedRes = await fetch('/api/upload/presigned', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+          mediaType,
+          fileSize: file.size,
+        }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to upload file');
+      if (!presignedRes.ok) {
+        const data = await presignedRes.json();
+        throw new Error(data.error || 'Failed to get upload URL');
       }
 
-      const { url } = await res.json();
-      return url;
+      const { uploadUrl, publicUrl } = await presignedRes.json();
+
+      // Step 2: Upload directly to storage
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error('Failed to upload file to storage');
+      }
+
+      return publicUrl;
     } catch (err) {
       console.error('Upload error:', err);
       throw err;
@@ -794,8 +777,15 @@ export function CreatePostForm() {
       } else if (selectedType === 'image' && uploadedImageUrls.length >= 2) {
         // For multi-image posts, send the uploaded URLs
         formData.append('media_urls', JSON.stringify(uploadedImageUrls));
-      } else if (selectedFile) {
-        formData.append('media', selectedFile);
+      } else if (selectedType === 'image' && selectedFile) {
+        // For single images, upload via presigned URL first to bypass Vercel's 4.5MB limit
+        setUploadProgress(10);
+        const imageUrl = await uploadFile(selectedFile);
+        if (!imageUrl) {
+          throw new Error('Failed to upload image');
+        }
+        setUploadProgress(90);
+        formData.append('media_url', imageUrl);
       }
 
       // Add audience for private posts
