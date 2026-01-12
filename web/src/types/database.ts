@@ -313,3 +313,21 @@ export interface PostWithEngagement extends Post {
   isSaved?: boolean;
   media?: PostMedia[] | null;
 }
+
+
+// Multi-profile types
+export interface Identity {
+  id: string;
+  email: string;
+  tier: AccountTier;
+  is_banned: boolean;
+}
+
+export interface ProfileSummary {
+  id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  is_default: boolean;
+  is_suspended: boolean;
+}

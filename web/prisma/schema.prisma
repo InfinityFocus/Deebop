@@ -8,10 +8,45 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// ============================================
+// Identity Model (Login & Subscription)
+// One Identity = One Login = Multiple Profiles
+// ============================================
+
+model Identity {
+  id               String      @id @default(cuid())
+  email            String      @unique
+  passwordHash     String      @map("password_hash")
+  tier             AccountTier @default(free)
+  stripeCustomerId String?     @map("stripe_customer_id")
+  isBanned         Boolean     @default(false) @map("is_banned")
+  bannedAt         DateTime?   @map("banned_at")
+  bannedReason     String?     @map("banned_reason")
+  birthYear        Int?        @map("birth_year")
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  profiles User[]
+
+  @@map("identities")
+}
+
+// ============================================
+// User Model (Profile - Public Persona)
+// Each profile has its own username, content,
+// and social graph. Will be renamed to Profile.
+// ============================================
+
 model User {
   id                       String                      @id @default(cuid())
+  // Identity link (nullable during migration, required after)
+  identityId               String?                     @map("identity_id")
+  identity                 Identity?                   @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  isDefault                Boolean                     @default(true) @map("is_default")
+  // DEPRECATED: These fields move to Identity after migration
   email                    String                      @unique
   passwordHash             String                      @map("password_hash")
+  // Profile-specific fields
   username                 String                      @unique
   displayName              String?                     @map("display_name")
   bio                      String?
@@ -105,6 +140,7 @@ model User {
   contentPrefs   UserContentPrefs?
   recentSearches RecentSearch[]
 
+  @@index([identityId])
   @@map("users")
 }
 
@@ -154,7 +190,7 @@ model Post {
   postLocation PostLocation?
 
   // Carousel media (multiple images)
-  media        PostMedia[]
+  media PostMedia[]
 
   @@index([userId])
   @@index([contentType])

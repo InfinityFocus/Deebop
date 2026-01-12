@@ -7,6 +7,7 @@ import { Home, Search, PlaySquare, PlusSquare, Bell, User, Settings, LogOut, Boo
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnreadNotificationCount } from '@/hooks/useNotifications';
+import { ProfileSwitcher } from '@/components/profile';
 
 const mainNavItems = [
   { href: '/home', icon: Home, label: 'Home' },
@@ -207,10 +208,8 @@ export function Sidebar() {
       <div className="p-4 border-t border-gray-800">
         {user ? (
           <div className="flex items-center gap-3">
-            {/* Avatar */}
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-white font-semibold">
-              {user.display_name?.[0]?.toUpperCase() || user.username?.[0]?.toUpperCase() || '?'}
-            </div>
+            {/* Profile Switcher / Avatar */}
+            <ProfileSwitcher showAddProfile={true} />
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-white truncate">
                 {user.display_name || user.username}

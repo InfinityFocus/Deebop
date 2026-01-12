@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import {
   CreditCard,
   User,
+  Users,
   Bell,
   Lock,
   Palette,
@@ -40,6 +41,12 @@ const settingsGroups: SettingsGroup[] = [
         icon: User,
         label: 'Edit Profile',
         description: 'Update your display name, bio, and avatar',
+      },
+      {
+        href: '/settings/profiles',
+        icon: Users,
+        label: 'Manage Profiles',
+        description: 'Switch between or add new profiles',
       },
       {
         href: '/settings/subscription',
