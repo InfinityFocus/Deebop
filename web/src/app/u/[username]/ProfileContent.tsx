@@ -15,6 +15,7 @@ interface UserProfile {
   display_name: string | null;
   bio: string | null;
   avatar_url: string | null;
+  cover_image_url: string | null;
   profile_link: string | null;
   tier: string;
   is_private: boolean;
@@ -145,8 +146,18 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
 
       {/* Profile Header */}
       <div className="p-4">
-        {/* Cover Image (placeholder) */}
-        <div className="h-32 bg-gradient-to-r from-emerald-600 via-yellow-500 to-cyan-500 rounded-xl mb-4" />
+        {/* Cover Image */}
+        {user.cover_image_url ? (
+          <div className="h-32 rounded-xl mb-4 overflow-hidden">
+            <img
+              src={user.cover_image_url}
+              alt="Cover"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : (
+          <div className="h-32 bg-gradient-to-r from-emerald-600 via-yellow-500 to-cyan-500 rounded-xl mb-4" />
+        )}
 
         {/* Avatar and Info */}
         <div className="flex flex-col items-center -mt-16 mb-4">
