@@ -10,7 +10,7 @@ import type { ContentType } from '@prisma/client';
 type FeedMode = 'discovery' | 'following' | 'favourites';
 type ContentTypeFilter = { contentType?: ContentType };
 type SensitiveContentFilter = { isSensitiveContent?: boolean };
-type DurationFilter = { mediaDurationSeconds?: { lt: number } };
+type DurationFilter = { OR?: Array<{ mediaDurationSeconds: null } | { mediaDurationSeconds: { lt: number } }> };
 
 // Auto-publish overdue scheduled posts (fallback for when cron doesn't run)
 async function publishOverdueDrops() {
@@ -63,8 +63,12 @@ export async function GET(request: NextRequest) {
     const sensitiveContentFilter: SensitiveContentFilter = isUnder16 ? { isSensitiveContent: false } : {};
 
     // Build duration filter (for reels - videos under 60 seconds)
+    // Include videos with null duration (not yet processed) OR under the limit
     const durationFilter: DurationFilter = maxDuration
-      ? { mediaDurationSeconds: { lt: parseInt(maxDuration) } }
+      ? { OR: [
+          { mediaDurationSeconds: null },
+          { mediaDurationSeconds: { lt: parseInt(maxDuration) } }
+        ] }
       : {};
 
     // Build user filter (for profile pages)

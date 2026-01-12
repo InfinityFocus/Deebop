@@ -1,9 +1,47 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Sparkles, TrendingUp, Shield, Play, MessageCircle, Podcast } from 'lucide-react';
+import { ArrowRight, Sparkles, TrendingUp, Shield, MessageCircle, Podcast } from 'lucide-react';
 import { useHomepageAnalytics } from '@/hooks/useHomepageAnalytics';
+
+// Small video component that autoplays when in view
+function AutoplayVideo({ src, poster, className }: { src: string; poster?: string | null; className?: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            video.play().catch(() => {});
+          } else {
+            video.pause();
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    observer.observe(video);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <video
+      ref={videoRef}
+      src={src}
+      poster={poster || undefined}
+      muted
+      loop
+      playsInline
+      className={className}
+    />
+  );
+}
 
 interface PublicPost {
   id: string;
@@ -127,22 +165,18 @@ export default function ExplorePreview() {
                   href={post.author ? `/u/${username}?post=${post.id}` : '#'}
                   className="group relative aspect-square rounded-xl overflow-hidden bg-gray-800"
                 >
-                  {thumbnailUrl && !isAudio ? (
-                    <>
-                      <img
-                        src={thumbnailUrl}
-                        alt={post.headline || 'Post'}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      {/* Video play indicator */}
-                      {isVideo && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center">
-                            <Play size={24} className="text-white ml-1" fill="white" />
-                          </div>
-                        </div>
-                      )}
-                    </>
+                  {isVideo && post.media_url ? (
+                    <AutoplayVideo
+                      src={post.media_url}
+                      poster={post.media_thumbnail_url}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : thumbnailUrl && !isAudio ? (
+                    <img
+                      src={thumbnailUrl}
+                      alt={post.headline || 'Post'}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
                   ) : isAudio ? (
                     // Styled audio card
                     <div className="w-full h-full bg-gradient-to-br from-rose-900/80 via-gray-900 to-purple-900/80 flex flex-col items-center justify-center p-4 relative">
