@@ -19,7 +19,7 @@ const tiers = [
     features: [
       { text: '1 Profile', included: true },
       { text: 'Unlimited images', included: true },
-      { text: 'Videos up to 1min @ 1080p', included: true },
+      { text: 'Videos up to 1min', included: true },
       { text: 'Audio up to 1min', included: true },
       { text: 'Unlimited shouts', included: true },
       { text: 'Collaborative Albums (2GB)', included: true },
@@ -45,7 +45,7 @@ const tiers = [
     features: [
       { text: '2 Profiles', included: true },
       { text: 'Unlimited images', included: true },
-      { text: 'Videos up to 3min @ 1080p', included: true },
+      { text: 'Videos up to 3min', included: true },
       { text: 'Audio up to 3min', included: true },
       { text: 'Unlimited shouts', included: true },
       { text: 'Collaborative Albums (10GB)', included: true },
@@ -72,7 +72,7 @@ const tiers = [
     features: [
       { text: '5 Profiles', included: true },
       { text: 'Unlimited images', included: true },
-      { text: 'Videos up to 10min @ 1080p', included: true },
+      { text: 'Videos up to 10min', included: true },
       { text: 'Audio up to 10min', included: true },
       { text: 'Unlimited shouts', included: true },
       { text: 'Collaborative Albums (50GB)', included: true },

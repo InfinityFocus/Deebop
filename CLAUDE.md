@@ -22,7 +22,7 @@ A social media platform combining Shouts (Twitter-like), Images (Instagram-like)
 | Feature | Free | Standard (£3.99/mo) | Pro (£9.99/mo) |
 |---------|------|---------------------|-----------------|
 | Images | 500KB compressed | 10MB original | 50MB original |
-| Video | 1min @ 1080p | 3min @ 1080p | 10min @ 1080p |
+| Video | 1min | 3min | 10min |
 | Audio | 1min | 3min | 10min |
 | 360 Panorama | No | No | Yes (100MB) |
 | Ads | Full | Reduced | None |
