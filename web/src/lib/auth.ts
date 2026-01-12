@@ -58,13 +58,16 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
     if (p.userId && !p.profileId) {
       p.profileId = p.userId;
     }
-    // Handle old tokens without identityId - need to look it up
+    // Handle old tokens without identityId - need to look it up from the profile
     if (p.profileId && !p.identityId) {
       const profile = await prisma.user.findUnique({
         where: { id: p.profileId },
         select: { identityId: true },
       });
-      p.identityId = profile?.identityId || '';
+      // Only set if we found a valid identityId
+      if (profile?.identityId) {
+        p.identityId = profile.identityId;
+      }
     }
 
     return p;
