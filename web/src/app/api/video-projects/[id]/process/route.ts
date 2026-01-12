@@ -1,31 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { triggerVideoProjectProcessing } from '@/lib/video-editor-processor';
-
-async function getUser() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('deebop-auth')?.value;
-
-  if (!token) {
-    return null;
-  }
-
-  try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const { payload } = await jwtVerify(token, secret);
-
-    const user = await prisma.user.findUnique({
-      where: { id: payload.sub as string },
-      select: { id: true, tier: true },
-    });
-
-    return user;
-  } catch {
-    return null;
-  }
-}
 
 // POST /api/video-projects/[id]/process - Start processing
 export async function POST(
@@ -33,7 +9,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getUser();
+    const user = await getCurrentUser();
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

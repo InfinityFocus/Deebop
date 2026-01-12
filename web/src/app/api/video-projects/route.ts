@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
 // Tier-based duration limits in seconds
@@ -10,33 +9,10 @@ const TIER_DURATION_LIMITS = {
   pro: 600,
 };
 
-async function getUser() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('deebop-auth')?.value;
-
-  if (!token) {
-    return null;
-  }
-
-  try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const { payload } = await jwtVerify(token, secret);
-
-    const user = await prisma.user.findUnique({
-      where: { id: payload.sub as string },
-      select: { id: true, tier: true },
-    });
-
-    return user;
-  } catch {
-    return null;
-  }
-}
-
 // GET /api/video-projects - List user's projects
 export async function GET() {
   try {
-    const user = await getUser();
+    const user = await getCurrentUser();
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -66,7 +42,7 @@ export async function GET() {
 // POST /api/video-projects - Create new project
 export async function POST(request: NextRequest) {
   try {
-    const user = await getUser();
+    const user = await getCurrentUser();
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
