@@ -10,19 +10,31 @@ import {
   AlertTriangle,
   Film,
 } from 'lucide-react';
-import { useVideoEditorStore } from '@/stores/videoEditorStore';
+import { useVideoEditorStore, VideoClip, TextOverlay } from '@/stores/videoEditorStore';
 import VideoEditor from '@/components/video-editor/VideoEditor';
+
+// Project data from database
+export interface InitialProject {
+  id: string;
+  name: string;
+  status: 'draft' | 'processing' | 'completed' | 'failed';
+  maxDurationSeconds: number;
+  clips: VideoClip[];
+  overlays: TextOverlay[];
+}
 
 interface VideoEditorClientProps {
   userId: string;
   userTier: string;
   maxDurationSeconds: number;
+  initialProject?: InitialProject;
 }
 
 export default function VideoEditorClient({
   userId,
   userTier,
   maxDurationSeconds,
+  initialProject,
 }: VideoEditorClientProps) {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
@@ -31,6 +43,7 @@ export default function VideoEditorClient({
 
   // Get stable action references
   const initProject = useVideoEditorStore((s) => s.initProject);
+  const loadProject = useVideoEditorStore((s) => s.loadProject);
   const resetProject = useVideoEditorStore((s) => s.resetProject);
   const setProjectName = useVideoEditorStore((s) => s.setProjectName);
 
@@ -43,12 +56,25 @@ export default function VideoEditorClient({
   const overlays = useVideoEditorStore((s) => s.overlays);
   const isOverLimit = currentDurationSeconds > maxDurationSeconds;
 
-  // Initialize new project on mount - only once
+  // Initialize project on mount - only once
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
 
-    initProject(null, maxDurationSeconds);
+    if (initialProject) {
+      // Load existing project
+      loadProject({
+        projectId: initialProject.id,
+        name: initialProject.name,
+        status: initialProject.status,
+        maxDurationSeconds: initialProject.maxDurationSeconds,
+        clips: initialProject.clips,
+        overlays: initialProject.overlays,
+      });
+    } else {
+      // Initialize new project
+      initProject(null, maxDurationSeconds);
+    }
 
     // Cleanup on unmount
     return () => {
