@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, PlaySquare, PlusSquare, Bell, User, Settings, LogOut, Bookmark, Crown, Images, Calendar, Link2, MoreHorizontal, ChevronDown } from 'lucide-react';
+import { Home, Search, PlaySquare, PlusSquare, Bell, User, Settings, LogOut, Bookmark, Crown, Images, Calendar, Link2, MoreHorizontal, ChevronDown, Film } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnreadNotificationCount } from '@/hooks/useNotifications';
@@ -22,6 +22,7 @@ const mainNavItems = [
 ];
 
 const secondaryNavItems = [
+  { href: '/create/video', icon: Film, label: 'Video Studio' },
   { href: '/creator-page', icon: Link2, label: 'Creator Page' },
   { href: '/settings/subscription', icon: Crown, label: 'Upgrade' },
   { href: '/settings', icon: Settings, label: 'Settings' },

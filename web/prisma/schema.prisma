@@ -96,6 +96,7 @@ model User {
   saves                    Save[]
   shares                   Share[]
   videoJobs                VideoJob[]
+  videoProjects            VideoProject[]
   views                    View[]
   // Event relations
   hostedEvents             Event[]                     @relation("EventHost")
@@ -733,6 +734,79 @@ model VideoJob {
 }
 
 // ============================================
+// Video Editor Models
+// ============================================
+
+model VideoProject {
+  id                     String             @id @default(cuid())
+  userId                 String             @map("user_id")
+  name                   String             @default("Untitled Project")
+  status                 VideoProjectStatus @default(draft)
+  maxDurationSeconds     Int                @map("max_duration_seconds")
+  currentDurationSeconds Float?             @map("current_duration_seconds")
+  outputUrl              String?            @map("output_url")
+  thumbnailUrl           String?            @map("thumbnail_url")
+  processingProgress     Int                @default(0) @map("processing_progress")
+  processingError        String?            @map("processing_error")
+  createdAt              DateTime           @default(now()) @map("created_at")
+  updatedAt              DateTime           @updatedAt @map("updated_at")
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clips    VideoClip[]
+  overlays VideoOverlay[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("video_projects")
+}
+
+model VideoClip {
+  id                String   @id @default(cuid())
+  projectId         String   @map("project_id")
+  sourceUrl         String   @map("source_url")
+  sourceDuration    Float    @map("source_duration")
+  sourceWidth       Int?     @map("source_width")
+  sourceHeight      Int?     @map("source_height")
+  sortOrder         Int      @default(0) @map("sort_order")
+  trimStart         Float    @default(0) @map("trim_start")
+  trimEnd           Float?   @map("trim_end")
+  speed             Float    @default(1.0)
+  filterPreset      String?  @map("filter_preset")
+  volume            Float    @default(1.0)
+  effectiveDuration Float?   @map("effective_duration")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  project VideoProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([sortOrder])
+  @@map("video_clips")
+}
+
+model VideoOverlay {
+  id              String      @id @default(cuid())
+  projectId       String      @map("project_id")
+  type            OverlayType @default(text)
+  positionX       Float       @default(50) @map("position_x")
+  positionY       Float       @default(50) @map("position_y")
+  startTime       Float       @default(0) @map("start_time")
+  endTime         Float?      @map("end_time")
+  text            String?
+  fontFamily      String      @default("sans-serif") @map("font_family")
+  fontSize        Int         @default(32) @map("font_size")
+  fontColor       String      @default("#FFFFFF") @map("font_color")
+  backgroundColor String?     @map("background_color")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  project VideoProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("video_overlays")
+}
+
+// ============================================
 // Event Models
 // ============================================
 
@@ -1240,6 +1314,18 @@ enum UploadWindow {
 enum AlbumType {
   standard
   event
+}
+
+enum VideoProjectStatus {
+  draft
+  processing
+  completed
+  failed
+}
+
+enum OverlayType {
+  text
+  image
 }
 
 // ============================================
