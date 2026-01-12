@@ -18,6 +18,12 @@ import { renderRichText } from '@/lib/text-utils';
 import { clsx } from 'clsx';
 import type { ContentType, HeadlineStyle, Visibility } from '@/types/database';
 
+// Prevent right-click/long-press to save media
+const preventContextMenu = (e: React.MouseEvent) => {
+  e.preventDefault();
+  return false;
+};
+
 // Video player component that autoplays when in view
 function VideoPlayer({ src, poster }: { src: string; poster?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -54,7 +60,7 @@ function VideoPlayer({ src, poster }: { src: string; poster?: string }) {
   };
 
   return (
-    <div className="relative">
+    <div className="relative" onContextMenu={preventContextMenu}>
       <video
         ref={videoRef}
         src={src}
@@ -64,6 +70,7 @@ function VideoPlayer({ src, poster }: { src: string; poster?: string }) {
         playsInline
         className="w-full max-h-[95vh] object-contain"
         onClick={toggleMute}
+        onContextMenu={preventContextMenu}
       />
       {/* Mute/unmute indicator */}
       <button
@@ -437,7 +444,7 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
 
       {/* Media */}
       {(post.media_url || (post.media && post.media.length > 0)) && (
-        <div className="relative">
+        <div className="relative" onContextMenu={preventContextMenu}>
           {post.content_type === 'image' && post.media && post.media.length > 1 ? (
             <ImageCarousel images={post.media} />
           ) : post.content_type === 'image' && post.media_url && (
@@ -445,6 +452,8 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
               src={post.media_url}
               alt=""
               className="w-full max-h-[95vh] object-contain"
+              onContextMenu={preventContextMenu}
+              draggable={false}
             />
           )}
 

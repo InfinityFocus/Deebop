@@ -6,6 +6,12 @@ import Link from 'next/link';
 import { Heart, Eye, Play, Podcast, MessageCircle, Video } from 'lucide-react';
 import type { PostResult } from '@/types/explore';
 
+// Prevent right-click/long-press to save media
+const preventContextMenu = (e: React.MouseEvent) => {
+  e.preventDefault();
+  return false;
+};
+
 // Small video component that autoplays when in view
 function AutoplayVideo({ src, poster, className }: { src: string; poster?: string | null; className?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -40,6 +46,7 @@ function AutoplayVideo({ src, poster, className }: { src: string; poster?: strin
       loop
       playsInline
       className={className}
+      onContextMenu={preventContextMenu}
     />
   );
 }
@@ -157,7 +164,9 @@ export default function TrendingPostCard({ post }: TrendingPostCardProps) {
               src={imageUrl!}
               alt=""
               fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              className="object-cover group-hover:scale-105 transition-transform duration-300 select-none"
+              onContextMenu={preventContextMenu}
+              draggable={false}
             />
             {isVideo && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/20">

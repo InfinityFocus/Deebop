@@ -34,6 +34,12 @@ interface ReelCardProps {
   onToggleMute: () => void;
 }
 
+// Prevent right-click/long-press to save media
+const preventContextMenu = (e: React.MouseEvent) => {
+  e.preventDefault();
+  return false;
+};
+
 export function ReelCard({ reel, isActive, isMuted, onToggleMute }: ReelCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -154,7 +160,7 @@ export function ReelCard({ reel, isActive, isMuted, onToggleMute }: ReelCardProp
   }, [isLiked]);
 
   return (
-    <div className="relative w-full h-full bg-black snap-start snap-always">
+    <div className="relative w-full h-full bg-black snap-start snap-always" onContextMenu={preventContextMenu}>
       {/* Video */}
       <video
         ref={videoRef}
@@ -165,6 +171,7 @@ export function ReelCard({ reel, isActive, isMuted, onToggleMute }: ReelCardProp
         muted={isMuted}
         onClick={togglePlayPause}
         onDoubleClick={handleDoubleTap}
+        onContextMenu={preventContextMenu}
         className="absolute inset-0 w-full h-full object-contain"
       />
 

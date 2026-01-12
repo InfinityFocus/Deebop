@@ -5,6 +5,12 @@ import Link from 'next/link';
 import { ArrowRight, Sparkles, TrendingUp, Shield, MessageCircle, Podcast } from 'lucide-react';
 import { useHomepageAnalytics } from '@/hooks/useHomepageAnalytics';
 
+// Prevent right-click/long-press to save media
+const preventContextMenu = (e: React.MouseEvent) => {
+  e.preventDefault();
+  return false;
+};
+
 // Small video component that autoplays when in view
 function AutoplayVideo({ src, poster, className }: { src: string; poster?: string | null; className?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -39,6 +45,7 @@ function AutoplayVideo({ src, poster, className }: { src: string; poster?: strin
       loop
       playsInline
       className={className}
+      onContextMenu={preventContextMenu}
     />
   );
 }
@@ -175,7 +182,9 @@ export default function ExplorePreview() {
                     <img
                       src={thumbnailUrl}
                       alt={post.headline || 'Post'}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 select-none"
+                      onContextMenu={preventContextMenu}
+                      draggable={false}
                     />
                   ) : isAudio ? (
                     // Styled audio card

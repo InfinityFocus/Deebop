@@ -17,6 +17,12 @@ interface ImageCarouselProps {
   className?: string;
 }
 
+// Prevent right-click/long-press to save media
+const preventContextMenu = (e: React.MouseEvent) => {
+  e.preventDefault();
+  return false;
+};
+
 export function ImageCarousel({ images, className }: ImageCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -94,7 +100,9 @@ export function ImageCarousel({ images, className }: ImageCarouselProps) {
       <img
         src={sortedImages[0].media_url}
         alt={sortedImages[0].alt_text || ''}
-        className={clsx('w-full max-h-[95vh] object-contain', className)}
+        className={clsx('w-full max-h-[95vh] object-contain select-none', className)}
+        onContextMenu={preventContextMenu}
+        draggable={false}
       />
     );
   }
@@ -126,6 +134,7 @@ export function ImageCarousel({ images, className }: ImageCarouselProps) {
             key={image.id}
             className="flex-none w-full snap-center"
             style={{ scrollSnapStop: 'always' }} // Force stop at each image
+            onContextMenu={preventContextMenu}
           >
             <img
               src={image.media_url}
@@ -133,6 +142,7 @@ export function ImageCarousel({ images, className }: ImageCarouselProps) {
               className="w-full max-h-[95vh] object-contain select-none"
               loading={index === 0 ? 'eager' : 'lazy'}
               draggable={false}
+              onContextMenu={preventContextMenu}
             />
           </div>
         ))}

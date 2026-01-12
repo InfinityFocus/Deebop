@@ -61,6 +61,12 @@ interface PanoramaViewerProps {
   onLoad?: () => void;
 }
 
+// Prevent right-click/long-press to save media
+const preventContextMenu = (e: React.MouseEvent) => {
+  e.preventDefault();
+  return false;
+};
+
 // Load Pannellum script dynamically
 let pannellumLoaded = false;
 let pannellumLoadPromise: Promise<void> | null = null;
@@ -199,12 +205,13 @@ export function PanoramaViewer({
   }, []);
 
   return (
-    <div className={`relative bg-gray-900 ${className}`}>
+    <div className={`relative bg-gray-900 ${className}`} onContextMenu={preventContextMenu}>
       {/* Pannellum container */}
       <div
         ref={containerRef}
         className="w-full h-full"
         style={{ minHeight: '300px' }}
+        onContextMenu={preventContextMenu}
       />
 
       {/* Loading overlay */}
