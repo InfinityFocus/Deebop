@@ -53,14 +53,16 @@ export default function VideoPreview() {
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
   const currentTimeRef = useRef<number>(0);
+  const durationRef = useRef<number>(0);
   const [currentClipId, setCurrentClipId] = useState<string | null>(null);
 
   const clips = useClips();
   const overlays = useOverlays();
   const { isPlaying, currentTime, duration, volume, isMuted } = usePlaybackState();
 
-  // Keep ref in sync with state
+  // Keep refs in sync with state (refs don't trigger re-renders)
   currentTimeRef.current = currentTime;
+  durationRef.current = duration;
 
   const play = useVideoEditorStore((s) => s.play);
   const pause = useVideoEditorStore((s) => s.pause);
@@ -82,7 +84,7 @@ export default function VideoPreview() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Draw frame to canvas
+  // Draw frame to canvas - uses refs to avoid dependency on rapidly changing state
   const drawFrame = useCallback(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -113,11 +115,23 @@ export default function VideoPreview() {
     }
 
     ctx.drawImage(video, drawX, drawY, drawWidth, drawHeight);
+  }, []);
 
-    // Draw text overlays
+  // Draw overlays on top of video frame
+  const drawOverlays = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const time = currentTimeRef.current;
+    const dur = durationRef.current;
+
+    // Filter active overlays based on current time
     const activeOverlays = overlays.filter((o) => {
-      const endTime = o.endTime ?? duration;
-      return currentTime >= o.startTime && currentTime <= endTime;
+      const endTime = o.endTime ?? dur;
+      return time >= o.startTime && time <= endTime;
     });
 
     activeOverlays.forEach((overlay) => {
@@ -160,7 +174,7 @@ export default function VideoPreview() {
         ctx.setLineDash([]);
       }
     });
-  }, [overlays, currentTime, duration, selectedOverlayId]);
+  }, [overlays, selectedOverlayId]);
 
   // Handle video time updates during playback
   useEffect(() => {
@@ -183,8 +197,9 @@ export default function VideoPreview() {
       setCurrentTime(newTime);
 
       drawFrame();
+      drawOverlays();
 
-      if (newTime < duration) {
+      if (newTime < durationRef.current) {
         animationRef.current = requestAnimationFrame(animate);
       } else {
         animationRef.current = null;
@@ -199,9 +214,7 @@ export default function VideoPreview() {
         animationRef.current = null;
       }
     };
-    // Note: currentTime intentionally excluded - we use currentTimeRef instead
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlaying, duration, setCurrentTime, drawFrame]);
+  }, [isPlaying, setCurrentTime, drawFrame, drawOverlays]);
 
   // Update video source and position when currentTime changes
   useEffect(() => {
@@ -244,8 +257,14 @@ export default function VideoPreview() {
     const video = videoRef.current;
     if (!video) return;
 
-    const handleCanPlay = () => drawFrame();
-    const handleSeeked = () => drawFrame();
+    const handleCanPlay = () => {
+      drawFrame();
+      drawOverlays();
+    };
+    const handleSeeked = () => {
+      drawFrame();
+      drawOverlays();
+    };
 
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('seeked', handleSeeked);
@@ -254,7 +273,7 @@ export default function VideoPreview() {
       video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('seeked', handleSeeked);
     };
-  }, [drawFrame]);
+  }, [drawFrame, drawOverlays]);
 
   // Resize canvas to container
   useEffect(() => {
@@ -267,6 +286,7 @@ export default function VideoPreview() {
       canvas.width = rect.width;
       canvas.height = rect.height;
       drawFrame();
+      drawOverlays();
     };
 
     resizeCanvas();
@@ -275,7 +295,7 @@ export default function VideoPreview() {
     observer.observe(container);
 
     return () => observer.disconnect();
-  }, [drawFrame]);
+  }, [drawFrame, drawOverlays]);
 
   // Handle overlay dragging
   const handleCanvasPointerDown = (e: React.PointerEvent) => {
@@ -322,6 +342,7 @@ export default function VideoPreview() {
 
     updateOverlay(draggingOverlayId, { positionX: x, positionY: y });
     drawFrame();
+    drawOverlays();
   };
 
   const handleCanvasPointerUp = () => {
