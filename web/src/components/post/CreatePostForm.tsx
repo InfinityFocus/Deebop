@@ -613,21 +613,76 @@ export function CreatePostForm() {
     }
   };
 
+  // Client-side image resizing (750px max width, JPEG 85% quality)
+  // Matches server-side processing in /api/upload for consistency
+  const resizeImage = async (file: File): Promise<{ blob: Blob; filename: string }> => {
+    const IMAGE_MAX_WIDTH = 750;
+    const IMAGE_QUALITY = 0.85;
+
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      img.onload = () => {
+        try {
+          let width = img.width;
+          let height = img.height;
+
+          if (width > IMAGE_MAX_WIDTH) {
+            height = Math.round((height * IMAGE_MAX_WIDTH) / width);
+            width = IMAGE_MAX_WIDTH;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'));
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error('Failed to create image blob'));
+                return;
+              }
+              const baseName = file.name.replace(/\.[^.]+$/, '');
+              resolve({ blob, filename: `${baseName}.jpg` });
+            },
+            'image/jpeg',
+            IMAGE_QUALITY
+          );
+        } catch (err) {
+          reject(err);
+        }
+      };
+
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   // Upload multiple images using batch presigned URLs
   const uploadMultipleImages = async (files: File[]): Promise<string[]> => {
     setIsUploadingImages(true);
     setImageUploadError(null);
 
     try {
-      // Step 1: Get batch presigned URLs
+      // Step 1: Resize all images client-side first
+      const resizedImages = await Promise.all(files.map(resizeImage));
+
+      // Step 2: Get batch presigned URLs for resized images
       const batchRes = await fetch('/api/upload/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          files: files.map((file) => ({
-            filename: file.name,
-            contentType: file.type,
-            fileSize: file.size,
+          files: resizedImages.map((img) => ({
+            filename: img.filename,
+            contentType: 'image/jpeg',
+            fileSize: img.blob.size,
           })),
           mediaType: 'image',
         }),
@@ -640,14 +695,14 @@ export function CreatePostForm() {
 
       const { uploads } = await batchRes.json();
 
-      // Step 2: Upload all files in parallel
+      // Step 3: Upload all resized files in parallel
       const uploadPromises = uploads.map(async (upload: { index: number; uploadUrl: string; publicUrl: string }, i: number) => {
-        const file = files[upload.index];
+        const resized = resizedImages[upload.index];
         const uploadRes = await fetch(upload.uploadUrl, {
           method: 'PUT',
-          body: file,
+          body: resized.blob,
           headers: {
-            'Content-Type': file.type,
+            'Content-Type': 'image/jpeg',
           },
         });
 
@@ -673,18 +728,29 @@ export function CreatePostForm() {
   const uploadFile = async (file: File): Promise<string | null> => {
     try {
       // Use presigned URLs for all media uploads to bypass serverless body size limits (4.5MB on Vercel)
-      // This applies to panoramas and single images
       const mediaType = selectedType === 'panorama360' ? 'panorama360' : 'image';
+
+      // For regular images (not panoramas), resize client-side before upload
+      let uploadBlob: Blob = file;
+      let uploadFilename = file.name;
+      let uploadContentType = file.type;
+
+      if (selectedType === 'image') {
+        const resized = await resizeImage(file);
+        uploadBlob = resized.blob;
+        uploadFilename = resized.filename;
+        uploadContentType = 'image/jpeg';
+      }
 
       // Step 1: Get presigned URL
       const presignedRes = await fetch('/api/upload/presigned', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type,
+          filename: uploadFilename,
+          contentType: uploadContentType,
           mediaType,
-          fileSize: file.size,
+          fileSize: uploadBlob.size,
         }),
       });
 
@@ -698,9 +764,9 @@ export function CreatePostForm() {
       // Step 2: Upload directly to storage
       const uploadRes = await fetch(uploadUrl, {
         method: 'PUT',
-        body: file,
+        body: uploadBlob,
         headers: {
-          'Content-Type': file.type,
+          'Content-Type': uploadContentType,
         },
       });
 
