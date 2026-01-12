@@ -52,11 +52,15 @@ export default function VideoPreview() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
+  const currentTimeRef = useRef<number>(0);
   const [currentClipId, setCurrentClipId] = useState<string | null>(null);
 
   const clips = useClips();
   const overlays = useOverlays();
   const { isPlaying, currentTime, duration, volume, isMuted } = usePlaybackState();
+
+  // Keep ref in sync with state
+  currentTimeRef.current = currentTime;
 
   const play = useVideoEditorStore((s) => s.play);
   const pause = useVideoEditorStore((s) => s.pause);
@@ -163,6 +167,7 @@ export default function VideoPreview() {
     if (!isPlaying) {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
       }
       return;
     }
@@ -173,13 +178,16 @@ export default function VideoPreview() {
       const delta = (now - lastTime) / 1000;
       lastTime = now;
 
-      const newTime = currentTime + delta;
+      // Use ref to get current time to avoid dependency on state
+      const newTime = currentTimeRef.current + delta;
       setCurrentTime(newTime);
 
       drawFrame();
 
       if (newTime < duration) {
         animationRef.current = requestAnimationFrame(animate);
+      } else {
+        animationRef.current = null;
       }
     };
 
@@ -188,9 +196,12 @@ export default function VideoPreview() {
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
       }
     };
-  }, [isPlaying, currentTime, duration, setCurrentTime, drawFrame]);
+    // Note: currentTime intentionally excluded - we use currentTimeRef instead
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying, duration, setCurrentTime, drawFrame]);
 
   // Update video source and position when currentTime changes
   useEffect(() => {
