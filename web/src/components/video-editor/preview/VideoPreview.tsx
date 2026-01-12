@@ -177,6 +177,8 @@ export default function VideoPreview() {
   }, [overlays, selectedOverlayId]);
 
   // Handle video time updates during playback
+  // IMPORTANT: We do NOT call setCurrentTime on every frame to avoid
+  // 60fps state updates causing re-renders. We update at 10fps for UI display.
   useEffect(() => {
     if (!isPlaying) {
       if (animationRef.current) {
@@ -187,21 +189,52 @@ export default function VideoPreview() {
     }
 
     let lastTime = performance.now();
+    let lastUiUpdate = performance.now();
+    const UI_UPDATE_INTERVAL = 100; // Update UI at 10fps
 
     const animate = (now: number) => {
       const delta = (now - lastTime) / 1000;
       lastTime = now;
 
-      // Use ref to get current time to avoid dependency on state
+      // Update ref
       const newTime = currentTimeRef.current + delta;
-      setCurrentTime(newTime);
+      currentTimeRef.current = newTime;
+
+      // Update video position if clip changed
+      const video = videoRef.current;
+      if (video && clips.length > 0) {
+        const result = getClipAtGlobalTime(clips, newTime);
+        if (result) {
+          const { clip, localTime } = result;
+          if (clip.id !== currentClipId) {
+            setCurrentClipId(clip.id);
+            video.src = clip.sourceUrl;
+            video.playbackRate = clip.speed;
+            video.load();
+          }
+          if (Math.abs(video.currentTime - localTime) > 0.1) {
+            video.currentTime = localTime;
+          }
+          if (canvasRef.current) {
+            canvasRef.current.style.filter = getCssFilter(clip.filterPreset);
+          }
+        }
+      }
 
       drawFrame();
       drawOverlays();
 
+      // Update UI state at lower frequency (10fps) to show time display
+      if (now - lastUiUpdate >= UI_UPDATE_INTERVAL) {
+        setCurrentTime(newTime);
+        lastUiUpdate = now;
+      }
+
       if (newTime < durationRef.current) {
         animationRef.current = requestAnimationFrame(animate);
       } else {
+        // Playback ended - sync state
+        setCurrentTime(durationRef.current);
         animationRef.current = null;
       }
     };
@@ -212,14 +245,23 @@ export default function VideoPreview() {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;
+        // Sync state when stopping playback
+        setCurrentTime(currentTimeRef.current);
       }
     };
-  }, [isPlaying, setCurrentTime, drawFrame, drawOverlays]);
+  }, [isPlaying, clips, currentClipId, setCurrentTime, drawFrame, drawOverlays]);
 
-  // Update video source and position when currentTime changes
+  // Update video source and position when seeking (not during playback)
+  // During playback, this is handled in the animation loop
   useEffect(() => {
+    // Skip during playback - animation loop handles it
+    if (isPlaying) return;
+
     const video = videoRef.current;
     if (!video || clips.length === 0) return;
+
+    // Sync ref with state when not playing
+    currentTimeRef.current = currentTime;
 
     const result = getClipAtGlobalTime(clips, currentTime);
     if (!result) return;
@@ -243,7 +285,7 @@ export default function VideoPreview() {
     if (canvasRef.current) {
       canvasRef.current.style.filter = getCssFilter(clip.filterPreset);
     }
-  }, [clips, currentTime, currentClipId]);
+  }, [clips, currentTime, currentClipId, isPlaying]);
 
   // Update volume
   useEffect(() => {

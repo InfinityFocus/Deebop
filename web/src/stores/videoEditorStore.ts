@@ -4,6 +4,7 @@
  */
 
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 
 // Types matching database schema
 export interface VideoClip {
@@ -395,15 +396,17 @@ export const useVideoEditorStore = create<VideoEditorState>()((set, get) => ({
   },
 }));
 
-// Selectors for common use cases
+// Selectors for common use cases - using useShallow for object returns to prevent infinite loops
 export const useProjectInfo = () =>
-  useVideoEditorStore((state) => ({
-    projectId: state.projectId,
-    projectName: state.projectName,
-    projectStatus: state.projectStatus,
-    currentDurationSeconds: state.currentDurationSeconds,
-    maxDurationSeconds: state.maxDurationSeconds,
-  }));
+  useVideoEditorStore(
+    useShallow((state) => ({
+      projectId: state.projectId,
+      projectName: state.projectName,
+      projectStatus: state.projectStatus,
+      currentDurationSeconds: state.currentDurationSeconds,
+      maxDurationSeconds: state.maxDurationSeconds,
+    }))
+  );
 
 export const useClips = () => useVideoEditorStore((state) => state.clips);
 export const useSelectedClip = () =>
@@ -417,14 +420,18 @@ export const useSelectedOverlay = () =>
     state.overlays.find((o) => o.id === state.selectedOverlayId) ?? null
   );
 
+// usePlaybackState uses useShallow to prevent re-renders when object reference changes
+// but values are the same
 export const usePlaybackState = () =>
-  useVideoEditorStore((state) => ({
-    isPlaying: state.isPlaying,
-    currentTime: state.currentTime,
-    duration: state.currentDurationSeconds,
-    volume: state.volume,
-    isMuted: state.isMuted,
-  }));
+  useVideoEditorStore(
+    useShallow((state) => ({
+      isPlaying: state.isPlaying,
+      currentTime: state.currentTime,
+      duration: state.currentDurationSeconds,
+      volume: state.volume,
+      isMuted: state.isMuted,
+    }))
+  );
 
 export const useIsOverLimit = () =>
   useVideoEditorStore(

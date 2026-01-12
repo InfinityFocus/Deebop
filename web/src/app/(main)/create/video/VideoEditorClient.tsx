@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -10,7 +10,7 @@ import {
   AlertTriangle,
   Film,
 } from 'lucide-react';
-import { useVideoEditorStore, useProjectInfo, useIsOverLimit } from '@/stores/videoEditorStore';
+import { useVideoEditorStore } from '@/stores/videoEditorStore';
 import VideoEditor from '@/components/video-editor/VideoEditor';
 
 interface VideoEditorClientProps {
@@ -27,24 +27,34 @@ export default function VideoEditorClient({
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const initializedRef = useRef(false);
 
+  // Get stable action references
   const initProject = useVideoEditorStore((s) => s.initProject);
   const resetProject = useVideoEditorStore((s) => s.resetProject);
-  const { projectId, projectName, currentDurationSeconds, projectStatus } = useProjectInfo();
-  const isOverLimit = useIsOverLimit();
-  const clips = useVideoEditorStore((s) => s.clips);
-  const overlays = useVideoEditorStore((s) => s.overlays);
   const setProjectName = useVideoEditorStore((s) => s.setProjectName);
 
-  // Initialize new project on mount
+  // Get state values individually to avoid object creation
+  const projectId = useVideoEditorStore((s) => s.projectId);
+  const projectName = useVideoEditorStore((s) => s.projectName);
+  const currentDurationSeconds = useVideoEditorStore((s) => s.currentDurationSeconds);
+  const maxDuration = useVideoEditorStore((s) => s.maxDurationSeconds);
+  const clips = useVideoEditorStore((s) => s.clips);
+  const overlays = useVideoEditorStore((s) => s.overlays);
+  const isOverLimit = currentDurationSeconds > maxDurationSeconds;
+
+  // Initialize new project on mount - only once
   useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     initProject(null, maxDurationSeconds);
 
     // Cleanup on unmount
     return () => {
       resetProject();
     };
-  }, [initProject, resetProject, maxDurationSeconds]);
+  }, []);
 
   // Format duration display
   const formatDuration = (seconds: number) => {
