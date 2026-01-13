@@ -215,7 +215,25 @@ export async function DELETE() {
       });
 
       // 15. Delete creator page data
-      await tx.creatorPageLink.deleteMany({
+      await tx.creatorPageEmail.deleteMany({
+        where: {
+          page: { userId: { in: userIds } },
+        },
+      });
+
+      await tx.creatorPageClick.deleteMany({
+        where: {
+          page: { userId: { in: userIds } },
+        },
+      });
+
+      await tx.creatorPageView.deleteMany({
+        where: {
+          page: { userId: { in: userIds } },
+        },
+      });
+
+      await tx.creatorPageBlock.deleteMany({
         where: {
           page: { userId: { in: userIds } },
         },
