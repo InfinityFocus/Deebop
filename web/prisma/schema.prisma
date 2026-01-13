@@ -78,6 +78,10 @@ model User {
   audienceGroups           AudienceGroup[]             @relation("UserAudienceGroups")
   blockedBy                Block[]                     @relation("Blocked")
   blocks                   Block[]                     @relation("Blocker")
+  mutedBy                  Mute[]                      @relation("Muted")
+  mutes                    Mute[]                      @relation("Muter")
+  restrictedBy             Restrict[]                  @relation("Restricted")
+  restricts                Restrict[]                  @relation("Restricter")
   blogPosts                BlogPost[]
   boosts                   Boost[]
   followRequestsSent       FollowRequest[]             @relation("Requester")
@@ -129,9 +133,20 @@ model User {
   showActivityStatus      Boolean @default(true) @map("show_activity_status")
   allowTagging            Boolean @default(true) @map("allow_tagging")
   requireTaggingApproval  Boolean @default(false) @map("require_tagging_approval")
+  limitTagsToFollowers    Boolean @default(false) @map("limit_tags_to_followers")
   allowMentions           Boolean @default(true) @map("allow_mentions")
   requireMentionApproval  Boolean @default(false) @map("require_mention_approval")
+  limitMentionsToFollowers Boolean @default(false) @map("limit_mentions_to_followers")
   showLikedPosts          Boolean @default(false) @map("show_liked_posts")
+  hideFromDiscovery       Boolean @default(false) @map("hide_from_discovery")
+  dontSuggestAccount      Boolean @default(false) @map("dont_suggest_account")
+  hideFollowersList       Boolean @default(false) @map("hide_followers_list")
+  hideFollowingList       Boolean @default(false) @map("hide_following_list")
+  hideEngagementCounts    Boolean @default(false) @map("hide_engagement_counts")
+
+  // Account status
+  isDeactivated           Boolean   @default(false) @map("is_deactivated")
+  deactivatedAt           DateTime? @map("deactivated_at")
 
   // Repost preferences
   allowReposts          Boolean  @default(true) @map("allow_reposts")
@@ -411,6 +426,30 @@ model Block {
 
   @@id([blockerId, blockedId])
   @@map("blocks")
+}
+
+// Mute: Hide someone's content from your feed (they don't know)
+model Mute {
+  muterId   String   @map("muter_id")
+  mutedId   String   @map("muted_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  muted     User     @relation("Muted", fields: [mutedId], references: [id], onDelete: Cascade)
+  muter     User     @relation("Muter", fields: [muterId], references: [id], onDelete: Cascade)
+
+  @@id([muterId, mutedId])
+  @@map("mutes")
+}
+
+// Restrict: Their interactions on your posts are only visible to them
+model Restrict {
+  restricterId String   @map("restricter_id")
+  restrictedId String   @map("restricted_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  restricted   User     @relation("Restricted", fields: [restrictedId], references: [id], onDelete: Cascade)
+  restricter   User     @relation("Restricter", fields: [restricterId], references: [id], onDelete: Cascade)
+
+  @@id([restricterId, restrictedId])
+  @@map("restricts")
 }
 
 model Report {

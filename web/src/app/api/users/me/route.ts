@@ -24,11 +24,18 @@ export async function GET() {
         showActivityStatus: true,
         allowTagging: true,
         requireTaggingApproval: true,
+        limitTagsToFollowers: true,
         allowMentions: true,
         requireMentionApproval: true,
+        limitMentionsToFollowers: true,
         showLikedPosts: true,
         allowReposts: true,
         requireRepostApproval: true,
+        hideFromDiscovery: true,
+        dontSuggestAccount: true,
+        hideFollowersList: true,
+        hideFollowingList: true,
+        hideEngagementCounts: true,
         followersCount: true,
         followingCount: true,
         _count: {
@@ -58,11 +65,18 @@ export async function GET() {
         show_activity_status: fullUser.showActivityStatus,
         allow_tagging: fullUser.allowTagging,
         require_tagging_approval: fullUser.requireTaggingApproval,
+        limit_tags_to_followers: fullUser.limitTagsToFollowers,
         allow_mentions: fullUser.allowMentions,
         require_mention_approval: fullUser.requireMentionApproval,
+        limit_mentions_to_followers: fullUser.limitMentionsToFollowers,
         show_liked_posts: fullUser.showLikedPosts,
         allow_reposts: fullUser.allowReposts,
         require_repost_approval: fullUser.requireRepostApproval,
+        hide_from_discovery: fullUser.hideFromDiscovery,
+        dont_suggest_account: fullUser.dontSuggestAccount,
+        hide_followers_list: fullUser.hideFollowersList,
+        hide_following_list: fullUser.hideFollowingList,
+        hide_engagement_counts: fullUser.hideEngagementCounts,
         followers_count: fullUser.followersCount,
         following_count: fullUser.followingCount,
         posts_count: fullUser._count.posts,
@@ -91,11 +105,18 @@ export async function PATCH(request: NextRequest) {
       show_activity_status,
       allow_tagging,
       require_tagging_approval,
+      limit_tags_to_followers,
       allow_mentions,
       require_mention_approval,
+      limit_mentions_to_followers,
       show_liked_posts,
       allow_reposts,
       require_repost_approval,
+      hide_from_discovery,
+      dont_suggest_account,
+      hide_followers_list,
+      hide_following_list,
+      hide_engagement_counts,
     } = body;
 
     // Validate profile link if provided
@@ -127,11 +148,18 @@ export async function PATCH(request: NextRequest) {
       showActivityStatus?: boolean;
       allowTagging?: boolean;
       requireTaggingApproval?: boolean;
+      limitTagsToFollowers?: boolean;
       allowMentions?: boolean;
       requireMentionApproval?: boolean;
+      limitMentionsToFollowers?: boolean;
       showLikedPosts?: boolean;
       allowReposts?: boolean;
       requireRepostApproval?: boolean;
+      hideFromDiscovery?: boolean;
+      dontSuggestAccount?: boolean;
+      hideFollowersList?: boolean;
+      hideFollowingList?: boolean;
+      hideEngagementCounts?: boolean;
     } = {};
 
     if (display_name !== undefined) {
@@ -155,11 +183,17 @@ export async function PATCH(request: NextRequest) {
     if (typeof require_tagging_approval === 'boolean') {
       updateData.requireTaggingApproval = require_tagging_approval;
     }
+    if (typeof limit_tags_to_followers === 'boolean') {
+      updateData.limitTagsToFollowers = limit_tags_to_followers;
+    }
     if (typeof allow_mentions === 'boolean') {
       updateData.allowMentions = allow_mentions;
     }
     if (typeof require_mention_approval === 'boolean') {
       updateData.requireMentionApproval = require_mention_approval;
+    }
+    if (typeof limit_mentions_to_followers === 'boolean') {
+      updateData.limitMentionsToFollowers = limit_mentions_to_followers;
     }
     if (typeof show_liked_posts === 'boolean') {
       updateData.showLikedPosts = show_liked_posts;
@@ -169,6 +203,21 @@ export async function PATCH(request: NextRequest) {
     }
     if (typeof require_repost_approval === 'boolean') {
       updateData.requireRepostApproval = require_repost_approval;
+    }
+    if (typeof hide_from_discovery === 'boolean') {
+      updateData.hideFromDiscovery = hide_from_discovery;
+    }
+    if (typeof dont_suggest_account === 'boolean') {
+      updateData.dontSuggestAccount = dont_suggest_account;
+    }
+    if (typeof hide_followers_list === 'boolean') {
+      updateData.hideFollowersList = hide_followers_list;
+    }
+    if (typeof hide_following_list === 'boolean') {
+      updateData.hideFollowingList = hide_following_list;
+    }
+    if (typeof hide_engagement_counts === 'boolean') {
+      updateData.hideEngagementCounts = hide_engagement_counts;
     }
 
     // Update user
@@ -187,11 +236,18 @@ export async function PATCH(request: NextRequest) {
         showActivityStatus: true,
         allowTagging: true,
         requireTaggingApproval: true,
+        limitTagsToFollowers: true,
         allowMentions: true,
         requireMentionApproval: true,
+        limitMentionsToFollowers: true,
         showLikedPosts: true,
         allowReposts: true,
         requireRepostApproval: true,
+        hideFromDiscovery: true,
+        dontSuggestAccount: true,
+        hideFollowersList: true,
+        hideFollowingList: true,
+        hideEngagementCounts: true,
         followersCount: true,
         followingCount: true,
         _count: {
@@ -217,11 +273,18 @@ export async function PATCH(request: NextRequest) {
         show_activity_status: updatedUser.showActivityStatus,
         allow_tagging: updatedUser.allowTagging,
         require_tagging_approval: updatedUser.requireTaggingApproval,
+        limit_tags_to_followers: updatedUser.limitTagsToFollowers,
         allow_mentions: updatedUser.allowMentions,
         require_mention_approval: updatedUser.requireMentionApproval,
+        limit_mentions_to_followers: updatedUser.limitMentionsToFollowers,
         show_liked_posts: updatedUser.showLikedPosts,
         allow_reposts: updatedUser.allowReposts,
         require_repost_approval: updatedUser.requireRepostApproval,
+        hide_from_discovery: updatedUser.hideFromDiscovery,
+        dont_suggest_account: updatedUser.dontSuggestAccount,
+        hide_followers_list: updatedUser.hideFollowersList,
+        hide_following_list: updatedUser.hideFollowingList,
+        hide_engagement_counts: updatedUser.hideEngagementCounts,
         followers_count: updatedUser.followersCount,
         following_count: updatedUser.followingCount,
         posts_count: updatedUser._count.posts,

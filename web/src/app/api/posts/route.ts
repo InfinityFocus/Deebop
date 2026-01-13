@@ -77,28 +77,46 @@ export async function GET(request: NextRequest) {
     // Get list of users the current user follows (needed for both modes)
     let followingIds: string[] = [];
     let favouriteIds: string[] = [];
+    let blockedIds: string[] = [];
+    let mutedIds: string[] = [];
     if (user) {
-      const following = await prisma.follow.findMany({
-        where: { followerId: user.id },
-        select: { followingId: true },
-      });
-      followingIds = following.map((f) => f.followingId);
+      const [following, favourites, blocks, mutes] = await Promise.all([
+        prisma.follow.findMany({
+          where: { followerId: user.id },
+          select: { followingId: true },
+        }),
+        prisma.favourite.findMany({
+          where: { userId: user.id },
+          select: { favouriteId: true },
+        }),
+        // Get users I've blocked
+        prisma.block.findMany({
+          where: { blockerId: user.id },
+          select: { blockedId: true },
+        }),
+        // Get users I've muted
+        prisma.mute.findMany({
+          where: { muterId: user.id },
+          select: { mutedId: true },
+        }),
+      ]);
 
-      // Get favourited users for favourites feed
-      const favourites = await prisma.favourite.findMany({
-        where: { userId: user.id },
-        select: { favouriteId: true },
-      });
+      followingIds = following.map((f) => f.followingId);
       favouriteIds = favourites.map((f) => f.favouriteId);
+      blockedIds = blocks.map((b) => b.blockedId);
+      mutedIds = mutes.map((m) => m.mutedId);
     }
 
     // Get repost settings for chain reposting behavior
     const repostSettings = await prisma.repostSettings.findFirst();
     const allowChainReposts = repostSettings?.allowChainReposts ?? true;
 
+    // Combine blocked and muted for content filtering (don't show posts from these users)
+    const excludedUserIds = [...new Set([...blockedIds, ...mutedIds])];
+
     // If saved posts requested
     if (savedOnly) {
-      return await fetchSavedFeed(user, contentTypeFilter, sensitiveContentFilter, durationFilter, cursor, limit);
+      return await fetchSavedFeed(user, contentTypeFilter, sensitiveContentFilter, durationFilter, cursor, limit, excludedUserIds);
     }
 
     // If profile page (userId specified), use legacy behavior (no mode filtering)
@@ -108,11 +126,11 @@ export async function GET(request: NextRequest) {
 
     // Handle feed modes
     if (mode === 'following') {
-      return await fetchFollowingFeed(user, contentTypeFilter, sensitiveContentFilter, durationFilter, cursor, limit, followingIds, allowChainReposts);
+      return await fetchFollowingFeed(user, contentTypeFilter, sensitiveContentFilter, durationFilter, cursor, limit, followingIds, allowChainReposts, excludedUserIds);
     } else if (mode === 'favourites') {
-      return await fetchFavouritesFeed(user, contentTypeFilter, sensitiveContentFilter, durationFilter, cursor, limit, favouriteIds, followingIds, allowChainReposts);
+      return await fetchFavouritesFeed(user, contentTypeFilter, sensitiveContentFilter, durationFilter, cursor, limit, favouriteIds, followingIds, allowChainReposts, excludedUserIds);
     } else {
-      return await fetchDiscoveryFeed(user, contentTypeFilter, sensitiveContentFilter, durationFilter, cursor, limit, followingIds, allowChainReposts);
+      return await fetchDiscoveryFeed(user, contentTypeFilter, sensitiveContentFilter, durationFilter, cursor, limit, followingIds, allowChainReposts, excludedUserIds);
     }
   } catch (error) {
     console.error('Get posts error:', error);
@@ -127,7 +145,8 @@ async function fetchSavedFeed(
   sensitiveContentFilter: SensitiveContentFilter,
   durationFilter: DurationFilter,
   cursor: string | null,
-  limit: number
+  limit: number,
+  excludedUserIds: string[] = []
 ) {
   if (!user) {
     return NextResponse.json({ error: 'Must be logged in to view saved posts' }, { status: 401 });
@@ -156,6 +175,10 @@ async function fetchSavedFeed(
       ...sensitiveContentFilter,
       ...durationFilter,
       status: 'published',
+      // Exclude blocked/muted users
+      ...(excludedUserIds.length > 0 ? { userId: { notIn: excludedUserIds } } : {}),
+      // Exclude deactivated users
+      user: { isDeactivated: false },
     },
     take: limit + 1,
     cursor: cursor ? { id: cursor } : undefined,
@@ -228,7 +251,8 @@ async function fetchFollowingFeed(
   cursor: string | null,
   limit: number,
   followingIds: string[],
-  allowChainReposts: boolean = true
+  allowChainReposts: boolean = true,
+  excludedUserIds: string[] = []
 ) {
   if (!user) {
     return NextResponse.json({ error: 'Must be logged in for Following feed' }, { status: 401 });
@@ -239,6 +263,16 @@ async function fetchFollowingFeed(
       posts: [],
       nextCursor: undefined,
       empty_reason: 'no_follows',
+    });
+  }
+
+  // Filter out blocked/muted users from following feed
+  const filteredFollowingIds = followingIds.filter(id => !excludedUserIds.includes(id));
+  if (filteredFollowingIds.length === 0) {
+    return NextResponse.json({
+      posts: [],
+      nextCursor: undefined,
+      empty_reason: 'all_blocked_or_muted',
     });
   }
 
@@ -278,8 +312,9 @@ async function fetchFollowingFeed(
       ...sensitiveContentFilter,
       ...durationFilter,
       ...visibilityFilter,
-      userId: { in: followingIds }, // Only from followed users
+      userId: { in: filteredFollowingIds }, // Only from followed users (excluding blocked/muted)
       status: 'published',
+      user: { isDeactivated: false },
     },
     take: fetchLimit + 1,
     cursor: cursor ? { id: cursor } : undefined,
@@ -323,14 +358,17 @@ async function fetchFollowingFeed(
     },
   });
 
-  // Fetch approved reposts from followed users
+  // Fetch approved reposts from followed users (excluding blocked/muted)
   const reposts = await prisma.repost.findMany({
     where: {
-      userId: { in: followingIds },
+      userId: { in: filteredFollowingIds },
       status: 'approved',
+      user: { isDeactivated: false },
       // Apply content type filter if specified
       ...(contentTypeFilter.contentType ? { post: { contentType: contentTypeFilter.contentType as 'shout' | 'image' | 'video' | 'audio' | 'panorama360' } } : {}),
       ...(Object.keys(sensitiveContentFilter).length > 0 ? { post: sensitiveContentFilter } : {}),
+      // Also exclude posts from blocked/muted users
+      ...(excludedUserIds.length > 0 ? { post: { userId: { notIn: excludedUserIds } } } : {}),
     },
     take: fetchLimit,
     orderBy: { createdAt: 'desc' },
@@ -463,7 +501,8 @@ async function fetchFavouritesFeed(
   limit: number,
   favouriteIds: string[],
   followingIds: string[],
-  allowChainReposts: boolean = true
+  allowChainReposts: boolean = true,
+  excludedUserIds: string[] = []
 ) {
   if (!user) {
     return NextResponse.json({ error: 'Must be logged in for Favourites feed' }, { status: 401 });
@@ -474,6 +513,16 @@ async function fetchFavouritesFeed(
       posts: [],
       nextCursor: undefined,
       empty_reason: 'no_favourites',
+    });
+  }
+
+  // Filter out blocked/muted users from favourites feed
+  const filteredFavouriteIds = favouriteIds.filter(id => !excludedUserIds.includes(id));
+  if (filteredFavouriteIds.length === 0) {
+    return NextResponse.json({
+      posts: [],
+      nextCursor: undefined,
+      empty_reason: 'all_blocked_or_muted',
     });
   }
 
@@ -522,8 +571,9 @@ async function fetchFavouritesFeed(
       ...sensitiveContentFilter,
       ...durationFilter,
       ...visibilityFilter,
-      userId: { in: favouriteIds }, // Only from favourited users
+      userId: { in: filteredFavouriteIds }, // Only from favourited users (excluding blocked/muted)
       status: 'published',
+      user: { isDeactivated: false },
     },
     take: fetchLimit + 1,
     cursor: cursor ? { id: cursor } : undefined,
@@ -567,14 +617,17 @@ async function fetchFavouritesFeed(
     },
   });
 
-  // Fetch approved reposts from favourited users
+  // Fetch approved reposts from favourited users (excluding blocked/muted)
   const reposts = await prisma.repost.findMany({
     where: {
-      userId: { in: favouriteIds },
+      userId: { in: filteredFavouriteIds },
       status: 'approved',
+      user: { isDeactivated: false },
       // Apply content type filter if specified
       ...(contentTypeFilter.contentType ? { post: { contentType: contentTypeFilter.contentType as 'shout' | 'image' | 'video' | 'audio' | 'panorama360' } } : {}),
       ...(Object.keys(sensitiveContentFilter).length > 0 ? { post: sensitiveContentFilter } : {}),
+      // Also exclude posts from blocked/muted users
+      ...(excludedUserIds.length > 0 ? { post: { userId: { notIn: excludedUserIds } } } : {}),
     },
     take: fetchLimit,
     orderBy: { createdAt: 'desc' },
@@ -706,7 +759,8 @@ async function fetchDiscoveryFeed(
   cursor: string | null,
   limit: number,
   followingIds: string[],
-  allowChainReposts: boolean = true
+  allowChainReposts: boolean = true,
+  excludedUserIds: string[] = []
 ) {
   // Fetch user's content preferences if logged in
   let contentPrefsFilter: Record<string, unknown> = {};
@@ -734,7 +788,10 @@ async function fetchDiscoveryFeed(
     }
   }
 
-  // For Discovery, we only show public posts (excluding user's own posts)
+  // Build user exclusion filter (own posts + blocked/muted users)
+  const userExclusionIds = user ? [...excludedUserIds, user.id] : excludedUserIds;
+
+  // For Discovery, we only show public posts (excluding user's own posts and blocked/muted)
   const posts = await prisma.post.findMany({
     where: {
       ...contentTypeFilter,
@@ -743,8 +800,13 @@ async function fetchDiscoveryFeed(
       ...contentPrefsFilter,
       visibility: 'public',
       status: 'published',
-      // Exclude user's own posts from discovery - they should see new content, not their own
-      ...(user ? { userId: { not: user.id } } : {}),
+      // Exclude user's own posts and blocked/muted users from discovery
+      ...(userExclusionIds.length > 0 ? { userId: { notIn: userExclusionIds } } : {}),
+      // Exclude deactivated users and users who hide from discovery
+      user: {
+        isDeactivated: false,
+        hideFromDiscovery: false,
+      },
     },
     // Fetch more for ranking/sorting
     take: Math.min(limit * 3, 150),
@@ -796,12 +858,24 @@ async function fetchDiscoveryFeed(
   const reposts = await prisma.repost.findMany({
     where: {
       status: 'approved',
+      // Exclude reposts from blocked/muted and deactivated/hidden users
+      ...(excludedUserIds.length > 0 ? { userId: { notIn: excludedUserIds } } : {}),
+      user: {
+        isDeactivated: false,
+        hideFromDiscovery: false,
+      },
       post: {
         visibility: 'public',
         status: 'published',
         ...(contentTypeFilter.contentType ? { contentType: contentTypeFilter.contentType as 'shout' | 'image' | 'video' | 'audio' | 'panorama360' } : {}),
         ...(Object.keys(sensitiveContentFilter).length > 0 ? sensitiveContentFilter : {}),
         ...(Object.keys(contentPrefsFilter).length > 0 ? contentPrefsFilter : {}),
+        // Also exclude posts from blocked/muted/deactivated/hidden users
+        ...(userExclusionIds.length > 0 ? { userId: { notIn: userExclusionIds } } : {}),
+        user: {
+          isDeactivated: false,
+          hideFromDiscovery: false,
+        },
       },
     },
     take: Math.min(limit * 2, 100),
