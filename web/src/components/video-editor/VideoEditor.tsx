@@ -164,151 +164,154 @@ export default function VideoEditor({
   // Get the preview container classes based on mode
   const getPreviewContainerClass = () => {
     if (previewMode === 'mobile') {
-      // Mobile mode: phone bezel on desktop, full-width on actual mobile
-      return 'w-full md:w-[375px] md:max-h-[667px] md:rounded-[2.5rem] md:border-[10px] md:border-zinc-700 rounded-xl overflow-hidden';
+      // Mobile mode: full-width on actual mobile, phone bezel on desktop
+      return 'w-full h-full md:w-[375px] md:h-auto md:max-h-[500px] lg:max-h-[600px] md:rounded-[2.5rem] md:border-[10px] md:border-zinc-700 rounded-lg md:rounded-[2.5rem] overflow-hidden';
     }
-    // Desktop mode: wider preview
-    return 'w-full max-w-3xl rounded-xl border border-zinc-700 overflow-hidden';
+    // Desktop mode: wider preview, full width on mobile
+    return 'w-full h-full md:max-w-3xl md:h-auto rounded-lg md:border md:border-zinc-700 overflow-hidden';
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-full">
-      {/* Left side - Preview and Timeline */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Preview mode toggle - only show on desktop when there are clips */}
-        {clips.length > 0 && (
-          <div className="hidden md:flex items-center justify-center gap-2 py-2 bg-zinc-900 border-b border-zinc-800">
-            <button
-              onClick={() => setPreviewMode('mobile')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition ${
-                previewMode === 'mobile'
-                  ? 'bg-zinc-700 text-white'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              <Smartphone size={16} />
-              Mobile
-            </button>
-            <button
-              onClick={() => setPreviewMode('desktop')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition ${
-                previewMode === 'desktop'
-                  ? 'bg-zinc-700 text-white'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              <Monitor size={16} />
-              Desktop
-            </button>
-          </div>
-        )}
-
-        {/* Video Preview */}
-        <div className="flex-1 min-h-0 bg-zinc-950 flex items-center justify-center p-4">
-          {clips.length === 0 ? (
-            // Empty state - upload prompt
-            <div
-              className="w-full h-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-zinc-700 rounded-xl"
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-            >
-              <div className="text-center max-w-md">
-                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-zinc-800 flex items-center justify-center">
-                  <Upload size={32} className="text-zinc-500" />
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2">
-                  Add your first clip
-                </h3>
-                <p className="text-zinc-400 mb-6">
-                  Drag and drop video files here, or click the button below to
-                  browse
-                </p>
-                <button
-                  onClick={handleUploadClick}
-                  disabled={isUploading}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 disabled:opacity-50 transition"
-                >
-                  {isUploading ? (
-                    <>
-                      <Loader2 size={20} className="animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Plus size={20} />
-                      Add Video Clips
-                    </>
-                  )}
-                </button>
-                {uploadError && (
-                  <p className="mt-4 text-red-400 text-sm">{uploadError}</p>
-                )}
-                <p className="mt-4 text-zinc-500 text-sm">
-                  Max duration: {Math.floor(maxDurationSeconds / 60)} min (
-                  {userTier} tier)
-                </p>
-              </div>
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Main content area */}
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
+        {/* Left side - Preview and Timeline */}
+        <div className="flex-1 flex flex-col min-w-0 min-h-0">
+          {/* Preview mode toggle - only show on desktop when there are clips */}
+          {clips.length > 0 && (
+            <div className="hidden md:flex items-center justify-center gap-2 py-2 bg-zinc-900 border-b border-zinc-800 flex-shrink-0">
+              <button
+                onClick={() => setPreviewMode('mobile')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition ${
+                  previewMode === 'mobile'
+                    ? 'bg-zinc-700 text-white'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Smartphone size={16} />
+                Mobile
+              </button>
+              <button
+                onClick={() => setPreviewMode('desktop')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition ${
+                  previewMode === 'desktop'
+                    ? 'bg-zinc-700 text-white'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Monitor size={16} />
+                Desktop
+              </button>
             </div>
-          ) : (
-            // Preview with phone bezel on desktop
-            <div className={getPreviewContainerClass()}>
-              <div className="bg-black aspect-[9/16] md:aspect-auto md:h-full">
-                <VideoPreview />
+          )}
+
+          {/* Video Preview */}
+          <div className="flex-1 min-h-0 bg-zinc-950 flex items-center justify-center p-2 sm:p-4">
+            {clips.length === 0 ? (
+              // Empty state - upload prompt
+              <div
+                className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-8 border-2 border-dashed border-zinc-700 rounded-xl"
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+              >
+                <div className="text-center max-w-md">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-full bg-zinc-800 flex items-center justify-center">
+                    <Upload size={28} className="text-zinc-500 sm:w-8 sm:h-8" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
+                    Add your first clip
+                  </h3>
+                  <p className="text-zinc-400 mb-4 sm:mb-6 text-sm sm:text-base">
+                    Drag and drop video files here, or click the button below to
+                    browse
+                  </p>
+                  <button
+                    onClick={handleUploadClick}
+                    disabled={isUploading}
+                    className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 disabled:opacity-50 transition text-sm sm:text-base"
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={18} />
+                        Add Video Clips
+                      </>
+                    )}
+                  </button>
+                  {uploadError && (
+                    <p className="mt-4 text-red-400 text-sm">{uploadError}</p>
+                  )}
+                  <p className="mt-4 text-zinc-500 text-xs sm:text-sm">
+                    Max duration: {Math.floor(maxDurationSeconds / 60)} min (
+                    {userTier} tier)
+                  </p>
+                </div>
               </div>
+            ) : (
+              // Preview - full width on mobile, constrained on desktop
+              <div className={getPreviewContainerClass()}>
+                <div className="bg-black h-full min-h-[200px]">
+                  <VideoPreview />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Timeline - reduced height on mobile */}
+          {clips.length > 0 && (
+            <div className="h-28 sm:h-40 md:h-48 border-t border-zinc-800 bg-zinc-900 flex-shrink-0">
+              <Timeline
+                onAddClip={handleUploadClick}
+                isUploading={isUploading}
+              />
             </div>
           )}
         </div>
 
-        {/* Timeline */}
+        {/* Right side - Tool panels (desktop) / Bottom sheet (mobile) */}
         {clips.length > 0 && (
-          <div className="h-40 md:h-48 border-t border-zinc-800 bg-zinc-900 flex-shrink-0">
-            <Timeline
-              onAddClip={handleUploadClick}
-              isUploading={isUploading}
-            />
+          <div className="lg:w-80 border-t lg:border-t-0 lg:border-l border-zinc-800 bg-zinc-900 flex flex-col h-[30vh] sm:h-[35vh] lg:h-auto lg:max-h-none flex-shrink-0">
+            {/* Tool tabs - horizontal scrolling on mobile if needed */}
+            <div className="flex border-b border-zinc-800 flex-shrink-0">
+              {TOOL_TABS.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() =>
+                      setActiveTab(activeTab === tab.id ? null : tab.id)
+                    }
+                    className={`flex-1 flex flex-col items-center gap-0.5 sm:gap-1 py-2 sm:py-3 text-xs font-medium transition ${
+                      activeTab === tab.id
+                        ? 'text-emerald-400 bg-zinc-800/50'
+                        : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'
+                    }`}
+                  >
+                    <Icon size={18} className="sm:w-5 sm:h-5" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Tool panel content */}
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 min-h-0">
+              {activeTab === 'text' && <TextOverlayTools />}
+              {activeTab === 'filters' && <FilterTools />}
+              {activeTab === 'speed' && <SpeedTools />}
+              {!activeTab && (
+                <div className="text-center text-zinc-500 py-4 sm:py-8">
+                  <p className="text-xs sm:text-sm">Select a tool to edit your video</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
-
-      {/* Right side - Tool panels (desktop) / Bottom sheet (mobile) */}
-      {clips.length > 0 && (
-        <div className="lg:w-80 border-t lg:border-t-0 lg:border-l border-zinc-800 bg-zinc-900 flex flex-col max-h-[40vh] lg:max-h-none">
-          {/* Tool tabs */}
-          <div className="flex border-b border-zinc-800">
-            {TOOL_TABS.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() =>
-                    setActiveTab(activeTab === tab.id ? null : tab.id)
-                  }
-                  className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition ${
-                    activeTab === tab.id
-                      ? 'text-emerald-400 bg-zinc-800/50'
-                      : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'
-                  }`}
-                >
-                  <Icon size={20} />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Tool panel content */}
-          <div className="flex-1 overflow-y-auto p-4">
-            {activeTab === 'text' && <TextOverlayTools />}
-            {activeTab === 'filters' && <FilterTools />}
-            {activeTab === 'speed' && <SpeedTools />}
-            {!activeTab && (
-              <div className="text-center text-zinc-500 py-8">
-                <p className="text-sm">Select a tool to edit your video</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Hidden file input */}
       <input

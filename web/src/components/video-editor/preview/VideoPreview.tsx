@@ -260,32 +260,55 @@ export default function VideoPreview() {
     const video = videoRef.current;
     if (!video || clips.length === 0) return;
 
+    console.log('[VideoPreview] Clips changed, loading video...', clips.length, 'clips');
+
     // Sync ref with state when not playing
     currentTimeRef.current = currentTime;
 
     const result = getClipAtGlobalTime(clips, currentTime);
-    if (!result) return;
+    if (!result) {
+      console.log('[VideoPreview] No clip at current time:', currentTime);
+      return;
+    }
 
     const { clip, localTime } = result;
+    console.log('[VideoPreview] Loading clip:', clip.id, 'at localTime:', localTime);
 
     // Switch video source if clip changed
     if (clip.id !== currentClipId) {
+      console.log('[VideoPreview] Setting new video source:', clip.sourceUrl);
       setCurrentClipId(clip.id);
       video.src = clip.sourceUrl;
       video.playbackRate = clip.speed;
-      video.load();
-    }
 
-    // Seek to the correct position
-    if (Math.abs(video.currentTime - localTime) > 0.1) {
-      video.currentTime = localTime;
+      // Handle video load events
+      const handleLoadedData = () => {
+        console.log('[VideoPreview] Video loaded, seeking to:', localTime);
+        video.currentTime = localTime;
+      };
+
+      const handleSeeked = () => {
+        console.log('[VideoPreview] Video seeked, drawing frame');
+        drawFrame();
+        drawOverlays();
+        video.removeEventListener('seeked', handleSeeked);
+      };
+
+      video.addEventListener('loadeddata', handleLoadedData, { once: true });
+      video.addEventListener('seeked', handleSeeked);
+      video.load();
+    } else {
+      // Same clip, just seek
+      if (Math.abs(video.currentTime - localTime) > 0.1) {
+        video.currentTime = localTime;
+      }
     }
 
     // Apply CSS filter
     if (canvasRef.current) {
       canvasRef.current.style.filter = getCssFilter(clip.filterPreset);
     }
-  }, [clips, currentTime, currentClipId, isPlaying]);
+  }, [clips, currentTime, currentClipId, isPlaying, drawFrame, drawOverlays]);
 
   // Update volume
   useEffect(() => {

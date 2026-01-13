@@ -231,38 +231,71 @@ export default function VideoEditorClient({
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-5rem)] md:min-h-screen bg-zinc-950">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 bg-zinc-900 border-b border-zinc-800">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.back()}
-            className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition"
-          >
-            <ArrowLeft size={20} />
-          </button>
+      {/* Header - Mobile responsive */}
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-3 sm:px-4 py-2 sm:py-3 bg-zinc-900 border-b border-zinc-800 gap-2 sm:gap-0">
+        {/* Top row: back button, name, and action buttons on mobile */}
+        <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+            <button
+              onClick={() => router.back()}
+              className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition flex-shrink-0"
+            >
+              <ArrowLeft size={20} />
+            </button>
 
-          <div className="flex items-center gap-2">
-            <Film size={20} className="text-emerald-500" />
-            <input
-              type="text"
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              className="bg-transparent text-white font-medium text-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded px-2 py-1"
-              placeholder="Project name"
-            />
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <Film size={18} className="text-emerald-500 flex-shrink-0 hidden sm:block" />
+              <input
+                type="text"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                className="bg-transparent text-white font-medium text-base sm:text-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded px-2 py-1 min-w-0 w-full max-w-[150px] sm:max-w-none"
+                placeholder="Project name"
+              />
+            </div>
+          </div>
+
+          {/* Action buttons on mobile (inline with name) */}
+          <div className="flex items-center gap-2 sm:hidden flex-shrink-0">
+            <button
+              onClick={() => {
+                console.log('[VideoEditorClient] Save clicked! clips:', clips.length);
+                handleSave();
+              }}
+              disabled={isSaving || clips.length === 0}
+              className="p-2 rounded-lg bg-zinc-800 text-white hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              {isSaving ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Save size={18} />
+              )}
+            </button>
+
+            <button
+              onClick={() => {
+                console.log('[VideoEditorClient] Export clicked! clips:', clips.length, 'isOverLimit:', isOverLimit);
+                handleProcess();
+              }}
+              disabled={isSaving || clips.length === 0 || isOverLimit}
+              className="p-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              <Play size={18} />
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Bottom row on mobile: duration and clips count */}
+        <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
           {/* Duration indicator */}
           <div
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm ${
+            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm ${
               isOverLimit
                 ? 'bg-red-500/20 text-red-400'
                 : 'bg-zinc-800 text-zinc-300'
             }`}
           >
-            {isOverLimit && <AlertTriangle size={14} />}
+            {isOverLimit && <AlertTriangle size={12} className="sm:w-[14px] sm:h-[14px]" />}
             <span>{formatDuration(currentDurationSeconds)}</span>
             <span className="text-zinc-500">/</span>
             <span className="text-zinc-500">{formatDuration(maxDurationSeconds)}</span>
@@ -273,35 +306,36 @@ export default function VideoEditorClient({
             [{clips.length} clips]
           </span>
 
-          {/* Save button */}
-          <button
-            onClick={() => {
-              console.log('[VideoEditorClient] Save clicked! clips:', clips.length);
-              handleSave();
-            }}
-            disabled={isSaving || clips.length === 0}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-800 text-white hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            {isSaving ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Save size={16} />
-            )}
-            Save
-          </button>
+          {/* Desktop action buttons */}
+          <div className="hidden sm:flex items-center gap-3">
+            <button
+              onClick={() => {
+                console.log('[VideoEditorClient] Save clicked! clips:', clips.length);
+                handleSave();
+              }}
+              disabled={isSaving || clips.length === 0}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-800 text-white hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              {isSaving ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Save size={16} />
+              )}
+              Save
+            </button>
 
-          {/* Process/Export button */}
-          <button
-            onClick={() => {
-              console.log('[VideoEditorClient] Export clicked! clips:', clips.length, 'isOverLimit:', isOverLimit);
-              handleProcess();
-            }}
-            disabled={isSaving || clips.length === 0 || isOverLimit}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            <Play size={16} />
-            Export
-          </button>
+            <button
+              onClick={() => {
+                console.log('[VideoEditorClient] Export clicked! clips:', clips.length, 'isOverLimit:', isOverLimit);
+                handleProcess();
+              }}
+              disabled={isSaving || clips.length === 0 || isOverLimit}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              <Play size={16} />
+              Export
+            </button>
+          </div>
         </div>
       </header>
 
