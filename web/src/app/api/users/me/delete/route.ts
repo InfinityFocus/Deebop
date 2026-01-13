@@ -120,7 +120,7 @@ export async function DELETE() {
         },
       });
 
-      await tx.albumContributor.deleteMany({
+      await tx.albumMember.deleteMany({
         where: {
           OR: [
             { album: { ownerId: { in: userIds } } },
@@ -129,10 +129,21 @@ export async function DELETE() {
         },
       });
 
-      await tx.albumPost.deleteMany({
+      await tx.albumItem.deleteMany({
         where: {
-          album: { ownerId: { in: userIds } },
+          OR: [
+            { album: { ownerId: { in: userIds } } },
+            { uploaderId: { in: userIds } },
+          ],
         },
+      });
+
+      await tx.albumLike.deleteMany({
+        where: { userId: { in: userIds } },
+      });
+
+      await tx.albumSave.deleteMany({
+        where: { userId: { in: userIds } },
       });
 
       await tx.album.deleteMany({
@@ -140,6 +151,19 @@ export async function DELETE() {
       });
 
       // 12. Delete event related data
+      await tx.eventInviteLinkRedemption.deleteMany({
+        where: { userId: { in: userIds } },
+      });
+
+      await tx.eventInviteLink.deleteMany({
+        where: {
+          OR: [
+            { event: { hostId: { in: userIds } } },
+            { createdById: { in: userIds } },
+          ],
+        },
+      });
+
       await tx.eventInvite.deleteMany({
         where: {
           OR: [
@@ -150,9 +174,12 @@ export async function DELETE() {
         },
       });
 
-      await tx.eventPost.deleteMany({
+      await tx.eventRsvp.deleteMany({
         where: {
-          event: { hostId: { in: userIds } },
+          OR: [
+            { event: { hostId: { in: userIds } } },
+            { userId: { in: userIds } },
+          ],
         },
       });
 
