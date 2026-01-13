@@ -525,19 +525,19 @@ export default function VideoPreview() {
         onPointerUp={handleCanvasPointerUp}
         onPointerLeave={handleCanvasPointerUp}
       >
+        {/* Video element - hidden but used as source for canvas */}
+        <video
+          ref={videoRef}
+          className="absolute inset-0 w-full h-full object-contain opacity-0 pointer-events-none"
+          muted={isMuted}
+          playsInline
+          crossOrigin="anonymous"
+        />
+        {/* Canvas for drawing video frames + overlays */}
         <canvas
           ref={canvasRef}
           className="absolute inset-0 w-full h-full"
           style={{ touchAction: 'none' }}
-        />
-        {/* Fallback: show video directly if canvas isn't working */}
-        <video
-          ref={videoRef}
-          className="absolute inset-0 w-full h-full object-contain"
-          muted={isMuted}
-          playsInline
-          crossOrigin="anonymous"
-          controls
         />
 
         {/* Loading indicator */}
