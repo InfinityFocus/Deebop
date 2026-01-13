@@ -128,43 +128,43 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
   const tierBadge = TIER_BADGES[user.tier] || TIER_BADGES.free;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
+    <div className="max-w-2xl mx-auto">
+      {/* Cover Image - at very top */}
+      <div className="relative">
+        {user.cover_image_url ? (
+          <img
+            src={user.cover_image_url}
+            alt="Cover"
+            className="w-full h-40 object-cover"
+          />
+        ) : (
+          <div className="w-full h-40 bg-gradient-to-r from-emerald-600 via-yellow-500 to-cyan-500" />
+        )}
+
+        {/* Navigation buttons overlaid on cover image */}
+        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
           <button
             onClick={() => window.history.back()}
-            className="p-2 -ml-2 hover:bg-gray-800 rounded-lg transition"
+            className="p-2 bg-black/50 hover:bg-black/70 rounded-full transition backdrop-blur-sm"
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-xl font-bold">@{user.username}</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          {user.is_own_profile ? (
-            <Link href="/settings" className="p-2 hover:bg-gray-800 rounded-lg transition">
-              <Settings size={20} />
-            </Link>
-          ) : currentUser && (
-            <ProfileActionsMenu username={user.username} />
-          )}
+          <div className="flex items-center gap-2">
+            {user.is_own_profile ? (
+              <Link href="/settings" className="p-2 bg-black/50 hover:bg-black/70 rounded-full transition backdrop-blur-sm">
+                <Settings size={20} />
+              </Link>
+            ) : currentUser && (
+              <div className="bg-black/50 rounded-full backdrop-blur-sm">
+                <ProfileActionsMenu username={user.username} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Profile Header */}
-      <div className="p-4">
-        {/* Cover Image */}
-        {user.cover_image_url ? (
-          <div className="h-32 rounded-xl mb-4 overflow-hidden">
-            <img
-              src={user.cover_image_url}
-              alt="Cover"
-              className="w-full h-full object-cover"
-            />
-          </div>
-        ) : (
-          <div className="h-32 bg-gradient-to-r from-emerald-600 via-yellow-500 to-cyan-500 rounded-xl mb-4" />
-        )}
+      {/* Profile Content */}
+      <div className="px-4">
 
         {/* Avatar and Info */}
         <div className="flex flex-col items-center -mt-16 mb-4">
