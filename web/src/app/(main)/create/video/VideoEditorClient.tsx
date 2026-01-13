@@ -9,6 +9,7 @@ import {
   Loader2,
   AlertTriangle,
   Film,
+  CheckCircle,
 } from 'lucide-react';
 import { useVideoEditorStore, VideoClip, TextOverlay } from '@/stores/videoEditorStore';
 import VideoEditor from '@/components/video-editor/VideoEditor';
@@ -39,6 +40,7 @@ export default function VideoEditorClient({
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const initializedRef = useRef(false);
 
   // Get stable action references
@@ -91,6 +93,8 @@ export default function VideoEditorClient({
 
   // Save project to database - returns the project ID on success, null on failure
   const handleSave = async (skipNavigation = false): Promise<string | null> => {
+    console.log('[VideoEditor] handleSave called, clips:', clips.length, 'skipNav:', skipNavigation);
+
     if (clips.length === 0) {
       setSaveError('Add at least one video clip before saving');
       return null;
@@ -98,6 +102,7 @@ export default function VideoEditorClient({
 
     setIsSaving(true);
     setSaveError(null);
+    setSaveSuccess(null);
 
     try {
       const method = projectId ? 'PUT' : 'POST';
@@ -105,14 +110,16 @@ export default function VideoEditorClient({
         ? `/api/video-projects/${projectId}`
         : '/api/video-projects';
 
+      console.log('[VideoEditor] Saving to:', url, 'method:', method);
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: projectName,
           maxDurationSeconds,
+          // Don't send client IDs - let server generate them
           clips: clips.map((c) => ({
-            id: c.id.startsWith('new-') ? undefined : c.id,
             sourceUrl: c.sourceUrl,
             sourceDuration: c.sourceDuration,
             sourceWidth: c.sourceWidth,
@@ -125,7 +132,6 @@ export default function VideoEditorClient({
             volume: c.volume,
           })),
           overlays: overlays.map((o) => ({
-            id: o.id.startsWith('new-') ? undefined : o.id,
             type: o.type,
             positionX: o.positionX,
             positionY: o.positionY,
@@ -140,22 +146,30 @@ export default function VideoEditorClient({
         }),
       });
 
+      console.log('[VideoEditor] Save response status:', res.status);
+
       if (!res.ok) {
         const data = await res.json();
+        console.error('[VideoEditor] Save error:', data);
         throw new Error(data.error || 'Failed to save project');
       }
 
       const data = await res.json();
       const savedId = data.id || projectId;
+      console.log('[VideoEditor] Saved project ID:', savedId);
+
+      setSaveSuccess('Project saved!');
+      setTimeout(() => setSaveSuccess(null), 3000);
 
       // Update project ID if this was a new project
       if (!projectId && data.id && !skipNavigation) {
-        // Navigate to the project edit page
+        console.log('[VideoEditor] Navigating to:', `/create/video/${data.id}`);
         router.push(`/create/video/${data.id}`);
       }
 
       return savedId;
     } catch (error) {
+      console.error('[VideoEditor] Save failed:', error);
       setSaveError(error instanceof Error ? error.message : 'Failed to save');
       return null;
     } finally {
@@ -165,6 +179,8 @@ export default function VideoEditorClient({
 
   // Process video (render final output)
   const handleProcess = async () => {
+    console.log('[VideoEditor] handleProcess called, clips:', clips.length, 'isOverLimit:', isOverLimit);
+
     if (isOverLimit) {
       setSaveError(`Video exceeds ${formatDuration(maxDurationSeconds)} limit for ${userTier} tier`);
       return;
@@ -177,6 +193,7 @@ export default function VideoEditorClient({
 
     // First save the project (skip navigation, we'll handle it after processing starts)
     const savedProjectId = await handleSave(true);
+    console.log('[VideoEditor] Save before process returned:', savedProjectId);
 
     if (!savedProjectId) {
       setSaveError('Failed to save project before processing');
@@ -185,18 +202,24 @@ export default function VideoEditorClient({
 
     // Start processing
     try {
+      console.log('[VideoEditor] Starting processing for:', savedProjectId);
       const res = await fetch(`/api/video-projects/${savedProjectId}/process`, {
         method: 'POST',
       });
 
+      console.log('[VideoEditor] Process response status:', res.status);
+
       if (!res.ok) {
         const data = await res.json();
+        console.error('[VideoEditor] Process error:', data);
         throw new Error(data.error || 'Failed to start processing');
       }
 
       // Redirect to project page to see progress
+      console.log('[VideoEditor] Navigating to:', `/create/video/${savedProjectId}`);
       router.push(`/create/video/${savedProjectId}`);
     } catch (error) {
+      console.error('[VideoEditor] Process failed:', error);
       setSaveError(error instanceof Error ? error.message : 'Failed to process');
     }
   };
@@ -265,6 +288,14 @@ export default function VideoEditorClient({
           </button>
         </div>
       </header>
+
+      {/* Success message */}
+      {saveSuccess && (
+        <div className="mx-4 mt-3 px-4 py-2 rounded-lg bg-emerald-500/20 text-emerald-400 text-sm flex items-center gap-2">
+          <CheckCircle size={16} />
+          {saveSuccess}
+        </div>
+      )}
 
       {/* Error message */}
       {saveError && (
