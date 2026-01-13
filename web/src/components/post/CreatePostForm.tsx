@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, Image, Video, Globe, Type, Loader2, Upload, Crown, Lock, Newspaper, Clock, Calendar, Eye, EyeOff, AlertCircle, CheckCircle, Podcast, Mic, FileAudio, GripVertical, Plus } from 'lucide-react';
+import { X, Image, Video, Globe, Type, Loader2, Upload, Crown, Lock, Newspaper, Clock, Calendar, Eye, EyeOff, AlertCircle, CheckCircle, Podcast, Mic, FileAudio, GripVertical, Plus, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { clsx } from 'clsx';
 import * as tus from 'tus-js-client';
@@ -1202,7 +1202,9 @@ export function CreatePostForm() {
                         {imageUploadError}
                       </div>
                     )}
-                    <p className="text-xs text-gray-500">{previewUrls.length}/8 images • Drag to reorder</p>
+                    <p className="text-xs text-gray-500">
+                      {previewUrls.length}/8 images • Drag to reorder • <UserPlus size={10} className="inline" /> Tag people after posting
+                    </p>
                   </div>
                 ) : previewUrl ? (
                   <div className="relative rounded-xl overflow-hidden">
@@ -1221,6 +1223,11 @@ export function CreatePostForm() {
                           <Plus size={16} />
                           Add more
                         </label>
+                        {/* Tagging hint */}
+                        <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 bg-black/60 rounded-full text-xs text-gray-300">
+                          <UserPlus size={12} />
+                          Tag people after posting
+                        </div>
                       </div>
                     )}
                     {selectedType === 'video' && (

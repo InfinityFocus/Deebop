@@ -1270,6 +1270,7 @@ enum NotificationType {
   favourite
   share
   mention
+  mention_request
   repost
   repost_request
   repost_approved

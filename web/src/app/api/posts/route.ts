@@ -1580,6 +1580,59 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Extract and process @mentions from text content
+      try {
+        const mentionText = `${textContent || ''} ${headline || ''}`;
+        const mentionMatches = mentionText.match(/@[\w]+/g);
+        if (mentionMatches && mentionMatches.length > 0) {
+          // Get unique usernames (without @)
+          const uniqueUsernames = [...new Set(
+            mentionMatches.map(mention => mention.toLowerCase().replace(/^@/, '').trim())
+          )].filter(username => username.length > 0 && username.length <= 30);
+
+          if (uniqueUsernames.length > 0) {
+            // Look up the mentioned users
+            const mentionedUsers = await tx.user.findMany({
+              where: {
+                username: { in: uniqueUsernames, mode: 'insensitive' },
+                id: { not: user.id }, // Don't notify yourself
+              },
+              select: {
+                id: true,
+                username: true,
+                allowMentions: true,
+                requireMentionApproval: true,
+              },
+            });
+
+            // Create notifications for users who allow mentions
+            for (const mentionedUser of mentionedUsers) {
+              if (!mentionedUser.allowMentions) {
+                // User has disabled mentions, skip
+                continue;
+              }
+
+              // Determine notification type based on approval setting
+              const notificationType = mentionedUser.requireMentionApproval
+                ? 'mention_request'
+                : 'mention';
+
+              await tx.notification.create({
+                data: {
+                  userId: mentionedUser.id,
+                  actorId: user.id,
+                  type: notificationType,
+                  postId: newPost.id,
+                },
+              });
+            }
+          }
+        }
+      } catch (err) {
+        // Non-fatal - log but don't fail the post creation
+        console.error(`Failed to process mentions: ${err instanceof Error ? err.message : 'Unknown'}`);
+      }
+
       return newPost;
     });
 

@@ -72,6 +72,7 @@ const notificationIcons: Record<string, React.ReactNode> = {
   tag_approved: <Check size={16} className="text-emerald-500" />,
   tag_denied: <X size={16} className="text-red-500" />,
   mention: <AtSign size={16} className="text-cyan-500" />,
+  mention_request: <AtSign size={16} className="text-yellow-500" />,
 };
 
 const notificationMessages: Record<string, (actor: string) => string> = {
@@ -91,6 +92,7 @@ const notificationMessages: Record<string, (actor: string) => string> = {
   tag_request: (actor) => `${actor} wants to tag you in a post`,
   tag_approved: (actor) => `${actor} approved your tag`,
   tag_denied: (actor) => `${actor} removed your tag`,
+  mention_request: (actor) => `${actor} mentioned you in a post`,
 };
 
 export default function NotificationsPage() {
