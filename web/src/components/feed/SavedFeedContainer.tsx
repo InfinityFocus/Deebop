@@ -134,7 +134,7 @@ export function SavedFeedContainer({ contentType, columns = 2 }: SavedFeedContai
   const breakpointCols = {
     default: columns,
     1024: Math.min(columns, 2),
-    640: 1,
+    640: columns, // Respect user's choice on mobile
   };
 
   return (
