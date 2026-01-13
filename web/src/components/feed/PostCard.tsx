@@ -319,7 +319,10 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
   return (
     <article id={`post-${post.id}`} className="bg-gray-900 border border-gray-800 rounded-xl transition-shadow">
       {/* Header */}
-      <header className="flex items-center justify-between p-4 gap-2 overflow-hidden">
+      <header className={clsx(
+        "flex items-center justify-between p-4 gap-2",
+        showMenu && "relative z-[60]"
+      )}>
         <Link href={`/u/${post.author.username}`} className="flex items-center gap-3 min-w-0 flex-1">
           <div className="relative flex-shrink-0">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-white font-bold">
