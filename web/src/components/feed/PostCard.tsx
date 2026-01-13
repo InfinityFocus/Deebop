@@ -587,18 +587,18 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
       )}
 
       {/* Interaction bar */}
-      <footer className="flex items-center justify-between px-4 py-3 border-t border-gray-800">
-        <div className="flex items-center gap-4 sm:gap-6">
+      <footer className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-t border-gray-800 overflow-hidden">
+        <div className="flex items-center gap-1 sm:gap-4">
           <button
             onClick={handleLike}
-            className="flex items-center gap-2 group min-w-[44px] min-h-[44px] justify-center touch-manipulation active:scale-95 transition-transform"
+            className="flex items-center gap-1 group p-2 justify-center touch-manipulation active:scale-95 transition-transform"
             aria-label={isLiked ? 'Unlike post' : 'Like post'}
             aria-pressed={isLiked}
           >
             <Heart
-              size={22}
+              size={18}
               className={clsx(
-                'transition',
+                'transition sm:w-[22px] sm:h-[22px]',
                 isLiked
                   ? 'fill-red-500 text-red-500'
                   : 'text-gray-500 group-hover:text-red-500'
@@ -606,7 +606,7 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
               aria-hidden="true"
             />
             {likesCount > 0 && (
-              <span className={clsx('text-sm', isLiked ? 'text-red-500' : 'text-gray-500')}>
+              <span className={clsx('text-xs sm:text-sm', isLiked ? 'text-red-500' : 'text-gray-500')}>
                 {likesCount}
               </span>
             )}
@@ -614,14 +614,14 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
 
           <button
             onClick={handleSave}
-            className="flex items-center gap-2 group min-w-[44px] min-h-[44px] justify-center touch-manipulation active:scale-95 transition-transform"
+            className="flex items-center gap-1 group p-2 justify-center touch-manipulation active:scale-95 transition-transform"
             aria-label={isSaved ? 'Unsave post' : 'Save post'}
             aria-pressed={isSaved}
           >
             <Bookmark
-              size={22}
+              size={18}
               className={clsx(
-                'transition',
+                'transition sm:w-[22px] sm:h-[22px]',
                 isSaved
                   ? 'fill-emerald-500 text-emerald-500'
                   : 'text-gray-500 group-hover:text-emerald-500'
@@ -634,14 +634,14 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
             <button
               onClick={handleRepost}
               disabled={isReposting}
-              className="flex items-center gap-2 group min-w-[44px] min-h-[44px] justify-center touch-manipulation active:scale-95 transition-transform disabled:opacity-50"
+              className="flex items-center gap-1 group p-2 justify-center touch-manipulation active:scale-95 transition-transform disabled:opacity-50"
               aria-label={isReposted ? 'Remove repost' : 'Repost'}
               aria-pressed={isReposted}
             >
               <Repeat
-                size={22}
+                size={18}
                 className={clsx(
-                  'transition',
+                  'transition sm:w-[22px] sm:h-[22px]',
                   isReposted
                     ? 'text-emerald-500'
                     : 'text-gray-500 group-hover:text-emerald-500',
@@ -650,7 +650,7 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
                 aria-hidden="true"
               />
               {repostsCount > 0 && (
-                <span className={clsx('text-sm', isReposted ? 'text-emerald-500' : 'text-gray-500')}>
+                <span className={clsx('text-xs sm:text-sm', isReposted ? 'text-emerald-500' : 'text-gray-500')}>
                   {repostsCount}
                 </span>
               )}
@@ -659,15 +659,15 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
 
           <button
             onClick={handleShare}
-            className="flex items-center gap-2 group min-w-[44px] min-h-[44px] justify-center touch-manipulation active:scale-95 transition-transform"
+            className="flex items-center gap-1 group p-2 justify-center touch-manipulation active:scale-95 transition-transform"
             aria-label="Share post"
           >
-            <Share2 size={22} className="text-gray-500 group-hover:text-blue-500 transition" aria-hidden="true" />
+            <Share2 size={18} className="text-gray-500 group-hover:text-blue-500 transition sm:w-[22px] sm:h-[22px]" aria-hidden="true" />
           </button>
         </div>
 
         {post.views_count > 0 && (
-          <span className="text-sm text-gray-500" aria-label={`${post.views_count} views`}>
+          <span className="text-xs sm:text-sm text-gray-500 truncate" aria-label={`${post.views_count} views`}>
             {post.views_count.toLocaleString()} views
           </span>
         )}

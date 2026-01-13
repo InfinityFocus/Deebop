@@ -35,8 +35,8 @@ export function DoomScrollWarning({
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto my-4">
-      <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-red-500/10 border border-amber-500/30 rounded-xl p-4 sm:p-6 relative overflow-hidden">
+    <div className="w-full max-w-xl mx-auto my-4 min-w-0">
+      <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-red-500/10 border border-amber-500/30 rounded-xl p-3 sm:p-6 relative overflow-hidden">
         {/* Close button */}
         <button
           onClick={onDismiss}
@@ -60,12 +60,12 @@ export function DoomScrollWarning({
         </p>
 
         {/* Stats */}
-        <div className="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-6 text-xs sm:text-sm">
-          <div className="px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-800/50 rounded-lg whitespace-nowrap">
+        <div className="flex flex-wrap gap-1.5 sm:gap-4 mb-4 sm:mb-6 text-xs sm:text-sm">
+          <div className="px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-800/50 rounded-lg">
             <span className="text-gray-400">Posts:</span>{' '}
             <span className="text-white font-medium">{postsViewed}</span>
           </div>
-          <div className="px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-800/50 rounded-lg whitespace-nowrap">
+          <div className="px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-800/50 rounded-lg">
             <span className="text-gray-400">Time:</span>{' '}
             <span className="text-white font-medium">{formatDuration(timeElapsed)}</span>
           </div>
