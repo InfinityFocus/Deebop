@@ -270,7 +270,7 @@ export async function GET() {
       notifications: notifications.map((n) => ({
         id: n.id,
         type: n.type,
-        read: n.read,
+        read: n.isRead,
         created_at: n.createdAt,
       })),
     };
