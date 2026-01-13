@@ -56,6 +56,8 @@ export default function VideoEditor({
       setUploadError(null);
 
       for (const file of Array.from(files)) {
+        console.log('[VideoEditor] Processing file:', file.name, file.type, file.size);
+
         if (!file.type.startsWith('video/')) {
           setUploadError('Only video files are supported');
           continue;
@@ -63,6 +65,7 @@ export default function VideoEditor({
 
         try {
           // Step 1: Get presigned URL from our API
+          console.log('[VideoEditor] Getting presigned URL...');
           const presignRes = await fetch('/api/upload/presigned', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -80,8 +83,10 @@ export default function VideoEditor({
           }
 
           const { uploadUrl, publicUrl } = await presignRes.json();
+          console.log('[VideoEditor] Got presigned URL, publicUrl:', publicUrl);
 
           // Step 2: Upload directly to S3/MinIO using presigned URL
+          console.log('[VideoEditor] Uploading to S3...');
           const uploadRes = await fetch(uploadUrl, {
             method: 'PUT',
             body: file,
@@ -93,8 +98,10 @@ export default function VideoEditor({
           if (!uploadRes.ok) {
             throw new Error('Upload failed');
           }
+          console.log('[VideoEditor] Upload to S3 successful');
 
           // Step 3: Get video metadata from the uploaded file
+          console.log('[VideoEditor] Loading video metadata...');
           const video = document.createElement('video');
           video.preload = 'metadata';
 
@@ -105,6 +112,11 @@ export default function VideoEditor({
           });
 
           // Add clip to store
+          console.log('[VideoEditor] Adding clip to store:', {
+            sourceUrl: publicUrl,
+            duration: video.duration,
+            dimensions: `${video.videoWidth}x${video.videoHeight}`,
+          });
           addClip({
             sourceUrl: publicUrl,
             sourceDuration: video.duration,
@@ -116,7 +128,9 @@ export default function VideoEditor({
             filterPreset: null,
             volume: 1,
           });
+          console.log('[VideoEditor] Clip added successfully');
         } catch (error) {
+          console.error('[VideoEditor] Upload error:', error);
           setUploadError(
             error instanceof Error ? error.message : 'Upload failed'
           );

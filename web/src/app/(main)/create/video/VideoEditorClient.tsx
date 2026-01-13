@@ -58,6 +58,11 @@ export default function VideoEditorClient({
   const overlays = useVideoEditorStore((s) => s.overlays);
   const isOverLimit = currentDurationSeconds > maxDurationSeconds;
 
+  // Debug: Log clips state changes
+  useEffect(() => {
+    console.log('[VideoEditorClient] Clips state updated:', clips.length, 'clips', clips);
+  }, [clips]);
+
   // Initialize project on mount - only once
   useEffect(() => {
     if (initializedRef.current) return;
@@ -263,9 +268,17 @@ export default function VideoEditorClient({
             <span className="text-zinc-500">{formatDuration(maxDurationSeconds)}</span>
           </div>
 
+          {/* Debug indicator */}
+          <span className="text-xs text-zinc-500">
+            [{clips.length} clips]
+          </span>
+
           {/* Save button */}
           <button
-            onClick={() => handleSave()}
+            onClick={() => {
+              console.log('[VideoEditorClient] Save clicked! clips:', clips.length);
+              handleSave();
+            }}
             disabled={isSaving || clips.length === 0}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-800 text-white hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
@@ -279,7 +292,10 @@ export default function VideoEditorClient({
 
           {/* Process/Export button */}
           <button
-            onClick={handleProcess}
+            onClick={() => {
+              console.log('[VideoEditorClient] Export clicked! clips:', clips.length, 'isOverLimit:', isOverLimit);
+              handleProcess();
+            }}
             disabled={isSaving || clips.length === 0 || isOverLimit}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
