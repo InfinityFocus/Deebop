@@ -114,7 +114,8 @@ export async function DELETE() {
         where: {
           OR: [
             { album: { ownerId: { in: userIds } } },
-            { userId: { in: userIds } },
+            { inviteeId: { in: userIds } },
+            { inviterId: { in: userIds } },
           ],
         },
       });
@@ -143,7 +144,8 @@ export async function DELETE() {
         where: {
           OR: [
             { event: { hostId: { in: userIds } } },
-            { userId: { in: userIds } },
+            { inviteeId: { in: userIds } },
+            { inviterId: { in: userIds } },
           ],
         },
       });
@@ -180,7 +182,7 @@ export async function DELETE() {
         where: {
           OR: [
             { userId: { in: userIds } },
-            { favouriteUserId: { in: userIds } },
+            { favouriteId: { in: userIds } },
           ],
         },
       });
