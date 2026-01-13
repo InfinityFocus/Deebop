@@ -319,9 +319,9 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
   return (
     <article id={`post-${post.id}`} className="bg-gray-900 border border-gray-800 rounded-xl transition-shadow">
       {/* Header */}
-      <header className="flex items-center justify-between p-4">
-        <Link href={`/u/${post.author.username}`} className="flex items-center gap-3">
-          <div className="relative">
+      <header className="flex items-center justify-between p-4 gap-2 overflow-hidden">
+        <Link href={`/u/${post.author.username}`} className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="relative flex-shrink-0">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-white font-bold">
               {post.author.avatar_url ? (
                 <img
@@ -340,26 +340,26 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
               </div>
             )}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="font-semibold text-white hover:underline">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-semibold text-white hover:underline truncate">
                 {post.author.display_name || post.author.username}
               </p>
               {post.is_following && (
-                <span className="text-xs px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full font-medium">
+                <span className="text-xs px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full font-medium whitespace-nowrap">
                   Following
                 </span>
               )}
               {post.is_sponsored_content && (
-                <span className="text-xs px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded-full font-medium border border-amber-500/30">
+                <span className="text-xs px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded-full font-medium border border-amber-500/30 whitespace-nowrap">
                   Paid partnership
                 </span>
               )}
             </div>
-            <p className="text-sm text-gray-500">@{post.author.username} · {timeAgo}</p>
+            <p className="text-sm text-gray-500 truncate">@{post.author.username} · {timeAgo}</p>
           </div>
         </Link>
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <button
             ref={menuButtonRef}
             onClick={() => setShowMenu(!showMenu)}

@@ -36,7 +36,7 @@ export function DoomScrollWarning({
 
   return (
     <div className="w-full max-w-xl mx-auto my-4">
-      <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-red-500/10 border border-amber-500/30 rounded-xl p-6 relative">
+      <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-red-500/10 border border-amber-500/30 rounded-xl p-4 sm:p-6 relative overflow-hidden">
         {/* Close button */}
         <button
           onClick={onDismiss}
@@ -47,41 +47,41 @@ export function DoomScrollWarning({
         </button>
 
         {/* Icon */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center">
-            <Coffee className="w-6 h-6 text-amber-400" />
+        <div className="flex items-center gap-3 mb-4 pr-8">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+            <Coffee className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400" />
           </div>
-          <h3 className="text-xl font-bold text-amber-400">{title}</h3>
+          <h3 className="text-lg sm:text-xl font-bold text-amber-400 truncate">{title}</h3>
         </div>
 
         {/* Message */}
-        <p className="text-gray-300 mb-6 leading-relaxed">
+        <p className="text-gray-300 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base">
           {formattedMessage}
         </p>
 
         {/* Stats */}
-        <div className="flex gap-4 mb-6 text-sm">
-          <div className="px-3 py-1.5 bg-gray-800/50 rounded-lg">
-            <span className="text-gray-400">Posts viewed:</span>{' '}
+        <div className="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-6 text-xs sm:text-sm">
+          <div className="px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-800/50 rounded-lg whitespace-nowrap">
+            <span className="text-gray-400">Posts:</span>{' '}
             <span className="text-white font-medium">{postsViewed}</span>
           </div>
-          <div className="px-3 py-1.5 bg-gray-800/50 rounded-lg">
-            <span className="text-gray-400">Time scrolling:</span>{' '}
+          <div className="px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-800/50 rounded-lg whitespace-nowrap">
+            <span className="text-gray-400">Time:</span>{' '}
             <span className="text-white font-medium">{formatDuration(timeElapsed)}</span>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <button
             onClick={handleTakeBreak}
-            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-medium rounded-lg transition"
+            className="px-3 sm:px-5 py-2 sm:py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-medium rounded-lg transition text-sm sm:text-base"
           >
             Take a Break
           </button>
           <button
             onClick={onDismiss}
-            className="px-5 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition"
+            className="px-3 sm:px-5 py-2 sm:py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition text-sm sm:text-base"
           >
             Keep Scrolling
           </button>
