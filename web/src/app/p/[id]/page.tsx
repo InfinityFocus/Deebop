@@ -1,6 +1,7 @@
 'use client';
 
 import { use } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { Loader2, ArrowLeft } from 'lucide-react';
@@ -56,6 +57,7 @@ export default function PostPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['post', id],
@@ -106,13 +108,13 @@ export default function PostPage({
     <div className="min-h-screen bg-black">
       <div className="max-w-xl mx-auto px-4 py-6">
         {/* Back button */}
-        <Link
-          href="/"
+        <button
+          onClick={() => router.back()}
           className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition"
         >
           <ArrowLeft size={20} />
           Back
-        </Link>
+        </button>
 
         {/* Post */}
         <PostCard post={data.post} />

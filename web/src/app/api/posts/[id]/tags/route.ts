@@ -168,13 +168,12 @@ export async function POST(
     }
 
     // Check if tag already exists
-    const existingTag = await prisma.postTag.findUnique({
+    // Use findFirst because mediaId can be null and unique constraints with null don't work as expected
+    const existingTag = await prisma.postTag.findFirst({
       where: {
-        postId_mediaId_taggedUserId: {
-          postId,
-          mediaId: mediaId || null,
-          taggedUserId,
-        },
+        postId,
+        mediaId: mediaId || null,
+        taggedUserId,
       },
     });
 

@@ -56,7 +56,10 @@ export function UserTagSearch({
 
   // Search users
   useEffect(() => {
-    if (!query.trim()) {
+    // Strip @ from the beginning of the query
+    const cleanQuery = query.trim().replace(/^@/, '');
+
+    if (!cleanQuery) {
       setResults([]);
       return;
     }
@@ -64,7 +67,7 @@ export function UserTagSearch({
     const searchUsers = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&limit=10`);
+        const res = await fetch(`/api/users/search?q=${encodeURIComponent(cleanQuery)}&limit=10`);
         if (res.ok) {
           const data = await res.json();
           // Filter out excluded users
