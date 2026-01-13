@@ -156,6 +156,14 @@ export default function VideoPreview() {
       return time >= o.startTime && time <= endTime;
     });
 
+    console.log('[VideoPreview] drawOverlays:', {
+      totalOverlays: overlays.length,
+      activeOverlays: activeOverlays.length,
+      currentTime: time,
+      duration: dur,
+      overlayTimes: overlays.map(o => ({ id: o.id, start: o.startTime, end: o.endTime, text: o.text?.substring(0, 10) }))
+    });
+
     activeOverlays.forEach((overlay) => {
       const x = (overlay.positionX / 100) * canvas.width;
       const y = (overlay.positionY / 100) * canvas.height;
@@ -398,6 +406,18 @@ export default function VideoPreview() {
       video.removeEventListener('seeked', handleSeeked);
     };
   }, [drawFrame, drawOverlays]);
+
+  // Redraw when overlays change (important for when paused)
+  useEffect(() => {
+    if (!isPlaying && clips.length > 0) {
+      const video = videoRef.current;
+      if (video && video.readyState >= 2) {
+        console.log('[VideoPreview] Overlays changed, redrawing...', overlays.length, 'overlays');
+        drawFrame();
+        drawOverlays();
+      }
+    }
+  }, [overlays, selectedOverlayId, isPlaying, clips.length, drawFrame, drawOverlays]);
 
   // Resize canvas to container
   useEffect(() => {
