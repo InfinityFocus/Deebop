@@ -23,6 +23,7 @@ export async function GET() {
         isPrivate: true,
         showActivityStatus: true,
         allowTagging: true,
+        requireTaggingApproval: true,
         showLikedPosts: true,
         allowReposts: true,
         requireRepostApproval: true,
@@ -54,6 +55,7 @@ export async function GET() {
         is_private: fullUser.isPrivate,
         show_activity_status: fullUser.showActivityStatus,
         allow_tagging: fullUser.allowTagging,
+        require_tagging_approval: fullUser.requireTaggingApproval,
         show_liked_posts: fullUser.showLikedPosts,
         allow_reposts: fullUser.allowReposts,
         require_repost_approval: fullUser.requireRepostApproval,
@@ -84,6 +86,7 @@ export async function PATCH(request: NextRequest) {
       is_private,
       show_activity_status,
       allow_tagging,
+      require_tagging_approval,
       show_liked_posts,
       allow_reposts,
       require_repost_approval,
@@ -117,6 +120,7 @@ export async function PATCH(request: NextRequest) {
       isPrivate?: boolean;
       showActivityStatus?: boolean;
       allowTagging?: boolean;
+      requireTaggingApproval?: boolean;
       showLikedPosts?: boolean;
       allowReposts?: boolean;
       requireRepostApproval?: boolean;
@@ -139,6 +143,9 @@ export async function PATCH(request: NextRequest) {
     }
     if (typeof allow_tagging === 'boolean') {
       updateData.allowTagging = allow_tagging;
+    }
+    if (typeof require_tagging_approval === 'boolean') {
+      updateData.requireTaggingApproval = require_tagging_approval;
     }
     if (typeof show_liked_posts === 'boolean') {
       updateData.showLikedPosts = show_liked_posts;
@@ -165,6 +172,7 @@ export async function PATCH(request: NextRequest) {
         isPrivate: true,
         showActivityStatus: true,
         allowTagging: true,
+        requireTaggingApproval: true,
         showLikedPosts: true,
         allowReposts: true,
         requireRepostApproval: true,
@@ -192,6 +200,7 @@ export async function PATCH(request: NextRequest) {
         is_private: updatedUser.isPrivate,
         show_activity_status: updatedUser.showActivityStatus,
         allow_tagging: updatedUser.allowTagging,
+        require_tagging_approval: updatedUser.requireTaggingApproval,
         show_liked_posts: updatedUser.showLikedPosts,
         allow_reposts: updatedUser.allowReposts,
         require_repost_approval: updatedUser.requireRepostApproval,

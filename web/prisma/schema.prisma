@@ -126,9 +126,10 @@ model User {
   emailProductUpdates Boolean @default(true) @map("email_product_updates")
 
   // Privacy preferences
-  showActivityStatus Boolean @default(true) @map("show_activity_status")
-  allowTagging       Boolean @default(true) @map("allow_tagging")
-  showLikedPosts     Boolean @default(false) @map("show_liked_posts")
+  showActivityStatus      Boolean @default(true) @map("show_activity_status")
+  allowTagging            Boolean @default(true) @map("allow_tagging")
+  requireTaggingApproval  Boolean @default(false) @map("require_tagging_approval")
+  showLikedPosts          Boolean @default(false) @map("show_liked_posts")
 
   // Repost preferences
   allowReposts          Boolean  @default(true) @map("allow_reposts")

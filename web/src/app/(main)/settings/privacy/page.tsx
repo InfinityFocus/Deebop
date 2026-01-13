@@ -11,6 +11,7 @@ interface PrivacySettings {
   is_private: boolean;
   show_activity_status: boolean;
   allow_tagging: boolean;
+  require_tagging_approval: boolean;
   show_liked_posts: boolean;
   allow_reposts: boolean;
   require_repost_approval: boolean;
@@ -24,6 +25,7 @@ async function fetchPrivacySettings(): Promise<PrivacySettings> {
     is_private: data.user.is_private ?? false,
     show_activity_status: data.user.show_activity_status ?? true,
     allow_tagging: data.user.allow_tagging ?? true,
+    require_tagging_approval: data.user.require_tagging_approval ?? false,
     show_liked_posts: data.user.show_liked_posts ?? false,
     allow_reposts: data.user.allow_reposts ?? true,
     require_repost_approval: data.user.require_repost_approval ?? false,
@@ -38,6 +40,7 @@ export default function PrivacySettingsPage() {
   const [isPrivate, setIsPrivate] = useState(false);
   const [showActivityStatus, setShowActivityStatus] = useState(true);
   const [allowTagging, setAllowTagging] = useState(true);
+  const [requireTaggingApproval, setRequireTaggingApproval] = useState(false);
   const [showLikedPosts, setShowLikedPosts] = useState(false);
   const [allowReposts, setAllowReposts] = useState(true);
   const [requireRepostApproval, setRequireRepostApproval] = useState(false);
@@ -56,6 +59,7 @@ export default function PrivacySettingsPage() {
       setIsPrivate(data.is_private);
       setShowActivityStatus(data.show_activity_status);
       setAllowTagging(data.allow_tagging);
+      setRequireTaggingApproval(data.require_tagging_approval);
       setShowLikedPosts(data.show_liked_posts);
       setAllowReposts(data.allow_reposts);
       setRequireRepostApproval(data.require_repost_approval);
@@ -84,6 +88,7 @@ export default function PrivacySettingsPage() {
       is_private: isPrivate,
       show_activity_status: showActivityStatus,
       allow_tagging: allowTagging,
+      require_tagging_approval: requireTaggingApproval,
       show_liked_posts: showLikedPosts,
       allow_reposts: allowReposts,
       require_repost_approval: requireRepostApproval,
@@ -304,7 +309,7 @@ export default function PrivacySettingsPage() {
             <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-xl border border-gray-700">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
-                  <Users size={20} className="text-gray-300" />
+                  <Users size={20} className={allowTagging ? 'text-emerald-400' : 'text-gray-300'} />
                 </div>
                 <div>
                   <p className="font-medium text-white">Allow Tagging</p>
@@ -328,6 +333,36 @@ export default function PrivacySettingsPage() {
                 />
               </button>
             </div>
+
+            {allowTagging && (
+              <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
+                    <Shield size={20} className={requireTaggingApproval ? 'text-yellow-400' : 'text-gray-300'} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-white">Require Approval</p>
+                    <p className="text-sm text-gray-300">
+                      Review and approve tags before they appear on your profile
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setRequireTaggingApproval(!requireTaggingApproval)}
+                  className={clsx(
+                    'relative w-12 h-6 rounded-full transition-colors',
+                    requireTaggingApproval ? 'bg-purple-500' : 'bg-gray-600'
+                  )}
+                >
+                  <span
+                    className={clsx(
+                      'absolute top-1 w-4 h-4 bg-white rounded-full transition-transform',
+                      requireTaggingApproval ? 'right-1' : 'left-1'
+                    )}
+                  />
+                </button>
+              </div>
+            )}
           </div>
         </section>
 

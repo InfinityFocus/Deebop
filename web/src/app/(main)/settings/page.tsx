@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import {
   CreditCard,
@@ -14,6 +16,9 @@ import {
   Crown,
   Zap,
   Sparkles,
+  Trash2,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
@@ -101,8 +106,39 @@ const tierColors = {
 };
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const router = useRouter();
   const TierIcon = tierIcons[user?.tier || 'free'];
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== 'DELETE') return;
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const res = await fetch('/api/users/me/delete', {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete account');
+      }
+
+      // Log out and redirect to home
+      await logout();
+      router.push('/');
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : 'Failed to delete account');
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -218,7 +254,117 @@ export default function SettingsPage() {
             </div>
           </div>
         ))}
+
+        {/* Danger Zone */}
+        <div>
+          <h2 className="text-sm font-semibold text-red-400 uppercase tracking-wider mb-3">
+            Danger Zone
+          </h2>
+          <div className="space-y-2">
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="w-full flex items-center gap-4 p-4 rounded-xl border border-red-500/30 bg-red-500/10 hover:border-red-500/50 transition text-left"
+            >
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-red-500/20">
+                <Trash2 size={20} className="text-red-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-red-400">Delete Account</p>
+                <p className="text-sm text-gray-300">
+                  Permanently delete your account and all data
+                </p>
+              </div>
+              <ChevronRight size={20} className="text-red-400 flex-shrink-0" />
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-2xl border border-gray-700 max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+                <AlertTriangle size={24} className="text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white">Delete Account</h3>
+                <p className="text-sm text-gray-400">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <p className="text-gray-300">
+                This will permanently delete:
+              </p>
+              <ul className="text-sm text-gray-400 space-y-2">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                  Your account and all profiles
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                  All your posts, images, and videos
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                  Your followers and following lists
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                  All saved items and preferences
+                </li>
+              </ul>
+
+              <div className="pt-4 border-t border-gray-700">
+                <label className="block text-sm text-gray-300 mb-2">
+                  Type <span className="font-mono font-bold text-red-400">DELETE</span> to confirm:
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                  placeholder="DELETE"
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red-500"
+                />
+              </div>
+
+              {deleteError && (
+                <p className="text-sm text-red-400">{deleteError}</p>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmation('');
+                  setDeleteError(null);
+                }}
+                disabled={isDeleting}
+                className="flex-1 py-3 bg-gray-700 text-white font-semibold rounded-xl hover:bg-gray-600 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmation !== 'DELETE' || isDeleting}
+                className="flex-1 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-500 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 size={20} className="animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete Account'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
