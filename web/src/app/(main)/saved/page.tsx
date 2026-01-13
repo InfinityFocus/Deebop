@@ -39,11 +39,11 @@ export default function SavedPage() {
   }
 
   const columnToggle = (
-    <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1">
+    <div className="flex items-center gap-0.5 sm:gap-1 bg-gray-800 rounded-lg p-0.5 sm:p-1">
       <button
         onClick={() => setColumns(1)}
         className={clsx(
-          'p-2 rounded-md transition',
+          'p-1.5 sm:p-2 rounded-md transition',
           columns === 1
             ? 'bg-emerald-500 text-white'
             : 'text-gray-400 hover:text-white hover:bg-gray-700'
@@ -51,12 +51,12 @@ export default function SavedPage() {
         aria-label="1 column layout"
         title="1 column"
       >
-        <LayoutGrid size={18} />
+        <LayoutGrid size={16} className="sm:w-[18px] sm:h-[18px]" />
       </button>
       <button
         onClick={() => setColumns(2)}
         className={clsx(
-          'p-2 rounded-md transition',
+          'p-1.5 sm:p-2 rounded-md transition',
           columns === 2
             ? 'bg-emerald-500 text-white'
             : 'text-gray-400 hover:text-white hover:bg-gray-700'
@@ -64,12 +64,12 @@ export default function SavedPage() {
         aria-label="2 column layout"
         title="2 columns"
       >
-        <Columns2 size={18} />
+        <Columns2 size={16} className="sm:w-[18px] sm:h-[18px]" />
       </button>
       <button
         onClick={() => setColumns(3)}
         className={clsx(
-          'p-2 rounded-md transition',
+          'p-1.5 sm:p-2 rounded-md transition',
           columns === 3
             ? 'bg-emerald-500 text-white'
             : 'text-gray-400 hover:text-white hover:bg-gray-700'
@@ -77,7 +77,7 @@ export default function SavedPage() {
         aria-label="3 column layout"
         title="3 columns"
       >
-        <Columns3 size={18} />
+        <Columns3 size={16} className="sm:w-[18px] sm:h-[18px]" />
       </button>
     </div>
   );

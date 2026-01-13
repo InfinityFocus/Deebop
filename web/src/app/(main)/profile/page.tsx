@@ -166,7 +166,7 @@ export default function ProfilePage() {
               )}
             >
               <Grid size={18} />
-              Posts
+              <span className="hidden sm:inline">Posts</span>
             </button>
             <button
               onClick={() => setActiveTab('scheduled')}
@@ -178,7 +178,7 @@ export default function ProfilePage() {
               )}
             >
               <Clock size={18} />
-              Scheduled
+              <span className="hidden sm:inline">Scheduled</span>
             </button>
             <button
               onClick={() => setActiveTab('saved')}
@@ -190,16 +190,16 @@ export default function ProfilePage() {
               )}
             >
               <Bookmark size={18} />
-              Saved
+              <span className="hidden sm:inline">Saved</span>
             </button>
           </div>
 
           {/* Column Toggle */}
-          <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1 ml-4">
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-gray-800 rounded-lg p-0.5 sm:p-1 ml-2 sm:ml-4">
             <button
               onClick={() => setColumns(1)}
               className={clsx(
-                'p-2 rounded-md transition',
+                'p-1.5 sm:p-2 rounded-md transition',
                 columns === 1
                   ? 'bg-emerald-500 text-white'
                   : 'text-gray-400 hover:text-white hover:bg-gray-700'
@@ -207,12 +207,12 @@ export default function ProfilePage() {
               aria-label="1 column layout"
               title="1 column"
             >
-              <LayoutGrid size={18} />
+              <LayoutGrid size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
             <button
               onClick={() => setColumns(2)}
               className={clsx(
-                'p-2 rounded-md transition',
+                'p-1.5 sm:p-2 rounded-md transition',
                 columns === 2
                   ? 'bg-emerald-500 text-white'
                   : 'text-gray-400 hover:text-white hover:bg-gray-700'
@@ -220,12 +220,12 @@ export default function ProfilePage() {
               aria-label="2 column layout"
               title="2 columns"
             >
-              <Columns2 size={18} />
+              <Columns2 size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
             <button
               onClick={() => setColumns(3)}
               className={clsx(
-                'p-2 rounded-md transition',
+                'p-1.5 sm:p-2 rounded-md transition',
                 columns === 3
                   ? 'bg-emerald-500 text-white'
                   : 'text-gray-400 hover:text-white hover:bg-gray-700'
@@ -233,7 +233,7 @@ export default function ProfilePage() {
               aria-label="3 column layout"
               title="3 columns"
             >
-              <Columns3 size={18} />
+              <Columns3 size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
           </div>
         </div>

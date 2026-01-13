@@ -3,7 +3,7 @@
 import { useState, use } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Settings, Grid, Bookmark, Crown, UserPlus, UserCheck, Clock, Loader2, ArrowLeft, Link2, Star } from 'lucide-react';
+import { Settings, Grid, Bookmark, Crown, UserPlus, UserCheck, Clock, Loader2, ArrowLeft, Link2, Star, LayoutGrid, Columns2, Columns3 } from 'lucide-react';
 import Link from 'next/link';
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
@@ -57,6 +57,7 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
+  const [columns, setColumns] = useState<1 | 2 | 3>(1);
   const searchParams = useSearchParams();
   const highlightPostId = searchParams.get('post') || undefined;
 
@@ -128,9 +129,14 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
   const tierBadge = TIER_BADGES[user.tier] || TIER_BADGES.free;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className={clsx(
+      'mx-auto px-4 py-8',
+      columns === 1 && 'max-w-2xl',
+      columns === 2 && 'max-w-4xl',
+      columns === 3 && 'max-w-6xl'
+    )}>
       {/* Cover Image */}
-      <div className="relative">
+      <div className={clsx('relative', columns > 1 && 'max-w-2xl mx-auto')}>
         {user.cover_image_url ? (
           <img
             src={user.cover_image_url}
@@ -164,7 +170,7 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
       </div>
 
       {/* Avatar and Info */}
-      <div className="flex flex-col items-center -mt-16 mb-4 relative z-10">
+      <div className={clsx('flex flex-col items-center -mt-16 mb-4 relative z-10', columns > 1 && 'max-w-2xl mx-auto')}>
           <div className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 border-4 border-black flex items-center justify-center text-3xl font-bold text-white">
             {user.avatar_url ? (
               <img
@@ -220,8 +226,8 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
           )}
         </div>
 
-        {/* Stats */}
-        <div className="flex justify-center gap-8 py-4 border-y border-gray-800">
+      {/* Stats */}
+      <div className={clsx('flex justify-center gap-8 py-4 border-y border-gray-800', columns > 1 && 'max-w-2xl mx-auto')}>
           <div className="text-center">
             <p className="font-bold text-lg">{user.posts_count}</p>
             <p className="text-gray-500 text-sm">Posts</p>
@@ -242,8 +248,8 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
           </button>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-3 mt-4">
+      {/* Action Buttons */}
+      <div className={clsx('flex gap-3 mt-4', columns > 1 && 'max-w-2xl mx-auto')}>
           {user.is_own_profile ? (
             <>
               <Link
@@ -328,8 +334,9 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
           )}
         </div>
 
-        {/* Content Tabs */}
-        <div className="flex border-b border-gray-800 mt-6">
+      {/* Content Tabs */}
+      <div className={clsx('flex items-center justify-between border-b border-gray-800 mt-6', columns > 1 && 'max-w-2xl mx-auto')}>
+        <div className="flex flex-1">
           <button
             onClick={() => setActiveTab('posts')}
             className={clsx(
@@ -340,7 +347,7 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
             )}
           >
             <Grid size={18} />
-            Posts
+            <span className="hidden sm:inline">Posts</span>
           </button>
           {user.is_own_profile && (
             <button
@@ -353,15 +360,59 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
               )}
             >
               <Bookmark size={18} />
-              Saved
+              <span className="hidden sm:inline">Saved</span>
             </button>
           )}
         </div>
 
+        {/* Column Toggle */}
+        <div className="flex items-center gap-0.5 sm:gap-1 bg-gray-800 rounded-lg p-0.5 sm:p-1 ml-2 sm:ml-4">
+          <button
+            onClick={() => setColumns(1)}
+            className={clsx(
+              'p-1.5 sm:p-2 rounded-md transition',
+              columns === 1
+                ? 'bg-emerald-500 text-white'
+                : 'text-gray-400 hover:text-white hover:bg-gray-700'
+            )}
+            aria-label="1 column layout"
+            title="1 column"
+          >
+            <LayoutGrid size={16} className="sm:w-[18px] sm:h-[18px]" />
+          </button>
+          <button
+            onClick={() => setColumns(2)}
+            className={clsx(
+              'p-1.5 sm:p-2 rounded-md transition',
+              columns === 2
+                ? 'bg-emerald-500 text-white'
+                : 'text-gray-400 hover:text-white hover:bg-gray-700'
+            )}
+            aria-label="2 column layout"
+            title="2 columns"
+          >
+            <Columns2 size={16} className="sm:w-[18px] sm:h-[18px]" />
+          </button>
+          <button
+            onClick={() => setColumns(3)}
+            className={clsx(
+              'p-1.5 sm:p-2 rounded-md transition',
+              columns === 3
+                ? 'bg-emerald-500 text-white'
+                : 'text-gray-400 hover:text-white hover:bg-gray-700'
+            )}
+            aria-label="3 column layout"
+            title="3 columns"
+          >
+            <Columns3 size={16} className="sm:w-[18px] sm:h-[18px]" />
+          </button>
+        </div>
+      </div>
+
       {/* User's Posts */}
       <div className="mt-4">
         {activeTab === 'posts' ? (
-          <FeedContainer userId={user.id} highlightPostId={highlightPostId} />
+          <FeedContainer userId={user.id} highlightPostId={highlightPostId} columns={columns} />
         ) : (
           <div className="text-center py-16">
             <Bookmark className="mx-auto text-gray-500 mb-4" size={32} />
