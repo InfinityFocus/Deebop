@@ -1,10 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Home } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { FeedContainer, ContentTypeFilter, FeedModeToggle } from '@/components/feed';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { useFeedPreferencesStore } from '@/stores/feedPreferencesStore';
 import type { ContentType } from '@/types/database';
 
@@ -22,22 +20,19 @@ export default function HomePage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <PageHeader
-        title="Home"
-        subtitle={user ? `@${user.username}` : undefined}
-        icon={<Home size={24} />}
-      >
-        {user && (
-          <div className="flex justify-center mb-3">
-            <FeedModeToggle />
-          </div>
-        )}
-        <ContentTypeFilter selected={contentType} onChange={setContentType} />
-      </PageHeader>
+    <div className="max-w-2xl mx-auto px-4 pt-8">
+      {/* Feed Mode Tabs */}
+      {user && (
+        <div className="flex justify-center mb-4">
+          <FeedModeToggle />
+        </div>
+      )}
+
+      {/* Content Type Filter */}
+      <ContentTypeFilter selected={contentType} onChange={setContentType} />
 
       {/* Feed Content */}
-      <div className="px-4 py-4">
+      <div className="py-4">
         {user ? (
           <FeedContainer contentType={contentType} mode={mode} />
         ) : (
