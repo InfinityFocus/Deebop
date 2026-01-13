@@ -335,11 +335,13 @@ export const useVideoEditorStore = create<VideoEditorState>()((set, get) => ({
 
   setCurrentTime: (time) => {
     const { currentDurationSeconds, isPlaying } = get();
-    if (time >= currentDurationSeconds && isPlaying) {
+    // Always clamp time to valid range
+    const clampedTime = Math.max(0, Math.min(time, currentDurationSeconds || 0));
+    if (clampedTime >= currentDurationSeconds && isPlaying) {
       // Reached end of video
       set({ currentTime: currentDurationSeconds, isPlaying: false });
     } else {
-      set({ currentTime: time });
+      set({ currentTime: clampedTime });
     }
   },
 

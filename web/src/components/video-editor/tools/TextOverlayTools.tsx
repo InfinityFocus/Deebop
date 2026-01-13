@@ -21,16 +21,25 @@ export default function TextOverlayTools() {
   const removeOverlay = useVideoEditorStore((s) => s.removeOverlay);
   const updateOverlay = useVideoEditorStore((s) => s.updateOverlay);
   const selectOverlay = useVideoEditorStore((s) => s.selectOverlay);
+  const seek = useVideoEditorStore((s) => s.seek);
 
   const handleAddOverlay = () => {
     if (!newText.trim()) return;
+    if (duration <= 0) return; // No video loaded
+
+    // Clamp start time to valid range
+    const startTime = Math.max(0, Math.min(currentTime, duration - 0.1));
+    // Default 5 second duration, clamped to video end
+    const endTime = Math.min(startTime + 5, duration);
+
+    console.log('[TextOverlayTools] Adding overlay:', { startTime, endTime, duration, currentTime });
 
     addOverlay({
       type: 'text',
       positionX: 50,
       positionY: 50,
-      startTime: currentTime,
-      endTime: Math.min(currentTime + 5, duration),
+      startTime,
+      endTime,
       text: newText.trim(),
       fontFamily: 'sans-serif',
       fontSize: 32,
@@ -38,6 +47,8 @@ export default function TextOverlayTools() {
       backgroundColor: null,
     });
 
+    // Seek to the overlay's start time so it's immediately visible
+    seek(startTime);
     setNewText('');
   };
 
