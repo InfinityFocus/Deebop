@@ -60,6 +60,8 @@ interface RepostedPost {
   is_reposted: boolean;
   repost_status: string | null;
   can_repost: boolean;
+  // Approved mentions - only these @usernames are clickable links
+  approved_mentions?: string[];
 }
 
 interface RepostedPostCardProps {
@@ -100,6 +102,7 @@ export function RepostedPostCard({ repost }: RepostedPostCardProps) {
     is_reposted: repost.is_reposted,
     repost_status: repost.repost_status,
     can_repost: repost.can_repost,
+    approved_mentions: repost.approved_mentions,
   };
 
   return (

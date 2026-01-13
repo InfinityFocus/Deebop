@@ -146,6 +146,8 @@ interface Post {
   is_reposted?: boolean;
   repost_status?: string | null;
   can_repost?: boolean;
+  // Approved mentions - only these @usernames are clickable links
+  approved_mentions?: string[];
 }
 
 interface PostCardProps {
@@ -179,6 +181,11 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
   const [localVisibility, setLocalVisibility] = useState<Visibility>(post.visibility || 'public');
 
   const isOwnPost = user?.id === post.user_id;
+
+  // Create Set of approved mentions for rendering clickable @links
+  const approvedMentionsSet = post.approved_mentions
+    ? new Set(post.approved_mentions.map(m => m.toLowerCase()))
+    : undefined;
 
   // Close menu on outside click
   useEffect(() => {
@@ -439,7 +446,7 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
       {/* Content - Only show if no headline overlay on media */}
       {localTextContent && !(localHeadline && (post.media_url || (post.media && post.media.length > 0))) && (
         <div className="px-4 pb-3">
-          <p className="text-white whitespace-pre-wrap">{renderRichText(localTextContent)}</p>
+          <p className="text-white whitespace-pre-wrap">{renderRichText(localTextContent, approvedMentionsSet)}</p>
         </div>
       )}
 
@@ -520,7 +527,7 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
                     <h3 className="font-semibold text-white">{localHeadline}</h3>
                   )}
                   {localTextContent && (
-                    <p className="text-gray-400 text-sm whitespace-pre-wrap">{renderRichText(localTextContent)}</p>
+                    <p className="text-gray-400 text-sm whitespace-pre-wrap">{renderRichText(localTextContent, approvedMentionsSet)}</p>
                   )}
                 </div>
               )}
@@ -534,6 +541,7 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
               description={localTextContent}
               style={localHeadlineStyle}
               isFlagged={post.is_flagged}
+              approvedMentions={approvedMentionsSet}
             />
           )}
         </div>

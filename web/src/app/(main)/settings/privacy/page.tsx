@@ -390,7 +390,7 @@ export default function PrivacySettingsPage() {
                 <div>
                   <p className="font-medium text-white">Allow Mentions</p>
                   <p className="text-sm text-gray-300">
-                    Let others mention you (@username) in their posts
+                    Let others @mention you in their posts
                   </p>
                 </div>
               </div>
@@ -419,7 +419,7 @@ export default function PrivacySettingsPage() {
                   <div>
                     <p className="font-medium text-white">Require Approval</p>
                     <p className="text-sm text-gray-300">
-                      Review and approve mentions before others can see them
+                      Approve mentions before they become clickable links to your profile
                     </p>
                   </div>
                 </div>

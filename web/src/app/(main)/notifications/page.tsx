@@ -44,6 +44,7 @@ interface Notification {
   album: NotificationAlbum | null;
   repost_id?: string;
   tag_id?: string;
+  mention_id?: string;
 }
 
 async function fetchNotifications({ pageParam }: { pageParam?: string }) {
@@ -73,6 +74,8 @@ const notificationIcons: Record<string, React.ReactNode> = {
   tag_denied: <X size={16} className="text-red-500" />,
   mention: <AtSign size={16} className="text-cyan-500" />,
   mention_request: <AtSign size={16} className="text-yellow-500" />,
+  mention_approved: <Check size={16} className="text-emerald-500" />,
+  mention_denied: <X size={16} className="text-red-500" />,
 };
 
 const notificationMessages: Record<string, (actor: string) => string> = {
@@ -92,7 +95,9 @@ const notificationMessages: Record<string, (actor: string) => string> = {
   tag_request: (actor) => `${actor} wants to tag you in a post`,
   tag_approved: (actor) => `${actor} approved your tag`,
   tag_denied: (actor) => `${actor} removed your tag`,
-  mention_request: (actor) => `${actor} mentioned you in a post`,
+  mention_request: (actor) => `${actor} wants to mention you in a post`,
+  mention_approved: (actor) => `${actor} approved your mention`,
+  mention_denied: (actor) => `${actor} declined your mention`,
 };
 
 export default function NotificationsPage() {
@@ -263,9 +268,41 @@ function NotificationItem({ notification }: { notification: Notification }) {
     },
   });
 
+  // Mutations for mention approval/denial
+  const approveMention = useMutation({
+    mutationFn: async ({ postId, mentionId }: { postId: string; mentionId: string }) => {
+      const res = await fetch(`/api/posts/${postId}/mentions/${mentionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'approve' }),
+      });
+      if (!res.ok) throw new Error('Failed to approve mention');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  const denyMention = useMutation({
+    mutationFn: async ({ postId, mentionId }: { postId: string; mentionId: string }) => {
+      const res = await fetch(`/api/posts/${postId}/mentions/${mentionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'deny' }),
+      });
+      if (!res.ok) throw new Error('Failed to deny mention');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
   const isRepostRequest = notification.type === 'repost_request';
   const isTagRequest = notification.type === 'tag_request';
-  const isProcessing = approveRepost.isPending || denyRepost.isPending || approveTag.isPending || denyTag.isPending;
+  const isMentionRequest = notification.type === 'mention_request';
+  const isProcessing = approveRepost.isPending || denyRepost.isPending || approveTag.isPending || denyTag.isPending || approveMention.isPending || denyMention.isPending;
 
   const handleApprove = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -296,6 +333,22 @@ function NotificationItem({ notification }: { notification: Notification }) {
     e.stopPropagation();
     if (notification.tag_id && notification.post?.id) {
       denyTag.mutate({ postId: notification.post.id, tagId: notification.tag_id });
+    }
+  };
+
+  const handleApproveMention = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (notification.mention_id && notification.post?.id) {
+      approveMention.mutate({ postId: notification.post.id, mentionId: notification.mention_id });
+    }
+  };
+
+  const handleDenyMention = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (notification.mention_id && notification.post?.id) {
+      denyMention.mutate({ postId: notification.post.id, mentionId: notification.mention_id });
     }
   };
 
@@ -392,6 +445,36 @@ function NotificationItem({ notification }: { notification: Notification }) {
               className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition disabled:opacity-50 flex items-center gap-1"
             >
               {denyTag.isPending ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <X size={14} />
+              )}
+              Deny
+            </button>
+          </div>
+        )}
+
+        {/* Mention request approval buttons */}
+        {isMentionRequest && notification.mention_id && notification.post?.id && (
+          <div className="flex items-center gap-2 mt-3">
+            <button
+              onClick={handleApproveMention}
+              disabled={isProcessing}
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm rounded-lg transition disabled:opacity-50 flex items-center gap-1"
+            >
+              {approveMention.isPending ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Check size={14} />
+              )}
+              Approve
+            </button>
+            <button
+              onClick={handleDenyMention}
+              disabled={isProcessing}
+              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition disabled:opacity-50 flex items-center gap-1"
+            >
+              {denyMention.isPending ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (
                 <X size={14} />

@@ -142,6 +142,10 @@ model User {
   tagsReceived PostTag[] @relation("TagsReceived")
   tagsMade     PostTag[] @relation("TagsMade")
 
+  // Mention relations
+  mentionsReceived PostMention[] @relation("MentionsReceived")
+  mentionsMade     PostMention[] @relation("MentionsMade")
+
   // Explore feature relations
   interests      UserInterest[]
   location       UserLocation?
@@ -191,6 +195,7 @@ model Post {
   shares               Share[]
   reposts              Repost[]
   tags                 PostTag[]
+  mentions             PostMention[]
   videoJob             VideoJob?
   views                View[]
 
@@ -361,6 +366,28 @@ model PostTag {
   @@index([taggerId])
   @@index([status])
   @@map("post_tags")
+}
+
+// Tracks @mentions in posts with approval workflow
+model PostMention {
+  id              String        @id @default(cuid())
+  postId          String        @map("post_id")
+  mentionedUserId String        @map("mentioned_user_id")
+  mentionerId     String        @map("mentioner_id")
+  status          MentionStatus @default(pending)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  approvedAt      DateTime?     @map("approved_at")
+
+  post          Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  mentionedUser User @relation("MentionsReceived", fields: [mentionedUserId], references: [id], onDelete: Cascade)
+  mentioner     User @relation("MentionsMade", fields: [mentionerId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, mentionedUserId])
+  @@index([postId])
+  @@index([mentionedUserId])
+  @@index([mentionerId])
+  @@index([status])
+  @@map("post_mentions")
 }
 
 model View {
@@ -1270,7 +1297,6 @@ enum NotificationType {
   favourite
   share
   mention
-  mention_request
   repost
   repost_request
   repost_approved
@@ -1281,6 +1307,9 @@ enum NotificationType {
   tag_request
   tag_approved
   tag_denied
+  mention_request
+  mention_approved
+  mention_denied
 }
 
 enum RepostStatus {
@@ -1290,6 +1319,12 @@ enum RepostStatus {
 }
 
 enum TagStatus {
+  pending
+  approved
+  denied
+}
+
+enum MentionStatus {
   pending
   approved
   denied

@@ -192,6 +192,10 @@ async function fetchSavedFeed(
       likes: { where: { userId: user.id }, select: { userId: true } },
       saves: { where: { userId: user.id }, select: { userId: true } },
       reposts: { where: { userId: user.id }, select: { status: true } },
+      mentions: {
+        where: { status: 'approved' },
+        select: { mentionedUser: { select: { username: true } } },
+      },
     },
   });
 
@@ -312,6 +316,10 @@ async function fetchFollowingFeed(
       likes: { where: { userId: user.id }, select: { userId: true } },
       saves: { where: { userId: user.id }, select: { userId: true } },
       reposts: { where: { userId: user.id }, select: { status: true } },
+      mentions: {
+        where: { status: 'approved' },
+        select: { mentionedUser: { select: { username: true } } },
+      },
     },
   });
 
@@ -368,6 +376,10 @@ async function fetchFollowingFeed(
           likes: { where: { userId: user.id }, select: { userId: true } },
           saves: { where: { userId: user.id }, select: { userId: true } },
           reposts: { where: { userId: user.id }, select: { status: true } },
+          mentions: {
+            where: { status: 'approved' },
+            select: { mentionedUser: { select: { username: true } } },
+          },
         },
       },
     },
@@ -548,6 +560,10 @@ async function fetchFavouritesFeed(
       likes: { where: { userId: user.id }, select: { userId: true } },
       saves: { where: { userId: user.id }, select: { userId: true } },
       reposts: { where: { userId: user.id }, select: { status: true } },
+      mentions: {
+        where: { status: 'approved' },
+        select: { mentionedUser: { select: { username: true } } },
+      },
     },
   });
 
@@ -604,6 +620,10 @@ async function fetchFavouritesFeed(
           likes: { where: { userId: user.id }, select: { userId: true } },
           saves: { where: { userId: user.id }, select: { userId: true } },
           reposts: { where: { userId: user.id }, select: { status: true } },
+          mentions: {
+            where: { status: 'approved' },
+            select: { mentionedUser: { select: { username: true } } },
+          },
         },
       },
     },
@@ -762,6 +782,10 @@ async function fetchDiscoveryFeed(
       likes: user ? { where: { userId: user.id }, select: { userId: true } } : false,
       saves: user ? { where: { userId: user.id }, select: { userId: true } } : false,
       reposts: user ? { where: { userId: user.id }, select: { status: true } } : false,
+      mentions: {
+        where: { status: 'approved' },
+        select: { mentionedUser: { select: { username: true } } },
+      },
     },
   });
 
@@ -824,6 +848,10 @@ async function fetchDiscoveryFeed(
           likes: user ? { where: { userId: user.id }, select: { userId: true } } : false,
           saves: user ? { where: { userId: user.id }, select: { userId: true } } : false,
           reposts: user ? { where: { userId: user.id }, select: { status: true } } : false,
+          mentions: {
+            where: { status: 'approved' },
+            select: { mentionedUser: { select: { username: true } } },
+          },
         },
       },
     },
@@ -984,6 +1012,10 @@ async function fetchProfileFeed(
       likes: user ? { where: { userId: user.id }, select: { userId: true } } : false,
       saves: user ? { where: { userId: user.id }, select: { userId: true } } : false,
       reposts: user ? { where: { userId: user.id }, select: { status: true } } : false,
+      mentions: {
+        where: { status: 'approved' },
+        select: { mentionedUser: { select: { username: true } } },
+      },
     },
   });
 
@@ -1066,6 +1098,8 @@ function formatPost(
       alt_text: m.altText,
       sort_order: m.sortOrder,
     })) || null,
+    // Approved @mentions - only these are clickable links
+    approved_mentions: post.mentions?.map((m: any) => m.mentionedUser.username.toLowerCase()) || [],
   };
 }
 
@@ -1143,6 +1177,8 @@ function formatRepost(
       alt_text: m.altText,
       sort_order: m.sortOrder,
     })) || null,
+    // Approved @mentions - only these are clickable links
+    approved_mentions: post.mentions?.map((m: any) => m.mentionedUser.username.toLowerCase()) || [],
   };
 }
 
@@ -1595,7 +1631,7 @@ export async function POST(request: NextRequest) {
             const mentionedUsers = await tx.user.findMany({
               where: {
                 username: { in: uniqueUsernames, mode: 'insensitive' },
-                id: { not: user.id }, // Don't notify yourself
+                id: { not: user.id }, // Don't mention yourself
               },
               select: {
                 id: true,
@@ -1605,18 +1641,29 @@ export async function POST(request: NextRequest) {
               },
             });
 
-            // Create notifications for users who allow mentions
+            // Create PostMention records and notifications for users who allow mentions
             for (const mentionedUser of mentionedUsers) {
               if (!mentionedUser.allowMentions) {
-                // User has disabled mentions, skip
+                // User has disabled mentions entirely, skip
                 continue;
               }
 
-              // Determine notification type based on approval setting
-              const notificationType = mentionedUser.requireMentionApproval
-                ? 'mention_request'
-                : 'mention';
+              // Determine status based on approval settings
+              const mentionStatus = mentionedUser.requireMentionApproval ? 'pending' : 'approved';
+              const notificationType = mentionedUser.requireMentionApproval ? 'mention_request' : 'mention';
 
+              // Create the PostMention record
+              await tx.postMention.create({
+                data: {
+                  postId: newPost.id,
+                  mentionedUserId: mentionedUser.id,
+                  mentionerId: user.id,
+                  status: mentionStatus,
+                  approvedAt: mentionStatus === 'approved' ? new Date() : null,
+                },
+              });
+
+              // Create notification
               await tx.notification.create({
                 data: {
                   userId: mentionedUser.id,

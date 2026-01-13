@@ -11,6 +11,7 @@ export interface HeadlineOverlayProps {
   style?: 'normal' | 'news';
   isFlagged?: boolean;
   className?: string;
+  approvedMentions?: Set<string>;
 }
 
 export function HeadlineOverlay({
@@ -19,6 +20,7 @@ export function HeadlineOverlay({
   style = 'normal',
   isFlagged = false,
   className,
+  approvedMentions,
 }: HeadlineOverlayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const hasDescription = description && description.trim().length > 0;
@@ -68,7 +70,7 @@ export function HeadlineOverlay({
             isNewsStyle ? 'font-serif text-lg font-semibold' : 'font-sans text-base font-medium'
           )}
         >
-          {renderRichText(headline)}
+          {renderRichText(headline, approvedMentions)}
         </h3>
 
         {/* Description (expandable) */}
@@ -80,7 +82,7 @@ export function HeadlineOverlay({
                 isExpanded ? 'max-h-96' : 'max-h-0'
               )}
             >
-              <p className="whitespace-pre-wrap">{renderRichText(description!)}</p>
+              <p className="whitespace-pre-wrap">{renderRichText(description!, approvedMentions)}</p>
             </div>
 
             {/* Expand/Collapse button */}
@@ -116,6 +118,7 @@ export function HeadlineOverlayCompact({
   style = 'normal',
   isFlagged = false,
   className,
+  approvedMentions,
 }: Omit<HeadlineOverlayProps, 'description'>) {
   const isNewsStyle = style === 'news';
 
@@ -152,7 +155,7 @@ export function HeadlineOverlayCompact({
             isNewsStyle ? 'font-serif font-semibold' : 'font-sans font-medium'
           )}
         >
-          {renderRichText(headline)}
+          {renderRichText(headline, approvedMentions)}
         </span>
       </div>
     </div>

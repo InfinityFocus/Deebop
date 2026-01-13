@@ -118,10 +118,41 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // For mention_request notifications, we need to look up the mention ID
+    const mentionRequestNotifications = notifications.filter(
+      (n) => n.type === 'mention_request' && n.postId && n.actorId
+    );
+
+    // Batch fetch mention IDs for mention_request notifications
+    const mentionMap = new Map<string, string>();
+    if (mentionRequestNotifications.length > 0) {
+      const mentions = await prisma.postMention.findMany({
+        where: {
+          OR: mentionRequestNotifications.map((n) => ({
+            postId: n.postId!,
+            mentionerId: n.actorId!,
+            mentionedUserId: user.id,
+            status: 'pending',
+          })),
+        },
+        select: {
+          id: true,
+          postId: true,
+          mentionerId: true,
+        },
+      });
+
+      for (const mention of mentions) {
+        const key = `${mention.postId}-${mention.mentionerId}`;
+        mentionMap.set(key, mention.id);
+      }
+    }
+
     // Transform for response
     const transformedNotifications = notifications.map((n) => {
       let repostId: string | null = null;
       let tagId: string | null = null;
+      let mentionId: string | null = null;
 
       // Look up repost ID for repost_request notifications
       if (n.type === 'repost_request' && n.postId && n.actorId) {
@@ -135,6 +166,12 @@ export async function GET(request: NextRequest) {
         tagId = tagMap.get(key) || null;
       }
 
+      // Look up mention ID for mention_request notifications
+      if (n.type === 'mention_request' && n.postId && n.actorId) {
+        const key = `${n.postId}-${n.actorId}`;
+        mentionId = mentionMap.get(key) || null;
+      }
+
       return {
         id: n.id,
         type: n.type,
@@ -142,6 +179,7 @@ export async function GET(request: NextRequest) {
         created_at: n.createdAt.toISOString(),
         repost_id: repostId,
         tag_id: tagId,
+        mention_id: mentionId,
         actor: n.actor
           ? {
               id: n.actor.id,
