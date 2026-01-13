@@ -131,6 +131,9 @@ npm run dev
 - [x] Footer with navigation links
 - [x] Video transcoding (FFmpeg, async processing, tier-based limits)
 
+### Disabled Features
+- **Video Studio** (`/create/video`) - Advanced video editor with text overlays, filters, trim, speed adjustment. Disabled because FFmpeg is not available on Vercel serverless. Code exists but navigation links removed. To re-enable: add back to `Sidebar.tsx` and `Navbar.tsx` secondaryNavItems, and integrate external video processing (Cloudinary, AWS MediaConvert, or self-hosted FFmpeg worker).
+
 ## Video Transcoding System
 
 The platform includes automatic video transcoding using FFmpeg CLI. Videos are processed asynchronously after upload.
