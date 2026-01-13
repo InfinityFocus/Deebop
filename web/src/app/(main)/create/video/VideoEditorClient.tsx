@@ -89,11 +89,11 @@ export default function VideoEditorClient({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Save project to database
-  const handleSave = async () => {
+  // Save project to database - returns the project ID on success, null on failure
+  const handleSave = async (skipNavigation = false): Promise<string | null> => {
     if (clips.length === 0) {
       setSaveError('Add at least one video clip before saving');
-      return;
+      return null;
     }
 
     setIsSaving(true);
@@ -146,14 +146,18 @@ export default function VideoEditorClient({
       }
 
       const data = await res.json();
+      const savedId = data.id || projectId;
 
       // Update project ID if this was a new project
-      if (!projectId && data.id) {
+      if (!projectId && data.id && !skipNavigation) {
         // Navigate to the project edit page
         router.push(`/create/video/${data.id}`);
       }
+
+      return savedId;
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Failed to save');
+      return null;
     } finally {
       setIsSaving(false);
     }
@@ -171,17 +175,17 @@ export default function VideoEditorClient({
       return;
     }
 
-    // First save the project
-    await handleSave();
+    // First save the project (skip navigation, we'll handle it after processing starts)
+    const savedProjectId = await handleSave(true);
 
-    if (!projectId) {
-      setSaveError('Save the project first before processing');
+    if (!savedProjectId) {
+      setSaveError('Failed to save project before processing');
       return;
     }
 
     // Start processing
     try {
-      const res = await fetch(`/api/video-projects/${projectId}/process`, {
+      const res = await fetch(`/api/video-projects/${savedProjectId}/process`, {
         method: 'POST',
       });
 
@@ -191,7 +195,7 @@ export default function VideoEditorClient({
       }
 
       // Redirect to project page to see progress
-      router.push(`/create/video/${projectId}`);
+      router.push(`/create/video/${savedProjectId}`);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Failed to process');
     }
@@ -238,7 +242,7 @@ export default function VideoEditorClient({
 
           {/* Save button */}
           <button
-            onClick={handleSave}
+            onClick={() => handleSave()}
             disabled={isSaving || clips.length === 0}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-800 text-white hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
