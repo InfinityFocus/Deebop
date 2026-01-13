@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Settings, Grid, Bookmark, Crown, Users, Clock } from 'lucide-react';
+import { Settings, Grid, Bookmark, Crown, Users, Clock, LayoutGrid, Columns2, Columns3 } from 'lucide-react';
 import Link from 'next/link';
 import { clsx } from 'clsx';
 import { FeedContainer } from '@/components/feed';
@@ -21,6 +21,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<'posts' | 'saved' | 'scheduled'>('posts');
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
+  const [columns, setColumns] = useState<1 | 2 | 3>(1);
 
   if (isLoading) {
     return (
@@ -37,9 +38,14 @@ export default function ProfilePage() {
   const tierBadge = TIER_BADGES[user.tier];
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className={clsx(
+      'mx-auto px-4 py-8',
+      columns === 1 && 'max-w-2xl',
+      columns === 2 && 'max-w-4xl',
+      columns === 3 && 'max-w-6xl'
+    )}>
       {/* Profile Header */}
-      <div>
+      <div className={clsx(columns > 1 && 'max-w-2xl mx-auto')}>
         {/* Cover Image (placeholder) */}
         {user.cover_image_url ? (
           <img src={user.cover_image_url} alt="Cover" className="h-32 w-full rounded-xl mb-4 object-cover" />
@@ -148,51 +154,96 @@ export default function ProfilePage() {
         </div>
 
         {/* Content Tabs */}
-        <div className="flex border-b border-gray-800 mt-6">
-          <button
-            onClick={() => setActiveTab('posts')}
-            className={clsx(
-              'flex-1 py-3 flex items-center justify-center gap-2 transition',
-              activeTab === 'posts'
-                ? 'text-white border-b-2 border-emerald-500'
-                : 'text-gray-500 hover:text-gray-300'
-            )}
-          >
-            <Grid size={18} />
-            Posts
-          </button>
-          <button
-            onClick={() => setActiveTab('scheduled')}
-            className={clsx(
-              'flex-1 py-3 flex items-center justify-center gap-2 transition',
-              activeTab === 'scheduled'
-                ? 'text-white border-b-2 border-emerald-500'
-                : 'text-gray-500 hover:text-gray-300'
-            )}
-          >
-            <Clock size={18} />
-            Scheduled
-          </button>
-          <button
-            onClick={() => setActiveTab('saved')}
-            className={clsx(
-              'flex-1 py-3 flex items-center justify-center gap-2 transition',
-              activeTab === 'saved'
-                ? 'text-white border-b-2 border-emerald-500'
-                : 'text-gray-500 hover:text-gray-300'
-            )}
-          >
-            <Bookmark size={18} />
-            Saved
-          </button>
-        </div>
+        <div className="flex items-center justify-between border-b border-gray-800 mt-6">
+          <div className="flex flex-1">
+            <button
+              onClick={() => setActiveTab('posts')}
+              className={clsx(
+                'flex-1 py-3 flex items-center justify-center gap-2 transition',
+                activeTab === 'posts'
+                  ? 'text-white border-b-2 border-emerald-500'
+                  : 'text-gray-500 hover:text-gray-300'
+              )}
+            >
+              <Grid size={18} />
+              Posts
+            </button>
+            <button
+              onClick={() => setActiveTab('scheduled')}
+              className={clsx(
+                'flex-1 py-3 flex items-center justify-center gap-2 transition',
+                activeTab === 'scheduled'
+                  ? 'text-white border-b-2 border-emerald-500'
+                  : 'text-gray-500 hover:text-gray-300'
+              )}
+            >
+              <Clock size={18} />
+              Scheduled
+            </button>
+            <button
+              onClick={() => setActiveTab('saved')}
+              className={clsx(
+                'flex-1 py-3 flex items-center justify-center gap-2 transition',
+                activeTab === 'saved'
+                  ? 'text-white border-b-2 border-emerald-500'
+                  : 'text-gray-500 hover:text-gray-300'
+              )}
+            >
+              <Bookmark size={18} />
+              Saved
+            </button>
+          </div>
 
-        {/* Content */}
-        <div className="mt-4">
-          {activeTab === 'posts' && <FeedContainer userId={user.id} />}
-          {activeTab === 'scheduled' && <MyScheduledDrops />}
-          {activeTab === 'saved' && <SavedFeedContainer />}
+          {/* Column Toggle */}
+          <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1 ml-4">
+            <button
+              onClick={() => setColumns(1)}
+              className={clsx(
+                'p-2 rounded-md transition',
+                columns === 1
+                  ? 'bg-emerald-500 text-white'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
+              )}
+              aria-label="1 column layout"
+              title="1 column"
+            >
+              <LayoutGrid size={18} />
+            </button>
+            <button
+              onClick={() => setColumns(2)}
+              className={clsx(
+                'p-2 rounded-md transition',
+                columns === 2
+                  ? 'bg-emerald-500 text-white'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
+              )}
+              aria-label="2 column layout"
+              title="2 columns"
+            >
+              <Columns2 size={18} />
+            </button>
+            <button
+              onClick={() => setColumns(3)}
+              className={clsx(
+                'p-2 rounded-md transition',
+                columns === 3
+                  ? 'bg-emerald-500 text-white'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
+              )}
+              aria-label="3 column layout"
+              title="3 columns"
+            >
+              <Columns3 size={18} />
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* Content */}
+      <div className="mt-4">
+        {activeTab === 'posts' && <FeedContainer userId={user.id} columns={columns} />}
+        {activeTab === 'scheduled' && <MyScheduledDrops />}
+        {activeTab === 'saved' && <SavedFeedContainer columns={columns} />}
       </div>
 
       {/* Modals */}

@@ -4,6 +4,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Loader2, Users, Star } from 'lucide-react';
 import Link from 'next/link';
+import Masonry from 'react-masonry-css';
 import { PostCard } from './PostCard';
 import { RepostedPostCard } from './RepostedPostCard';
 import { AdCard, BoostedPostCard } from '@/components/ads';
@@ -29,6 +30,7 @@ interface FeedContainerProps {
   userId?: string;
   mode?: FeedMode;
   highlightPostId?: string;
+  columns?: 1 | 2 | 3;
 }
 
 interface Post {
@@ -146,7 +148,7 @@ async function fetchUserPreferences(): Promise<UserPreferences | null> {
   }
 }
 
-export function FeedContainer({ contentType, userId, mode = 'discovery', highlightPostId }: FeedContainerProps) {
+export function FeedContainer({ contentType, userId, mode = 'discovery', highlightPostId, columns = 1 }: FeedContainerProps) {
   const { user } = useAuth();
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -458,25 +460,45 @@ export function FeedContainer({ contentType, userId, mode = 'discovery', highlig
     return items;
   };
 
+  const breakpointCols = {
+    default: columns,
+    1024: Math.min(columns, 2),
+    640: 1,
+  };
+
   return (
     <>
       {/* Break overlay - shown when user takes a break */}
       {showBreakOverlay && <BreakOverlay onBreakEnd={handleBreakEnd} />}
 
-      <div className="space-y-4">
-        {/* Show upcoming drops section on main feed (not profile feeds) */}
-        {!userId && <UpcomingDropsSection mode={mode} />}
+      {/* Show upcoming drops section on main feed (not profile feeds) */}
+      {!userId && <UpcomingDropsSection mode={mode} />}
 
-        {renderFeedItems()}
-
-        {/* Load more trigger */}
-        <div ref={loadMoreRef} className="py-4">
-          {isFetchingNextPage && (
-            <div className="flex justify-center">
-              <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
-            </div>
-          )}
+      {columns === 1 ? (
+        <div className="space-y-4">
+          {renderFeedItems()}
         </div>
+      ) : (
+        <Masonry
+          breakpointCols={breakpointCols}
+          className="flex -ml-4 w-auto"
+          columnClassName="pl-4 bg-clip-padding"
+        >
+          {renderFeedItems().map((item, index) => (
+            <div key={index} className="mb-4">
+              {item}
+            </div>
+          ))}
+        </Masonry>
+      )}
+
+      {/* Load more trigger */}
+      <div ref={loadMoreRef} className="py-4">
+        {isFetchingNextPage && (
+          <div className="flex justify-center">
+            <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
+          </div>
+        )}
       </div>
     </>
   );
