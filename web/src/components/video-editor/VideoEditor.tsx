@@ -9,6 +9,8 @@ import {
   Plus,
   Upload,
   Loader2,
+  Smartphone,
+  Monitor,
 } from 'lucide-react';
 import { useVideoEditorStore, useClips } from '@/stores/videoEditorStore';
 import VideoPreview from './preview/VideoPreview';
@@ -29,12 +31,14 @@ const TOOL_TABS = [
 ] as const;
 
 type ToolTabId = (typeof TOOL_TABS)[number]['id'];
+type PreviewMode = 'mobile' | 'desktop';
 
 export default function VideoEditor({
   userTier,
   maxDurationSeconds,
 }: VideoEditorProps) {
   const [activeTab, setActiveTab] = useState<ToolTabId | null>(null);
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('mobile');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -143,16 +147,54 @@ export default function VideoEditor({
     e.preventDefault();
   };
 
+  // Get the preview container classes based on mode
+  const getPreviewContainerClass = () => {
+    if (previewMode === 'mobile') {
+      // Mobile mode: phone bezel on desktop, full-width on actual mobile
+      return 'w-full md:w-[375px] md:max-h-[667px] md:rounded-[2.5rem] md:border-[10px] md:border-zinc-700 rounded-xl overflow-hidden';
+    }
+    // Desktop mode: wider preview
+    return 'w-full max-w-3xl rounded-xl border border-zinc-700 overflow-hidden';
+  };
+
   return (
     <div className="flex flex-col lg:flex-row h-full">
       {/* Left side - Preview and Timeline */}
       <div className="flex-1 flex flex-col min-w-0">
+        {/* Preview mode toggle - only show on desktop when there are clips */}
+        {clips.length > 0 && (
+          <div className="hidden md:flex items-center justify-center gap-2 py-2 bg-zinc-900 border-b border-zinc-800">
+            <button
+              onClick={() => setPreviewMode('mobile')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition ${
+                previewMode === 'mobile'
+                  ? 'bg-zinc-700 text-white'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Smartphone size={16} />
+              Mobile
+            </button>
+            <button
+              onClick={() => setPreviewMode('desktop')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition ${
+                previewMode === 'desktop'
+                  ? 'bg-zinc-700 text-white'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Monitor size={16} />
+              Desktop
+            </button>
+          </div>
+        )}
+
         {/* Video Preview */}
-        <div className="flex-1 min-h-0 bg-black">
+        <div className="flex-1 min-h-0 bg-zinc-950 flex items-center justify-center p-4">
           {clips.length === 0 ? (
             // Empty state - upload prompt
             <div
-              className="h-full flex flex-col items-center justify-center p-8"
+              className="w-full h-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-zinc-700 rounded-xl"
               onDrop={handleDrop}
               onDragOver={handleDragOver}
             >
@@ -194,13 +236,18 @@ export default function VideoEditor({
               </div>
             </div>
           ) : (
-            <VideoPreview />
+            // Preview with phone bezel on desktop
+            <div className={getPreviewContainerClass()}>
+              <div className="bg-black aspect-[9/16] md:aspect-auto md:h-full">
+                <VideoPreview />
+              </div>
+            </div>
           )}
         </div>
 
         {/* Timeline */}
         {clips.length > 0 && (
-          <div className="h-48 border-t border-zinc-800 bg-zinc-900">
+          <div className="h-40 md:h-48 border-t border-zinc-800 bg-zinc-900 flex-shrink-0">
             <Timeline
               onAddClip={handleUploadClick}
               isUploading={isUploading}
@@ -211,7 +258,7 @@ export default function VideoEditor({
 
       {/* Right side - Tool panels (desktop) / Bottom sheet (mobile) */}
       {clips.length > 0 && (
-        <div className="lg:w-80 border-t lg:border-t-0 lg:border-l border-zinc-800 bg-zinc-900 flex flex-col">
+        <div className="lg:w-80 border-t lg:border-t-0 lg:border-l border-zinc-800 bg-zinc-900 flex flex-col max-h-[40vh] lg:max-h-none">
           {/* Tool tabs */}
           <div className="flex border-b border-zinc-800">
             {TOOL_TABS.map((tab) => {
