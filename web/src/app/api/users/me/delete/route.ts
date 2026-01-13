@@ -17,13 +17,15 @@ export async function DELETE() {
       select: { identityId: true },
     });
 
-    if (!currentUser) {
+    if (!currentUser || !currentUser.identityId) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    const identityId = currentUser.identityId;
+
     // Find all user IDs under this identity (all profiles)
     const allProfiles = await prisma.user.findMany({
-      where: { identityId: currentUser.identityId },
+      where: { identityId },
       select: { id: true },
     });
 
@@ -250,12 +252,12 @@ export async function DELETE() {
 
       // 17. Delete all user profiles under this identity
       await tx.user.deleteMany({
-        where: { identityId: currentUser.identityId },
+        where: { identityId },
       });
 
       // 18. Delete the identity itself
       await tx.identity.delete({
-        where: { id: currentUser.identityId },
+        where: { id: identityId },
       });
     });
 
