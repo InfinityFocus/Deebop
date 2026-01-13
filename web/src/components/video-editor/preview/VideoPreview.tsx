@@ -9,6 +9,7 @@ import {
   Maximize2,
   SkipBack,
   SkipForward,
+  AlertCircle,
 } from 'lucide-react';
 import {
   useVideoEditorStore,
@@ -55,6 +56,10 @@ export default function VideoPreview() {
   const currentTimeRef = useRef<number>(0);
   const durationRef = useRef<number>(0);
   const [currentClipId, setCurrentClipId] = useState<string | null>(null);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [isVideoLoading, setIsVideoLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string>('Initializing...');
+  const [canvasDims, setCanvasDims] = useState({ w: 0, h: 0 });
 
   const clips = useClips();
   const overlays = useOverlays();
@@ -88,10 +93,27 @@ export default function VideoPreview() {
   const drawFrame = useCallback(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
-    if (!canvas || !video || video.readyState < 2) return;
+
+    if (!canvas) {
+      console.log('[VideoPreview] drawFrame: no canvas');
+      return;
+    }
+    if (!video) {
+      console.log('[VideoPreview] drawFrame: no video element');
+      return;
+    }
+    if (video.readyState < 2) {
+      console.log('[VideoPreview] drawFrame: video not ready, readyState:', video.readyState);
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      console.log('[VideoPreview] drawFrame: no canvas context');
+      return;
+    }
+
+    console.log('[VideoPreview] drawFrame: drawing to canvas', canvas.width, 'x', canvas.height, 'video:', video.videoWidth, 'x', video.videoHeight);
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -258,7 +280,10 @@ export default function VideoPreview() {
     if (isPlaying) return;
 
     const video = videoRef.current;
-    if (!video || clips.length === 0) return;
+    if (!video || clips.length === 0) {
+      console.log('[VideoPreview] Skipping: no video element or no clips');
+      return;
+    }
 
     console.log('[VideoPreview] Clips changed, loading video...', clips.length, 'clips');
 
@@ -278,25 +303,59 @@ export default function VideoPreview() {
     if (clip.id !== currentClipId) {
       console.log('[VideoPreview] Setting new video source:', clip.sourceUrl);
       setCurrentClipId(clip.id);
-      video.src = clip.sourceUrl;
-      video.playbackRate = clip.speed;
+      setVideoError(null);
+      setIsVideoLoading(true);
 
-      // Handle video load events
+      // Handle video events
       const handleLoadedData = () => {
-        console.log('[VideoPreview] Video loaded, seeking to:', localTime);
+        console.log('[VideoPreview] Video loadeddata event, seeking to:', localTime);
+        setIsVideoLoading(false);
+        setDebugInfo(`Loaded: ${video.videoWidth}x${video.videoHeight}`);
         video.currentTime = localTime;
       };
 
-      const handleSeeked = () => {
-        console.log('[VideoPreview] Video seeked, drawing frame');
+      const handleCanPlayThrough = () => {
+        console.log('[VideoPreview] Video canplaythrough, readyState:', video.readyState);
+        setDebugInfo(`Ready: ${video.videoWidth}x${video.videoHeight}, rs=${video.readyState}`);
         drawFrame();
         drawOverlays();
-        video.removeEventListener('seeked', handleSeeked);
       };
 
+      const handleSeeked = () => {
+        console.log('[VideoPreview] Video seeked, drawing frame, readyState:', video.readyState);
+        setDebugInfo(`Seeked, drawing frame...`);
+        drawFrame();
+        drawOverlays();
+      };
+
+      const handleError = (e: Event) => {
+        const mediaError = video.error;
+        console.error('[VideoPreview] Video load error:', mediaError?.code, mediaError?.message);
+        setIsVideoLoading(false);
+        setDebugInfo(`Error: ${mediaError?.code}`);
+        setVideoError(`Failed to load video: ${mediaError?.message || 'Unknown error'}`);
+      };
+
+      // Remove any existing listeners
+      video.removeEventListener('error', handleError);
+
+      // Add new listeners
       video.addEventListener('loadeddata', handleLoadedData, { once: true });
+      video.addEventListener('canplaythrough', handleCanPlayThrough, { once: true });
       video.addEventListener('seeked', handleSeeked);
+      video.addEventListener('error', handleError);
+
+      // Set source and load
+      video.src = clip.sourceUrl;
+      video.playbackRate = clip.speed;
+      video.crossOrigin = 'anonymous'; // Enable CORS
       video.load();
+
+      // Cleanup
+      return () => {
+        video.removeEventListener('seeked', handleSeeked);
+        video.removeEventListener('error', handleError);
+      };
     } else {
       // Same clip, just seek
       if (Math.abs(video.currentTime - localTime) > 0.1) {
@@ -344,22 +403,44 @@ export default function VideoPreview() {
   useEffect(() => {
     const container = containerRef.current;
     const canvas = canvasRef.current;
-    if (!container || !canvas) return;
+    if (!container || !canvas) {
+      console.log('[VideoPreview] Resize: no container or canvas');
+      return;
+    }
 
     const resizeCanvas = () => {
       const rect = container.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-      drawFrame();
-      drawOverlays();
+      console.log('[VideoPreview] Resizing canvas to:', rect.width, 'x', rect.height);
+
+      // Ensure minimum dimensions
+      const width = Math.max(rect.width, 320);
+      const height = Math.max(rect.height, 180);
+
+      canvas.width = width;
+      canvas.height = height;
+      setCanvasDims({ w: width, h: height });
+      setDebugInfo(`Canvas: ${width}x${height}`);
+
+      // Draw if video is ready
+      if (videoRef.current && videoRef.current.readyState >= 2) {
+        drawFrame();
+        drawOverlays();
+      }
     };
 
+    // Initial resize
     resizeCanvas();
+
+    // Also resize after a short delay to catch late layout changes
+    const timeoutId = setTimeout(resizeCanvas, 100);
 
     const observer = new ResizeObserver(resizeCanvas);
     observer.observe(container);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      clearTimeout(timeoutId);
+    };
   }, [drawFrame, drawOverlays]);
 
   // Handle overlay dragging
@@ -434,11 +515,11 @@ export default function VideoPreview() {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full w-full flex flex-col min-h-0">
       {/* Canvas container */}
       <div
         ref={containerRef}
-        className="flex-1 relative bg-black"
+        className="flex-1 relative bg-black min-h-[200px]"
         onPointerDown={handleCanvasPointerDown}
         onPointerMove={handleCanvasPointerMove}
         onPointerUp={handleCanvasPointerUp}
@@ -449,11 +530,51 @@ export default function VideoPreview() {
           className="absolute inset-0 w-full h-full"
           style={{ touchAction: 'none' }}
         />
-        <video ref={videoRef} className="hidden" muted={isMuted} playsInline />
+        {/* Fallback: show video directly if canvas isn't working */}
+        <video
+          ref={videoRef}
+          className="absolute inset-0 w-full h-full object-contain"
+          muted={isMuted}
+          playsInline
+          crossOrigin="anonymous"
+          controls
+        />
+
+        {/* Loading indicator */}
+        {isVideoLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+            <div className="flex flex-col items-center gap-2 text-white">
+              <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm">Loading video...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Error indicator */}
+        {videoError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+            <div className="flex flex-col items-center gap-2 text-red-400 text-center px-4">
+              <AlertCircle size={32} />
+              <span className="text-sm">{videoError}</span>
+            </div>
+          </div>
+        )}
+
+        {/* No clips indicator */}
+        {clips.length === 0 && !isVideoLoading && !videoError && (
+          <div className="absolute inset-0 flex items-center justify-center text-zinc-500">
+            <span className="text-sm">No video loaded</span>
+          </div>
+        )}
+
+        {/* Debug overlay - temporary */}
+        <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded font-mono">
+          {debugInfo} | clips:{clips.length} | canvas:{canvasDims.w}x{canvasDims.h}
+        </div>
       </div>
 
       {/* Controls */}
-      <div className="bg-zinc-900 border-t border-zinc-800 px-4 py-3">
+      <div className="bg-zinc-900 border-t border-zinc-800 px-3 sm:px-4 py-2 sm:py-3 flex-shrink-0">
         {/* Seek bar */}
         <div
           className="h-1.5 bg-zinc-700 rounded-full mb-3 cursor-pointer group"

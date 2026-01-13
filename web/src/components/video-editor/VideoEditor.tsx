@@ -163,12 +163,14 @@ export default function VideoEditor({
 
   // Get the preview container classes based on mode
   const getPreviewContainerClass = () => {
+    // On mobile: always full width/height
+    // On desktop: constrained based on mode
     if (previewMode === 'mobile') {
-      // Mobile mode: full-width on actual mobile, phone bezel on desktop
-      return 'w-full h-full md:w-[375px] md:h-auto md:max-h-[500px] lg:max-h-[600px] md:rounded-[2.5rem] md:border-[10px] md:border-zinc-700 rounded-lg md:rounded-[2.5rem] overflow-hidden';
+      // Mobile mode: phone bezel on desktop screens
+      return 'w-full h-full lg:w-[375px] lg:h-[667px] lg:rounded-[2.5rem] lg:border-[10px] lg:border-zinc-700 overflow-hidden';
     }
-    // Desktop mode: wider preview, full width on mobile
-    return 'w-full h-full md:max-w-3xl md:h-auto rounded-lg md:border md:border-zinc-700 overflow-hidden';
+    // Desktop mode: wider preview
+    return 'w-full h-full lg:max-w-3xl lg:max-h-[600px] lg:rounded-xl lg:border lg:border-zinc-700 overflow-hidden';
   };
 
   return (
@@ -254,9 +256,7 @@ export default function VideoEditor({
             ) : (
               // Preview - full width on mobile, constrained on desktop
               <div className={getPreviewContainerClass()}>
-                <div className="bg-black h-full min-h-[200px]">
-                  <VideoPreview />
-                </div>
+                <VideoPreview />
               </div>
             )}
           </div>
