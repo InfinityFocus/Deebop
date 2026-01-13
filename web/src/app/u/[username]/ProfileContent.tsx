@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
 import { FeedContainer } from '@/components/feed';
+import { FollowersModal, FollowingModal, ProfileActionsMenu } from '@/components/profile';
 
 interface UserProfile {
   id: string;
@@ -54,6 +55,8 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
   const searchParams = useSearchParams();
   const highlightPostId = searchParams.get('post') || undefined;
 
@@ -137,11 +140,15 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
           </button>
           <h1 className="text-xl font-bold">@{user.username}</h1>
         </div>
-        {user.is_own_profile && (
-          <Link href="/settings" className="p-2 hover:bg-gray-800 rounded-lg transition">
-            <Settings size={20} />
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          {user.is_own_profile ? (
+            <Link href="/settings" className="p-2 hover:bg-gray-800 rounded-lg transition">
+              <Settings size={20} />
+            </Link>
+          ) : currentUser && (
+            <ProfileActionsMenu username={user.username} />
+          )}
+        </div>
       </div>
 
       {/* Profile Header */}
@@ -222,14 +229,20 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
             <p className="font-bold text-lg">{user.posts_count}</p>
             <p className="text-gray-500 text-sm">Posts</p>
           </div>
-          <div className="text-center">
+          <button
+            onClick={() => setShowFollowers(true)}
+            className="text-center hover:bg-gray-800/50 px-3 py-1 -my-1 rounded-lg transition"
+          >
             <p className="font-bold text-lg">{user.followers_count}</p>
             <p className="text-gray-500 text-sm">Followers</p>
-          </div>
-          <div className="text-center">
+          </button>
+          <button
+            onClick={() => setShowFollowing(true)}
+            className="text-center hover:bg-gray-800/50 px-3 py-1 -my-1 rounded-lg transition"
+          >
             <p className="font-bold text-lg">{user.following_count}</p>
             <p className="text-gray-500 text-sm">Following</p>
-          </div>
+          </button>
         </div>
 
         {/* Action Buttons */}
@@ -360,6 +373,20 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
           )}
         </div>
       </div>
+
+      {/* Modals */}
+      <FollowersModal
+        isOpen={showFollowers}
+        onClose={() => setShowFollowers(false)}
+        username={user.username}
+        isOwnProfile={user.is_own_profile}
+      />
+      <FollowingModal
+        isOpen={showFollowing}
+        onClose={() => setShowFollowing(false)}
+        username={user.username}
+        isOwnProfile={user.is_own_profile}
+      />
     </div>
   );
 }
