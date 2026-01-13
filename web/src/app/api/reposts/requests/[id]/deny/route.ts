@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
 // POST /api/reposts/requests/[id]/deny - Deny a repost request
 export async function POST(
@@ -57,13 +58,11 @@ export async function POST(
     });
 
     // Notify the requester that their repost was denied
-    await prisma.notification.create({
-      data: {
-        userId: repost.userId,
-        actorId: user.id,
-        type: 'repost_denied',
-        postId: repost.postId,
-      },
+    await createNotification({
+      userId: repost.userId,
+      actorId: user.id,
+      type: 'repost_denied',
+      postId: repost.postId,
     });
 
     return NextResponse.json({

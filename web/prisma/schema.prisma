@@ -128,25 +128,26 @@ model User {
   notifyMentions      Boolean @default(true) @map("notify_mentions")
   emailWeeklyDigest   Boolean @default(false) @map("email_weekly_digest")
   emailProductUpdates Boolean @default(true) @map("email_product_updates")
+  pushEnabled         Boolean @default(false) @map("push_enabled")
 
   // Privacy preferences
-  showActivityStatus      Boolean @default(true) @map("show_activity_status")
-  allowTagging            Boolean @default(true) @map("allow_tagging")
-  requireTaggingApproval  Boolean @default(false) @map("require_tagging_approval")
-  limitTagsToFollowers    Boolean @default(false) @map("limit_tags_to_followers")
-  allowMentions           Boolean @default(true) @map("allow_mentions")
-  requireMentionApproval  Boolean @default(false) @map("require_mention_approval")
+  showActivityStatus       Boolean @default(true) @map("show_activity_status")
+  allowTagging             Boolean @default(true) @map("allow_tagging")
+  requireTaggingApproval   Boolean @default(false) @map("require_tagging_approval")
+  limitTagsToFollowers     Boolean @default(false) @map("limit_tags_to_followers")
+  allowMentions            Boolean @default(true) @map("allow_mentions")
+  requireMentionApproval   Boolean @default(false) @map("require_mention_approval")
   limitMentionsToFollowers Boolean @default(false) @map("limit_mentions_to_followers")
-  showLikedPosts          Boolean @default(false) @map("show_liked_posts")
-  hideFromDiscovery       Boolean @default(false) @map("hide_from_discovery")
-  dontSuggestAccount      Boolean @default(false) @map("dont_suggest_account")
-  hideFollowersList       Boolean @default(false) @map("hide_followers_list")
-  hideFollowingList       Boolean @default(false) @map("hide_following_list")
-  hideEngagementCounts    Boolean @default(false) @map("hide_engagement_counts")
+  showLikedPosts           Boolean @default(false) @map("show_liked_posts")
+  hideFromDiscovery        Boolean @default(false) @map("hide_from_discovery")
+  dontSuggestAccount       Boolean @default(false) @map("dont_suggest_account")
+  hideFollowersList        Boolean @default(false) @map("hide_followers_list")
+  hideFollowingList        Boolean @default(false) @map("hide_following_list")
+  hideEngagementCounts     Boolean @default(false) @map("hide_engagement_counts")
 
   // Account status
-  isDeactivated           Boolean   @default(false) @map("is_deactivated")
-  deactivatedAt           DateTime? @map("deactivated_at")
+  isDeactivated Boolean   @default(false) @map("is_deactivated")
+  deactivatedAt DateTime? @map("deactivated_at")
 
   // Repost preferences
   allowReposts          Boolean  @default(true) @map("allow_reposts")
@@ -162,10 +163,11 @@ model User {
   mentionsMade     PostMention[] @relation("MentionsMade")
 
   // Explore feature relations
-  interests      UserInterest[]
-  location       UserLocation?
-  contentPrefs   UserContentPrefs?
-  recentSearches RecentSearch[]
+  interests         UserInterest[]
+  location          UserLocation?
+  contentPrefs      UserContentPrefs?
+  recentSearches    RecentSearch[]
+  pushSubscriptions PushSubscription[]
 
   @@index([identityId])
   @@map("users")
@@ -520,6 +522,21 @@ model Notification {
 
   @@index([userId, isRead])
   @@map("notifications")
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 model BlogPost {

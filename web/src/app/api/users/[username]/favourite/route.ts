@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
 // POST /api/users/[username]/favourite - Toggle favourite
 export async function POST(
@@ -73,12 +74,10 @@ export async function POST(
       });
 
       // Create notification for the favourited user
-      await prisma.notification.create({
-        data: {
-          userId: targetUser.id,
-          type: 'favourite',
-          actorId: user.id,
-        },
+      await createNotification({
+        userId: targetUser.id,
+        type: 'favourite',
+        actorId: user.id,
       });
 
       return NextResponse.json({ favourited: true });

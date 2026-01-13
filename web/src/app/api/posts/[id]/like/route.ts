@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
 // POST /api/posts/[id]/like - Toggle like
 export async function POST(
@@ -58,13 +59,11 @@ export async function POST(
 
       // Create notification for post author (if not self)
       if (post.userId !== user.id) {
-        await prisma.notification.create({
-          data: {
-            userId: post.userId,
-            type: 'like',
-            actorId: user.id,
-            postId,
-          },
+        await createNotification({
+          userId: post.userId,
+          type: 'like',
+          actorId: user.id,
+          postId,
         });
       }
 

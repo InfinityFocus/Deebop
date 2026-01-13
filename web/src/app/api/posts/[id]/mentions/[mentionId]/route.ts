@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
 // PATCH /api/posts/[id]/mentions/[mentionId] - Approve or deny a mention
 export async function PATCH(
@@ -58,13 +59,11 @@ export async function PATCH(
 
     // Notify the mentioner of the decision
     if (mention.mentionerId !== user.id) {
-      await prisma.notification.create({
-        data: {
-          userId: mention.mentionerId,
-          type: action === 'approve' ? 'mention_approved' : 'mention_denied',
-          actorId: user.id,
-          postId,
-        },
+      await createNotification({
+        userId: mention.mentionerId,
+        type: action === 'approve' ? 'mention_approved' : 'mention_denied',
+        actorId: user.id,
+        postId,
       });
     }
 

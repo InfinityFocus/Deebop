@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { Prisma } from '@prisma/client';
+import { createNotification } from '@/lib/notifications';
 
 // GET /api/posts/[id]/tags - Get all approved tags for a post
 export async function GET(
@@ -221,13 +222,11 @@ export async function POST(
 
     // Create notification
     if (user.id !== taggedUserId) {
-      await prisma.notification.create({
-        data: {
-          userId: taggedUserId,
-          type: initialStatus === 'pending' ? 'tag_request' : 'tag',
-          actorId: user.id,
-          postId,
-        },
+      await createNotification({
+        userId: taggedUserId,
+        type: initialStatus === 'pending' ? 'tag_request' : 'tag',
+        actorId: user.id,
+        postId,
       });
     }
 

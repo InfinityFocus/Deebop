@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
 // POST /api/reposts/requests/[id]/approve - Approve a repost request
 export async function POST(
@@ -64,13 +65,11 @@ export async function POST(
     });
 
     // Notify the requester that their repost was approved
-    await prisma.notification.create({
-      data: {
-        userId: repost.userId,
-        actorId: user.id,
-        type: 'repost_approved',
-        postId: repost.postId,
-      },
+    await createNotification({
+      userId: repost.userId,
+      actorId: user.id,
+      type: 'repost_approved',
+      postId: repost.postId,
     });
 
     return NextResponse.json({

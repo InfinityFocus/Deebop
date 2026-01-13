@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { ArrowLeft, Bell, Heart, UserPlus, Share2, AtSign, Loader2 } from 'lucide-react';
+import { ArrowLeft, Bell, Heart, UserPlus, Share2, AtSign, Loader2, Smartphone, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { clsx } from 'clsx';
 
 interface NotificationSettings {
@@ -25,6 +26,14 @@ async function fetchNotifications(): Promise<NotificationSettings> {
 export default function NotificationsSettingsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
+  const {
+    isSupported: pushSupported,
+    isSubscribed: pushSubscribed,
+    isLoading: pushLoading,
+    permission: pushPermission,
+    error: pushError,
+    toggle: togglePush,
+  } = usePushNotifications();
 
   // Local state for form
   const [notifyLikes, setNotifyLikes] = useState(true);
@@ -145,10 +154,67 @@ export default function NotificationsSettingsPage() {
       </div>
 
       <div className="space-y-8">
-        {/* Push Notifications */}
+        {/* Device Push Notifications */}
         <section>
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
-            Push Notifications
+            Device Notifications
+          </h2>
+          <div className="p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
+                  <Smartphone size={20} className="text-gray-300" />
+                </div>
+                <div>
+                  <p className="font-medium text-white">Push Notifications</p>
+                  <p className="text-sm text-gray-300">
+                    {!pushSupported
+                      ? 'Not supported on this device/browser'
+                      : pushPermission === 'denied'
+                      ? 'Blocked in browser settings'
+                      : pushSubscribed
+                      ? 'You will receive notifications on this device'
+                      : 'Enable to get notified on this device'}
+                  </p>
+                </div>
+              </div>
+              {pushSupported && pushPermission !== 'denied' && (
+                <button
+                  onClick={togglePush}
+                  disabled={pushLoading}
+                  className={clsx(
+                    'relative w-12 h-6 rounded-full transition-colors',
+                    pushSubscribed ? 'bg-emerald-500' : 'bg-gray-600',
+                    pushLoading && 'opacity-50'
+                  )}
+                >
+                  <span
+                    className={clsx(
+                      'absolute top-1 w-4 h-4 bg-white rounded-full transition-transform',
+                      pushSubscribed ? 'right-1' : 'left-1'
+                    )}
+                  />
+                </button>
+              )}
+            </div>
+            {pushError && (
+              <div className="mt-3 flex items-center gap-2 text-sm text-amber-400">
+                <AlertCircle size={16} />
+                <span>{pushError}</span>
+              </div>
+            )}
+            {pushPermission === 'denied' && (
+              <div className="mt-3 text-sm text-gray-400">
+                To enable notifications, update your browser settings to allow notifications from this site.
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Notification Types */}
+        <section>
+          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
+            What to Notify
           </h2>
           <div className="space-y-3">
             {pushSettings.map(setting => {

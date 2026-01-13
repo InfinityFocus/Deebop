@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
 // POST /api/posts/[id]/repost - Create a repost
 export async function POST(
@@ -108,13 +109,11 @@ export async function POST(
 
     // Create notification
     const notificationType = status === 'pending' ? 'repost_request' : 'repost';
-    await prisma.notification.create({
-      data: {
-        userId: post.userId,
-        actorId: user.id,
-        type: notificationType,
-        postId,
-      },
+    await createNotification({
+      userId: post.userId,
+      actorId: user.id,
+      type: notificationType,
+      postId,
     });
 
     return NextResponse.json({

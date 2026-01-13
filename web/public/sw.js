@@ -71,3 +71,67 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
+// Push notification event - show notification when received
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  try {
+    const data = event.data.json();
+    const { title, body, icon, badge, url, tag } = data;
+
+    const options = {
+      body: body || '',
+      icon: icon || '/icon-192.png',
+      badge: badge || '/icon-144.png',
+      tag: tag || 'default',
+      renotify: true,
+      requireInteraction: false,
+      data: { url: url || '/' },
+      vibrate: [100, 50, 100],
+      actions: [
+        { action: 'open', title: 'Open' },
+        { action: 'dismiss', title: 'Dismiss' },
+      ],
+    };
+
+    event.waitUntil(
+      self.registration.showNotification(title || 'Deebop', options)
+    );
+  } catch (error) {
+    console.error('Error showing push notification:', error);
+  }
+});
+
+// Notification click event - handle user interaction
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  if (event.action === 'dismiss') {
+    return;
+  }
+
+  const urlToOpen = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Check if there's already a window open
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.focus();
+          client.navigate(urlToOpen);
+          return;
+        }
+      }
+      // Open new window if none exists
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
+
+// Notification close event (optional - for analytics)
+self.addEventListener('notificationclose', (event) => {
+  // Could track dismissed notifications here
+});

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
 // PATCH /api/posts/[id]/tags/[tagId] - Approve or deny a tag
 export async function PATCH(
@@ -61,13 +62,11 @@ export async function PATCH(
 
     // Notify the tagger of the decision
     if (tag.taggerId !== user.id) {
-      await prisma.notification.create({
-        data: {
-          userId: tag.taggerId,
-          type: action === 'approve' ? 'tag_approved' : 'tag_denied',
-          actorId: user.id,
-          postId,
-        },
+      await createNotification({
+        userId: tag.taggerId,
+        type: action === 'approve' ? 'tag_approved' : 'tag_denied',
+        actorId: user.id,
+        postId,
       });
     }
 
