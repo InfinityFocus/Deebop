@@ -128,21 +128,21 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
   const tierBadge = TIER_BADGES[user.tier] || TIER_BADGES.free;
 
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* Cover Image - at very top */}
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      {/* Cover Image */}
       <div className="relative">
         {user.cover_image_url ? (
           <img
             src={user.cover_image_url}
             alt="Cover"
-            className="w-full h-40 object-cover"
+            className="h-32 w-full rounded-xl mb-4 object-cover"
           />
         ) : (
-          <div className="w-full h-40 bg-gradient-to-r from-emerald-600 via-yellow-500 to-cyan-500" />
+          <div className="h-32 bg-gradient-to-r from-emerald-600 via-yellow-500 to-cyan-500 rounded-xl mb-4" />
         )}
 
         {/* Navigation buttons overlaid on cover image */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+        <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
           <button
             onClick={() => window.history.back()}
             className="p-2 bg-black/50 hover:bg-black/70 rounded-full transition backdrop-blur-sm"
@@ -163,11 +163,8 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
         </div>
       </div>
 
-      {/* Profile Content */}
-      <div className="px-4">
-
-        {/* Avatar and Info */}
-        <div className="flex flex-col items-center -mt-12 mb-4">
+      {/* Avatar and Info */}
+      <div className="flex flex-col items-center -mt-16 mb-4">
           <div className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 border-4 border-black flex items-center justify-center text-3xl font-bold text-white">
             {user.avatar_url ? (
               <img
@@ -361,17 +358,16 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
           )}
         </div>
 
-        {/* User's Posts */}
-        <div className="mt-4">
-          {activeTab === 'posts' ? (
-            <FeedContainer userId={user.id} highlightPostId={highlightPostId} />
-          ) : (
-            <div className="text-center py-16">
-              <Bookmark className="mx-auto text-gray-500 mb-4" size={32} />
-              <p className="text-gray-500">Saved posts feature coming soon</p>
-            </div>
-          )}
-        </div>
+      {/* User's Posts */}
+      <div className="mt-4">
+        {activeTab === 'posts' ? (
+          <FeedContainer userId={user.id} highlightPostId={highlightPostId} />
+        ) : (
+          <div className="text-center py-16">
+            <Bookmark className="mx-auto text-gray-500 mb-4" size={32} />
+            <p className="text-gray-500">Saved posts feature coming soon</p>
+          </div>
+        )}
       </div>
 
       {/* Modals */}
