@@ -317,7 +317,7 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
 
   return (
-    <article id={`post-${post.id}`} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden transition-shadow">
+    <article id={`post-${post.id}`} className="bg-gray-900 border border-gray-800 rounded-xl transition-shadow">
       {/* Header */}
       <header className="flex items-center justify-between p-4">
         <Link href={`/u/${post.author.username}`} className="flex items-center gap-3">
@@ -452,7 +452,7 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
 
       {/* Media */}
       {(post.media_url || (post.media && post.media.length > 0)) && (
-        <div className="relative" onContextMenu={preventContextMenu}>
+        <div className="relative overflow-hidden" onContextMenu={preventContextMenu}>
           {post.content_type === 'image' && post.media && post.media.length > 1 ? (
             <ImageCarousel images={post.media} postId={post.id} isOwner={user?.id === post.user_id} />
           ) : post.content_type === 'image' && post.media_url && (
