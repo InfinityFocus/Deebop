@@ -167,7 +167,7 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
       <div className="px-4">
 
         {/* Avatar and Info */}
-        <div className="flex flex-col items-center -mt-16 mb-4">
+        <div className="flex flex-col items-center -mt-12 mb-4">
           <div className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 border-4 border-black flex items-center justify-center text-3xl font-bold text-white">
             {user.avatar_url ? (
               <img
