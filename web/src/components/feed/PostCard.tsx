@@ -359,7 +359,7 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
             <p className="text-sm text-gray-500 truncate">@{post.author.username} · {timeAgo}</p>
           </div>
         </Link>
-        <div className="relative flex-shrink-0">
+        <div className={clsx("relative flex-shrink-0", showMenu && "z-50")}>
           <button
             ref={menuButtonRef}
             onClick={() => setShowMenu(!showMenu)}
@@ -373,7 +373,7 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
           {showMenu && (
             <div
               ref={menuRef}
-              className="absolute right-0 top-full mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20"
+              className="absolute right-0 top-full mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50"
               role="menu"
               aria-label="Post actions"
             >
