@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, Heart, UserPlus, Share2, Loader2, Repeat, Check, X, Star, Calendar, Images } from 'lucide-react';
+import { Bell, Heart, UserPlus, Share2, Loader2, Repeat, Check, X, Star, Calendar, Images, UserCheck, AtSign } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
@@ -43,6 +43,7 @@ interface Notification {
   event: NotificationEvent | null;
   album: NotificationAlbum | null;
   repost_id?: string;
+  tag_id?: string;
 }
 
 async function fetchNotifications({ pageParam }: { pageParam?: string }) {
@@ -66,6 +67,11 @@ const notificationIcons: Record<string, React.ReactNode> = {
   repost_denied: <X size={16} className="text-red-500" />,
   event_invite: <Calendar size={16} className="text-cyan-500" />,
   album_invite: <Images size={16} className="text-emerald-500" />,
+  tag: <UserCheck size={16} className="text-emerald-500" />,
+  tag_request: <UserCheck size={16} className="text-yellow-500" />,
+  tag_approved: <Check size={16} className="text-emerald-500" />,
+  tag_denied: <X size={16} className="text-red-500" />,
+  mention: <AtSign size={16} className="text-cyan-500" />,
 };
 
 const notificationMessages: Record<string, (actor: string) => string> = {
@@ -81,6 +87,10 @@ const notificationMessages: Record<string, (actor: string) => string> = {
   repost_denied: (actor) => `${actor} denied your repost request`,
   event_invite: (actor) => `${actor} invited you to an event`,
   album_invite: (actor) => `${actor} invited you to an album`,
+  tag: (actor) => `${actor} tagged you in a post`,
+  tag_request: (actor) => `${actor} wants to tag you in a post`,
+  tag_approved: (actor) => `${actor} approved your tag`,
+  tag_denied: (actor) => `${actor} removed your tag`,
 };
 
 export default function NotificationsPage() {
@@ -220,8 +230,40 @@ function NotificationItem({ notification }: { notification: Notification }) {
     },
   });
 
+  // Mutations for tag approval/denial
+  const approveTag = useMutation({
+    mutationFn: async ({ postId, tagId }: { postId: string; tagId: string }) => {
+      const res = await fetch(`/api/posts/${postId}/tags/${tagId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'approve' }),
+      });
+      if (!res.ok) throw new Error('Failed to approve tag');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  const denyTag = useMutation({
+    mutationFn: async ({ postId, tagId }: { postId: string; tagId: string }) => {
+      const res = await fetch(`/api/posts/${postId}/tags/${tagId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'deny' }),
+      });
+      if (!res.ok) throw new Error('Failed to deny tag');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
   const isRepostRequest = notification.type === 'repost_request';
-  const isProcessing = approveRepost.isPending || denyRepost.isPending;
+  const isTagRequest = notification.type === 'tag_request';
+  const isProcessing = approveRepost.isPending || denyRepost.isPending || approveTag.isPending || denyTag.isPending;
 
   const handleApprove = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -236,6 +278,22 @@ function NotificationItem({ notification }: { notification: Notification }) {
     e.stopPropagation();
     if (notification.repost_id) {
       denyRepost.mutate(notification.repost_id);
+    }
+  };
+
+  const handleApproveTag = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (notification.tag_id && notification.post?.id) {
+      approveTag.mutate({ postId: notification.post.id, tagId: notification.tag_id });
+    }
+  };
+
+  const handleDenyTag = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (notification.tag_id && notification.post?.id) {
+      denyTag.mutate({ postId: notification.post.id, tagId: notification.tag_id });
     }
   };
 
@@ -302,6 +360,36 @@ function NotificationItem({ notification }: { notification: Notification }) {
               className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition disabled:opacity-50 flex items-center gap-1"
             >
               {denyRepost.isPending ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <X size={14} />
+              )}
+              Deny
+            </button>
+          </div>
+        )}
+
+        {/* Tag request approval buttons */}
+        {isTagRequest && notification.tag_id && notification.post?.id && (
+          <div className="flex items-center gap-2 mt-3">
+            <button
+              onClick={handleApproveTag}
+              disabled={isProcessing}
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm rounded-lg transition disabled:opacity-50 flex items-center gap-1"
+            >
+              {approveTag.isPending ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Check size={14} />
+              )}
+              Approve
+            </button>
+            <button
+              onClick={handleDenyTag}
+              disabled={isProcessing}
+              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition disabled:opacity-50 flex items-center gap-1"
+            >
+              {denyTag.isPending ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (
                 <X size={14} />

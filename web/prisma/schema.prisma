@@ -129,12 +129,18 @@ model User {
   showActivityStatus      Boolean @default(true) @map("show_activity_status")
   allowTagging            Boolean @default(true) @map("allow_tagging")
   requireTaggingApproval  Boolean @default(false) @map("require_tagging_approval")
+  allowMentions           Boolean @default(true) @map("allow_mentions")
+  requireMentionApproval  Boolean @default(false) @map("require_mention_approval")
   showLikedPosts          Boolean @default(false) @map("show_liked_posts")
 
   // Repost preferences
   allowReposts          Boolean  @default(true) @map("allow_reposts")
   requireRepostApproval Boolean  @default(false) @map("require_repost_approval")
   reposts               Repost[] @relation("UserReposts")
+
+  // Photo tagging relations
+  tagsReceived PostTag[] @relation("TagsReceived")
+  tagsMade     PostTag[] @relation("TagsMade")
 
   // Explore feature relations
   interests      UserInterest[]
@@ -184,6 +190,7 @@ model Post {
   saves                Save[]
   shares               Share[]
   reposts              Repost[]
+  tags                 PostTag[]
   videoJob             VideoJob?
   views                View[]
 
@@ -213,7 +220,8 @@ model PostMedia {
   altText      String?  @map("alt_text")
   createdAt    DateTime @default(now()) @map("created_at")
 
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tags PostTag[]
 
   @@index([postId])
   @@index([sortOrder])
@@ -328,6 +336,31 @@ model Repost {
   @@index([postId])
   @@index([status])
   @@map("reposts")
+}
+
+model PostTag {
+  id           String    @id @default(cuid())
+  postId       String    @map("post_id")
+  mediaId      String?   @map("media_id")
+  taggedUserId String    @map("tagged_user_id")
+  taggerId     String    @map("tagger_id")
+  positionX    Float     @map("position_x")
+  positionY    Float     @map("position_y")
+  status       TagStatus @default(pending)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  approvedAt   DateTime? @map("approved_at")
+
+  post       Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  media      PostMedia? @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  taggedUser User       @relation("TagsReceived", fields: [taggedUserId], references: [id], onDelete: Cascade)
+  tagger     User       @relation("TagsMade", fields: [taggerId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, mediaId, taggedUserId])
+  @@index([postId])
+  @@index([taggedUserId])
+  @@index([taggerId])
+  @@index([status])
+  @@map("post_tags")
 }
 
 model View {
@@ -1243,9 +1276,19 @@ enum NotificationType {
   repost_denied
   event_invite
   album_invite
+  tag
+  tag_request
+  tag_approved
+  tag_denied
 }
 
 enum RepostStatus {
+  pending
+  approved
+  denied
+}
+
+enum TagStatus {
   pending
   approved
   denied

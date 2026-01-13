@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { ArrowLeft, Lock, Eye, EyeOff, Users, Shield, Loader2, Repeat } from 'lucide-react';
+import { ArrowLeft, Lock, Eye, EyeOff, Users, Shield, Loader2, Repeat, AtSign, ImageIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { clsx } from 'clsx';
 
@@ -12,6 +12,8 @@ interface PrivacySettings {
   show_activity_status: boolean;
   allow_tagging: boolean;
   require_tagging_approval: boolean;
+  allow_mentions: boolean;
+  require_mention_approval: boolean;
   show_liked_posts: boolean;
   allow_reposts: boolean;
   require_repost_approval: boolean;
@@ -26,6 +28,8 @@ async function fetchPrivacySettings(): Promise<PrivacySettings> {
     show_activity_status: data.user.show_activity_status ?? true,
     allow_tagging: data.user.allow_tagging ?? true,
     require_tagging_approval: data.user.require_tagging_approval ?? false,
+    allow_mentions: data.user.allow_mentions ?? true,
+    require_mention_approval: data.user.require_mention_approval ?? false,
     show_liked_posts: data.user.show_liked_posts ?? false,
     allow_reposts: data.user.allow_reposts ?? true,
     require_repost_approval: data.user.require_repost_approval ?? false,
@@ -41,6 +45,8 @@ export default function PrivacySettingsPage() {
   const [showActivityStatus, setShowActivityStatus] = useState(true);
   const [allowTagging, setAllowTagging] = useState(true);
   const [requireTaggingApproval, setRequireTaggingApproval] = useState(false);
+  const [allowMentions, setAllowMentions] = useState(true);
+  const [requireMentionApproval, setRequireMentionApproval] = useState(false);
   const [showLikedPosts, setShowLikedPosts] = useState(false);
   const [allowReposts, setAllowReposts] = useState(true);
   const [requireRepostApproval, setRequireRepostApproval] = useState(false);
@@ -60,6 +66,8 @@ export default function PrivacySettingsPage() {
       setShowActivityStatus(data.show_activity_status);
       setAllowTagging(data.allow_tagging);
       setRequireTaggingApproval(data.require_tagging_approval);
+      setAllowMentions(data.allow_mentions);
+      setRequireMentionApproval(data.require_mention_approval);
       setShowLikedPosts(data.show_liked_posts);
       setAllowReposts(data.allow_reposts);
       setRequireRepostApproval(data.require_repost_approval);
@@ -89,6 +97,8 @@ export default function PrivacySettingsPage() {
       show_activity_status: showActivityStatus,
       allow_tagging: allowTagging,
       require_tagging_approval: requireTaggingApproval,
+      allow_mentions: allowMentions,
+      require_mention_approval: requireMentionApproval,
       show_liked_posts: showLikedPosts,
       allow_reposts: allowReposts,
       require_repost_approval: requireRepostApproval,
@@ -300,21 +310,21 @@ export default function PrivacySettingsPage() {
           </div>
         </section>
 
-        {/* Interactions */}
+        {/* Photo & Video Tags */}
         <section>
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
-            Interactions
+            Photo & Video Tags
           </h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-xl border border-gray-700">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
-                  <Users size={20} className={allowTagging ? 'text-emerald-400' : 'text-gray-300'} />
+                  <ImageIcon size={20} className={allowTagging ? 'text-emerald-400' : 'text-gray-300'} />
                 </div>
                 <div>
                   <p className="font-medium text-white">Allow Tagging</p>
                   <p className="text-sm text-gray-300">
-                    Let others tag you in their posts
+                    Let others tag you in photos, videos, and panoramas
                   </p>
                 </div>
               </div>
@@ -358,6 +368,72 @@ export default function PrivacySettingsPage() {
                     className={clsx(
                       'absolute top-1 w-4 h-4 bg-white rounded-full transition-transform',
                       requireTaggingApproval ? 'right-1' : 'left-1'
+                    )}
+                  />
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Mentions */}
+        <section>
+          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
+            Mentions
+          </h2>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
+                  <AtSign size={20} className={allowMentions ? 'text-emerald-400' : 'text-gray-300'} />
+                </div>
+                <div>
+                  <p className="font-medium text-white">Allow Mentions</p>
+                  <p className="text-sm text-gray-300">
+                    Let others mention you (@username) in their posts
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setAllowMentions(!allowMentions)}
+                className={clsx(
+                  'relative w-12 h-6 rounded-full transition-colors',
+                  allowMentions ? 'bg-purple-500' : 'bg-gray-600'
+                )}
+              >
+                <span
+                  className={clsx(
+                    'absolute top-1 w-4 h-4 bg-white rounded-full transition-transform',
+                    allowMentions ? 'right-1' : 'left-1'
+                  )}
+                />
+              </button>
+            </div>
+
+            {allowMentions && (
+              <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
+                    <Shield size={20} className={requireMentionApproval ? 'text-yellow-400' : 'text-gray-300'} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-white">Require Approval</p>
+                    <p className="text-sm text-gray-300">
+                      Review and approve mentions before others can see them
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setRequireMentionApproval(!requireMentionApproval)}
+                  className={clsx(
+                    'relative w-12 h-6 rounded-full transition-colors',
+                    requireMentionApproval ? 'bg-purple-500' : 'bg-gray-600'
+                  )}
+                >
+                  <span
+                    className={clsx(
+                      'absolute top-1 w-4 h-4 bg-white rounded-full transition-transform',
+                      requireMentionApproval ? 'right-1' : 'left-1'
                     )}
                   />
                 </button>

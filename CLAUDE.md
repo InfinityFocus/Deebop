@@ -134,6 +134,42 @@ npm run dev
 ### Disabled Features
 - **Video Studio** (`/create/video`) - Advanced video editor with text overlays, filters, trim, speed adjustment. Disabled because FFmpeg is not available on Vercel serverless. Code exists but navigation links removed. To re-enable: add back to `Sidebar.tsx` and `Navbar.tsx` secondaryNavItems, and integrate external video processing (Cloudinary, AWS MediaConvert, or self-hosted FFmpeg worker).
 
+### Partially Implemented Features
+- **Photo Tagging** - Backend complete (API + database), UI pending. Instagram-style click-to-tag on images.
+
+## Photo Tagging System
+
+Users can tag other users in image posts at specific x/y coordinates. Privacy controls allow users to:
+- `allowTagging`: Enable/disable being tagged (default: true)
+- `requireTaggingApproval`: Require approval before tags appear (default: false)
+
+### Database Model (`PostTag`)
+- `positionX/positionY`: Percentage coordinates (0-100) where tag appears on image
+- `mediaId`: For carousel posts, links to specific image
+- `status`: pending | approved | denied
+- Tagger gets notification when tag is approved/denied
+
+### API Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/posts/[id]/tags` | GET | Get tags for a post (approved + own pending) |
+| `/api/posts/[id]/tags` | POST | Add a tag to image post |
+| `/api/posts/[id]/tags/[tagId]` | PATCH | Approve or deny tag (`{ action: 'approve' \| 'deny' }`) |
+| `/api/posts/[id]/tags/[tagId]` | DELETE | Remove a tag |
+| `/api/users/me/tag-requests` | GET | Get pending tag requests for current user |
+
+### Tag Status Flow
+1. User A tags User B in a post
+2. If User B has `requireTaggingApproval=true`: status = `pending`, User B gets `tag_request` notification
+3. If User B approves: status = `approved`, User A gets `tag_approved` notification
+4. If User B denies: status = `denied`, User A gets `tag_denied` notification
+5. If `requireTaggingApproval=false`: status = `approved` immediately, User B gets `tag` notification
+
+### UI Implementation (Pending)
+- Click on image to add tag at that position
+- Show tag indicators (hover to reveal tagged username)
+- Tag approval UI in notifications panel
+
 ## Video Transcoding System
 
 The platform includes automatic video transcoding using FFmpeg CLI. Videos are processed asynchronously after upload.

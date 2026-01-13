@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { clsx } from 'clsx';
+import { TaggingOverlay } from '@/components/tagging';
 
 interface CarouselImage {
   id: string;
@@ -15,6 +16,8 @@ interface CarouselImage {
 interface ImageCarouselProps {
   images: CarouselImage[];
   className?: string;
+  postId?: string;
+  isOwner?: boolean;
 }
 
 // Prevent right-click/long-press to save media
@@ -23,7 +26,7 @@ const preventContextMenu = (e: React.MouseEvent) => {
   return false;
 };
 
-export function ImageCarousel({ images, className }: ImageCarouselProps) {
+export function ImageCarousel({ images, className, postId, isOwner = false }: ImageCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -96,15 +99,31 @@ export function ImageCarousel({ images, className }: ImageCarouselProps) {
 
   // Single image - no carousel needed
   if (sortedImages.length === 1) {
-    return (
+    const image = sortedImages[0];
+    const imageElement = (
       <img
-        src={sortedImages[0].media_url}
-        alt={sortedImages[0].alt_text || ''}
+        src={image.media_url}
+        alt={image.alt_text || ''}
         className={clsx('w-full max-h-[95vh] object-contain select-none', className)}
         onContextMenu={preventContextMenu}
         draggable={false}
       />
     );
+
+    if (postId) {
+      return (
+        <TaggingOverlay
+          postId={postId}
+          mediaId={image.id}
+          contentType="image"
+          isOwner={isOwner}
+        >
+          {imageElement}
+        </TaggingOverlay>
+      );
+    }
+
+    return imageElement;
   }
 
   return (
@@ -129,13 +148,8 @@ export function ImageCarousel({ images, className }: ImageCarouselProps) {
           overscrollBehaviorX: 'contain', // Prevents horizontal overscroll from triggering page navigation
         }}
       >
-        {sortedImages.map((image, index) => (
-          <div
-            key={image.id}
-            className="flex-none w-full snap-center"
-            style={{ scrollSnapStop: 'always' }} // Force stop at each image
-            onContextMenu={preventContextMenu}
-          >
+        {sortedImages.map((image, index) => {
+          const imageElement = (
             <img
               src={image.media_url}
               alt={image.alt_text || `Image ${index + 1}`}
@@ -144,8 +158,30 @@ export function ImageCarousel({ images, className }: ImageCarouselProps) {
               draggable={false}
               onContextMenu={preventContextMenu}
             />
-          </div>
-        ))}
+          );
+
+          return (
+            <div
+              key={image.id}
+              className="flex-none w-full snap-center"
+              style={{ scrollSnapStop: 'always' }}
+              onContextMenu={preventContextMenu}
+            >
+              {postId ? (
+                <TaggingOverlay
+                  postId={postId}
+                  mediaId={image.id}
+                  contentType="image"
+                  isOwner={isOwner}
+                >
+                  {imageElement}
+                </TaggingOverlay>
+              ) : (
+                imageElement
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Previous button - desktop only, show on hover */}

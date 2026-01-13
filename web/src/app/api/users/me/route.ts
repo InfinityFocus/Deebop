@@ -24,6 +24,8 @@ export async function GET() {
         showActivityStatus: true,
         allowTagging: true,
         requireTaggingApproval: true,
+        allowMentions: true,
+        requireMentionApproval: true,
         showLikedPosts: true,
         allowReposts: true,
         requireRepostApproval: true,
@@ -56,6 +58,8 @@ export async function GET() {
         show_activity_status: fullUser.showActivityStatus,
         allow_tagging: fullUser.allowTagging,
         require_tagging_approval: fullUser.requireTaggingApproval,
+        allow_mentions: fullUser.allowMentions,
+        require_mention_approval: fullUser.requireMentionApproval,
         show_liked_posts: fullUser.showLikedPosts,
         allow_reposts: fullUser.allowReposts,
         require_repost_approval: fullUser.requireRepostApproval,
@@ -87,6 +91,8 @@ export async function PATCH(request: NextRequest) {
       show_activity_status,
       allow_tagging,
       require_tagging_approval,
+      allow_mentions,
+      require_mention_approval,
       show_liked_posts,
       allow_reposts,
       require_repost_approval,
@@ -121,6 +127,8 @@ export async function PATCH(request: NextRequest) {
       showActivityStatus?: boolean;
       allowTagging?: boolean;
       requireTaggingApproval?: boolean;
+      allowMentions?: boolean;
+      requireMentionApproval?: boolean;
       showLikedPosts?: boolean;
       allowReposts?: boolean;
       requireRepostApproval?: boolean;
@@ -146,6 +154,12 @@ export async function PATCH(request: NextRequest) {
     }
     if (typeof require_tagging_approval === 'boolean') {
       updateData.requireTaggingApproval = require_tagging_approval;
+    }
+    if (typeof allow_mentions === 'boolean') {
+      updateData.allowMentions = allow_mentions;
+    }
+    if (typeof require_mention_approval === 'boolean') {
+      updateData.requireMentionApproval = require_mention_approval;
     }
     if (typeof show_liked_posts === 'boolean') {
       updateData.showLikedPosts = show_liked_posts;
@@ -173,6 +187,8 @@ export async function PATCH(request: NextRequest) {
         showActivityStatus: true,
         allowTagging: true,
         requireTaggingApproval: true,
+        allowMentions: true,
+        requireMentionApproval: true,
         showLikedPosts: true,
         allowReposts: true,
         requireRepostApproval: true,
@@ -201,6 +217,8 @@ export async function PATCH(request: NextRequest) {
         show_activity_status: updatedUser.showActivityStatus,
         allow_tagging: updatedUser.allowTagging,
         require_tagging_approval: updatedUser.requireTaggingApproval,
+        allow_mentions: updatedUser.allowMentions,
+        require_mention_approval: updatedUser.requireMentionApproval,
         show_liked_posts: updatedUser.showLikedPosts,
         allow_reposts: updatedUser.allowReposts,
         require_repost_approval: updatedUser.requireRepostApproval,

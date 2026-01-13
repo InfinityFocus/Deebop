@@ -12,6 +12,7 @@ import { ReportModal } from '@/components/moderation/ReportModal';
 import { EditPostModal } from '@/components/post/EditPostModal';
 import { DeletePostModal } from '@/components/post/DeletePostModal';
 import { HeadlineOverlay } from '@/components/shared/HeadlineOverlay';
+import { TaggingOverlay } from '@/components/tagging';
 import { useAuth } from '@/hooks/useAuth';
 import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import { renderRichText } from '@/lib/text-utils';
@@ -446,38 +447,56 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
       {(post.media_url || (post.media && post.media.length > 0)) && (
         <div className="relative" onContextMenu={preventContextMenu}>
           {post.content_type === 'image' && post.media && post.media.length > 1 ? (
-            <ImageCarousel images={post.media} />
+            <ImageCarousel images={post.media} postId={post.id} isOwner={user?.id === post.user_id} />
           ) : post.content_type === 'image' && post.media_url && (
-            <img
-              src={post.media_url}
-              alt=""
-              className="w-full max-h-[95vh] object-contain"
-              onContextMenu={preventContextMenu}
-              draggable={false}
-            />
+            <TaggingOverlay
+              postId={post.id}
+              contentType="image"
+              isOwner={user?.id === post.user_id}
+            >
+              <img
+                src={post.media_url}
+                alt=""
+                className="w-full max-h-[95vh] object-contain"
+                onContextMenu={preventContextMenu}
+                draggable={false}
+              />
+            </TaggingOverlay>
           )}
 
           {post.content_type === 'video' && post.media_url && (
-            <VideoPlayer
-              src={post.media_url}
-              poster={post.media_thumbnail_url || undefined}
-            />
+            <TaggingOverlay
+              postId={post.id}
+              contentType="video"
+              isOwner={user?.id === post.user_id}
+            >
+              <VideoPlayer
+                src={post.media_url}
+                poster={post.media_thumbnail_url || undefined}
+              />
+            </TaggingOverlay>
           )}
 
           {post.content_type === 'panorama360' && post.media_url && (
-            <div className="relative aspect-video">
-              <PanoramaViewer
-                src={post.media_url}
-                autoRotate
-                className="w-full h-full"
-              />
-              <Link
-                href={`/panorama/${post.id}`}
-                className="absolute top-4 right-4 bg-black/50 px-3 py-1 rounded-full text-white text-sm hover:bg-black/70 transition z-10"
-              >
-                View immersive
-              </Link>
-            </div>
+            <TaggingOverlay
+              postId={post.id}
+              contentType="panorama360"
+              isOwner={user?.id === post.user_id}
+            >
+              <div className="relative aspect-video">
+                <PanoramaViewer
+                  src={post.media_url}
+                  autoRotate
+                  className="w-full h-full"
+                />
+                <Link
+                  href={`/panorama/${post.id}`}
+                  className="absolute top-4 right-4 bg-black/50 px-3 py-1 rounded-full text-white text-sm hover:bg-black/70 transition z-10"
+                >
+                  View immersive
+                </Link>
+              </div>
+            </TaggingOverlay>
           )}
 
           {post.content_type === 'audio' && (

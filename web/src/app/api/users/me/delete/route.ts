@@ -59,6 +59,16 @@ export async function DELETE() {
         where: { userId: { in: userIds } },
       });
 
+      // 3.5. Delete post tags (both tagged and tagger)
+      await tx.postTag.deleteMany({
+        where: {
+          OR: [
+            { taggedUserId: { in: userIds } },
+            { taggerId: { in: userIds } },
+          ],
+        },
+      });
+
       // 4. Delete shares
       await tx.share.deleteMany({
         where: { userId: { in: userIds } },

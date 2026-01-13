@@ -88,14 +88,51 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // For tag_request notifications, we need to look up the tag ID
+    const tagRequestNotifications = notifications.filter(
+      (n) => n.type === 'tag_request' && n.postId && n.actorId
+    );
+
+    // Batch fetch tag IDs for tag_request notifications
+    const tagMap = new Map<string, string>();
+    if (tagRequestNotifications.length > 0) {
+      const tags = await prisma.postTag.findMany({
+        where: {
+          OR: tagRequestNotifications.map((n) => ({
+            postId: n.postId!,
+            taggerId: n.actorId!,
+            taggedUserId: user.id,
+            status: 'pending',
+          })),
+        },
+        select: {
+          id: true,
+          postId: true,
+          taggerId: true,
+        },
+      });
+
+      for (const tag of tags) {
+        const key = `${tag.postId}-${tag.taggerId}`;
+        tagMap.set(key, tag.id);
+      }
+    }
+
     // Transform for response
     const transformedNotifications = notifications.map((n) => {
       let repostId: string | null = null;
+      let tagId: string | null = null;
 
       // Look up repost ID for repost_request notifications
       if (n.type === 'repost_request' && n.postId && n.actorId) {
         const key = `${n.postId}-${n.actorId}`;
         repostId = repostMap.get(key) || null;
+      }
+
+      // Look up tag ID for tag_request notifications
+      if (n.type === 'tag_request' && n.postId && n.actorId) {
+        const key = `${n.postId}-${n.actorId}`;
+        tagId = tagMap.get(key) || null;
       }
 
       return {
@@ -104,6 +141,7 @@ export async function GET(request: NextRequest) {
         is_read: n.isRead,
         created_at: n.createdAt.toISOString(),
         repost_id: repostId,
+        tag_id: tagId,
         actor: n.actor
           ? {
               id: n.actor.id,
