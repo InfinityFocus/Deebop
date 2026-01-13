@@ -54,6 +54,9 @@ export default async function EditVideoProjectPage({ params }: Props) {
     name: project.name,
     status: project.status as 'draft' | 'processing' | 'completed' | 'failed',
     maxDurationSeconds: project.maxDurationSeconds,
+    processingProgress: project.processingProgress,
+    outputUrl: project.outputUrl,
+    processingError: project.processingError,
     clips: project.clips.map((clip) => ({
       id: clip.id,
       sourceUrl: clip.sourceUrl,

@@ -10,6 +10,8 @@ import {
   AlertTriangle,
   Film,
   CheckCircle,
+  Download,
+  RefreshCw,
 } from 'lucide-react';
 import { useVideoEditorStore, VideoClip, TextOverlay } from '@/stores/videoEditorStore';
 import VideoEditor from '@/components/video-editor/VideoEditor';
@@ -20,6 +22,9 @@ export interface InitialProject {
   name: string;
   status: 'draft' | 'processing' | 'completed' | 'failed';
   maxDurationSeconds: number;
+  processingProgress?: number;
+  outputUrl?: string | null;
+  processingError?: string | null;
   clips: VideoClip[];
   overlays: TextOverlay[];
 }
@@ -43,6 +48,14 @@ export default function VideoEditorClient({
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const initializedRef = useRef(false);
 
+  // Project status tracking
+  const [projectStatus, setProjectStatus] = useState<'draft' | 'processing' | 'completed' | 'failed'>(
+    initialProject?.status || 'draft'
+  );
+  const [processingProgress, setProcessingProgress] = useState(initialProject?.processingProgress || 0);
+  const [outputUrl, setOutputUrl] = useState<string | null>(initialProject?.outputUrl || null);
+  const [processingError, setProcessingError] = useState<string | null>(initialProject?.processingError || null);
+
   // Get stable action references
   const initProject = useVideoEditorStore((s) => s.initProject);
   const loadProject = useVideoEditorStore((s) => s.loadProject);
@@ -62,6 +75,33 @@ export default function VideoEditorClient({
   useEffect(() => {
     console.log('[VideoEditorClient] Clips state updated:', clips.length, 'clips', clips);
   }, [clips]);
+
+  // Poll for status updates when processing
+  useEffect(() => {
+    if (projectStatus !== 'processing' || !projectId) return;
+
+    const pollStatus = async () => {
+      try {
+        const res = await fetch(`/api/video-projects/${projectId}`);
+        if (res.ok) {
+          const data = await res.json();
+          console.log('[VideoEditorClient] Status poll:', data.status, data.processingProgress);
+          setProjectStatus(data.status);
+          setProcessingProgress(data.processingProgress || 0);
+          if (data.outputUrl) setOutputUrl(data.outputUrl);
+          if (data.processingError) setProcessingError(data.processingError);
+        }
+      } catch (e) {
+        console.error('[VideoEditorClient] Status poll error:', e);
+      }
+    };
+
+    // Poll every 2 seconds
+    const interval = setInterval(pollStatus, 2000);
+    pollStatus(); // Initial poll
+
+    return () => clearInterval(interval);
+  }, [projectStatus, projectId]);
 
   // Initialize project on mount - only once
   useEffect(() => {
@@ -220,9 +260,16 @@ export default function VideoEditorClient({
         throw new Error(data.error || 'Failed to start processing');
       }
 
-      // Redirect to project page to see progress
-      console.log('[VideoEditor] Navigating to:', `/create/video/${savedProjectId}`);
-      router.push(`/create/video/${savedProjectId}`);
+      // Set status to processing - polling will track progress
+      setProjectStatus('processing');
+      setProcessingProgress(0);
+      setSaveSuccess('Export started! Processing your video...');
+
+      // If this is a new project, redirect to the project page
+      if (!projectId) {
+        console.log('[VideoEditor] Navigating to:', `/create/video/${savedProjectId}`);
+        router.push(`/create/video/${savedProjectId}`);
+      }
     } catch (error) {
       console.error('[VideoEditor] Process failed:', error);
       setSaveError(error instanceof Error ? error.message : 'Failed to process');
@@ -344,6 +391,68 @@ export default function VideoEditorClient({
         <div className="mx-4 mt-3 px-4 py-2 rounded-lg bg-emerald-500/20 text-emerald-400 text-sm flex items-center gap-2">
           <CheckCircle size={16} />
           {saveSuccess}
+        </div>
+      )}
+
+      {/* Processing status banner */}
+      {projectStatus === 'processing' && (
+        <div className="mx-4 mt-3 px-4 py-3 rounded-lg bg-blue-500/20 text-blue-400">
+          <div className="flex items-center gap-2 mb-2">
+            <RefreshCw size={16} className="animate-spin" />
+            <span className="font-medium">Processing your video...</span>
+            <span className="text-blue-300">{processingProgress}%</span>
+          </div>
+          <div className="h-2 bg-blue-900/50 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-blue-500 transition-all duration-300"
+              style={{ width: `${processingProgress}%` }}
+            />
+          </div>
+          <p className="text-xs text-blue-300 mt-2">
+            This may take a few minutes. You can leave this page - processing continues in the background.
+          </p>
+        </div>
+      )}
+
+      {/* Completed status banner */}
+      {projectStatus === 'completed' && outputUrl && (
+        <div className="mx-4 mt-3 px-4 py-3 rounded-lg bg-emerald-500/20 text-emerald-400">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle size={16} />
+              <span className="font-medium">Video ready!</span>
+            </div>
+            <a
+              href={outputUrl}
+              download
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition text-sm"
+            >
+              <Download size={16} />
+              Download
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Failed status banner */}
+      {projectStatus === 'failed' && (
+        <div className="mx-4 mt-3 px-4 py-3 rounded-lg bg-red-500/20 text-red-400">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} />
+            <span className="font-medium">Processing failed</span>
+          </div>
+          {processingError && (
+            <p className="text-sm mt-1 text-red-300">{processingError}</p>
+          )}
+          <button
+            onClick={() => {
+              setProjectStatus('draft');
+              setProcessingError(null);
+            }}
+            className="mt-2 text-sm underline hover:no-underline"
+          >
+            Try again
+          </button>
         </div>
       )}
 
