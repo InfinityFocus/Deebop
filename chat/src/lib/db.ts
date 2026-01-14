@@ -44,6 +44,12 @@ export function getServiceClient(): SupabaseClient {
   return serviceClient;
 }
 
+// Alias for convenience - returns service client for server-side operations
+export const supabase = {
+  from: (table: string) => getServiceClient().schema('chat').from(table),
+  rpc: (fn: string, params?: Record<string, unknown>) => getServiceClient().rpc(fn, params),
+};
+
 // ==========================================
 // Type-safe Query Helpers
 // ==========================================
