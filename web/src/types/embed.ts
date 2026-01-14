@@ -8,6 +8,8 @@ export type EmbedContentType =
   | 'panorama360'
   | 'all';
 
+export type EmbedLayout = 'vertical' | 'horizontal';
+
 export interface EmbedConfig {
   theme: EmbedTheme;
   width: string;
@@ -15,6 +17,9 @@ export interface EmbedConfig {
   backgroundColor?: string;
   accentColor?: string;
   showEngagement: boolean;
+  borderRadius?: string;
+  borderWidth?: string;
+  borderColor?: string;
 }
 
 export interface FeedEmbedConfig extends EmbedConfig {
@@ -22,6 +27,7 @@ export interface FeedEmbedConfig extends EmbedConfig {
   username: string;
   limit: number;
   contentType: EmbedContentType;
+  layout: EmbedLayout;
 }
 
 export interface PostEmbedConfig extends EmbedConfig {
@@ -108,7 +114,7 @@ export const EMBED_THEME_DEFAULTS = {
 } as const;
 
 // Parse embed config from URL search params
-export function parseEmbedParams(searchParams: URLSearchParams): Partial<EmbedConfig> & { limit?: number; contentType?: EmbedContentType } {
+export function parseEmbedParams(searchParams: URLSearchParams): Partial<EmbedConfig> & { limit?: number; contentType?: EmbedContentType; layout?: EmbedLayout } {
   const theme = searchParams.get('theme') as EmbedTheme | null;
   const bg = searchParams.get('bg');
   const accent = searchParams.get('accent');
@@ -116,6 +122,10 @@ export function parseEmbedParams(searchParams: URLSearchParams): Partial<EmbedCo
   const h = searchParams.get('h');
   const limit = searchParams.get('limit');
   const type = searchParams.get('type') as EmbedContentType | null;
+  const layout = searchParams.get('layout') as EmbedLayout | null;
+  const borderRadius = searchParams.get('br');
+  const borderWidth = searchParams.get('bw');
+  const borderColor = searchParams.get('bc');
 
   return {
     theme: theme === 'light' ? 'light' : 'dark',
@@ -126,6 +136,10 @@ export function parseEmbedParams(searchParams: URLSearchParams): Partial<EmbedCo
     showEngagement: true,
     limit: limit ? Math.min(Math.max(parseInt(limit, 10) || 10, 1), 50) : 10,
     contentType: type || 'all',
+    layout: layout === 'horizontal' ? 'horizontal' : 'vertical',
+    borderRadius: borderRadius ? decodeURIComponent(borderRadius) : undefined,
+    borderWidth: borderWidth ? decodeURIComponent(borderWidth) : undefined,
+    borderColor: borderColor ? decodeURIComponent(borderColor) : undefined,
   };
 }
 
@@ -138,10 +152,14 @@ export function generateEmbedUrl(config: EmbedConfigUnion, baseUrl: string): str
   if (config.accentColor) params.set('accent', encodeURIComponent(config.accentColor));
   if (config.width !== '100%') params.set('w', config.width);
   if (config.height !== '600px') params.set('h', config.height);
+  if (config.borderRadius) params.set('br', encodeURIComponent(config.borderRadius));
+  if (config.borderWidth) params.set('bw', encodeURIComponent(config.borderWidth));
+  if (config.borderColor) params.set('bc', encodeURIComponent(config.borderColor));
 
   if (config.type === 'feed') {
     if (config.limit !== 10) params.set('limit', String(config.limit));
     if (config.contentType !== 'all') params.set('type', config.contentType);
+    if (config.layout === 'horizontal') params.set('layout', 'horizontal');
     const path = `/embed/u/${config.username}`;
     return params.toString() ? `${baseUrl}${path}?${params}` : `${baseUrl}${path}`;
   } else {
@@ -157,11 +175,20 @@ export function generateEmbedCode(config: EmbedConfigUnion, baseUrl: string): st
     ? `@${config.username}'s Deebop feed`
     : 'Deebop post';
 
+  // Build style attribute for border customization
+  const styles: string[] = [];
+  if (config.borderRadius) styles.push(`border-radius: ${config.borderRadius}`);
+  if (config.borderWidth && config.borderWidth !== '0') {
+    const borderColor = config.borderColor || (config.theme === 'dark' ? '#374151' : '#e5e7eb');
+    styles.push(`border: ${config.borderWidth} solid ${borderColor}`);
+  }
+  const styleAttr = styles.length > 0 ? `\n  style="${styles.join('; ')}"` : '';
+
   return `<iframe
   src="${src}"
   width="${config.width}"
   height="${config.height}"
-  frameborder="0"
+  frameborder="0"${styleAttr}
   allow="autoplay; fullscreen"
   sandbox="allow-scripts allow-same-origin allow-popups"
   loading="lazy"

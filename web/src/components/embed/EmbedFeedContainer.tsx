@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { EmbedPostCard } from './EmbedPostCard';
 import { EmbedBranding } from './EmbedBranding';
-import type { EmbedPost, EmbedUser, EmbedContentType } from '@/types/embed';
+import type { EmbedPost, EmbedUser, EmbedContentType, EmbedLayout } from '@/types/embed';
 
 interface EmbedFeedContainerProps {
   username: string;
@@ -12,6 +13,7 @@ interface EmbedFeedContainerProps {
   showEngagement: boolean;
   showBranding: boolean;
   baseUrl: string;
+  layout?: EmbedLayout;
 }
 
 export function EmbedFeedContainer({
@@ -21,6 +23,7 @@ export function EmbedFeedContainer({
   showEngagement,
   showBranding,
   baseUrl,
+  layout = 'vertical',
 }: EmbedFeedContainerProps) {
   const [user, setUser] = useState<EmbedUser | null>(null);
   const [posts, setPosts] = useState<EmbedPost[]>([]);
@@ -29,6 +32,10 @@ export function EmbedFeedContainer({
   const [nextCursor, setNextCursor] = useState<string | undefined>();
   const [loadingMore, setLoadingMore] = useState(false);
   const loaderRef = useRef<HTMLDivElement>(null);
+  const horizontalScrollRef = useRef<HTMLDivElement>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
   const fetchFeed = useCallback(async (cursor?: string) => {
     try {
@@ -68,6 +75,39 @@ export function EmbedFeedContainer({
   useEffect(() => {
     fetchFeed();
   }, [fetchFeed]);
+
+  // Check scroll position for horizontal layout
+  const checkScrollPosition = useCallback(() => {
+    if (horizontalScrollRef.current && layout === 'horizontal') {
+      const { scrollLeft, scrollWidth, clientWidth } = horizontalScrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 10);
+    }
+  }, [layout]);
+
+  // Horizontal navigation
+  const scrollToPost = useCallback((direction: 'left' | 'right') => {
+    if (!horizontalScrollRef.current) return;
+    const container = horizontalScrollRef.current;
+    const postWidth = container.querySelector('[data-post]')?.clientWidth || 300;
+    const gap = 8; // gap-2 = 8px
+    const scrollAmount = postWidth + gap;
+
+    container.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth',
+    });
+  }, []);
+
+  // Update scroll state when posts change
+  useEffect(() => {
+    if (layout === 'horizontal') {
+      checkScrollPosition();
+      // Also check after a small delay to account for rendering
+      const timer = setTimeout(checkScrollPosition, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [posts, layout, checkScrollPosition]);
 
   // Infinite scroll
   useEffect(() => {
@@ -187,27 +227,86 @@ export function EmbedFeedContainer({
       )}
 
       {/* Posts list */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-2 space-y-2">
-          {posts.map((post) => (
-            <EmbedPostCard
-              key={post.id}
-              post={post}
-              showEngagement={showEngagement}
-              baseUrl={baseUrl}
-            />
-          ))}
-        </div>
+      {layout === 'vertical' ? (
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-2 space-y-2">
+            {posts.map((post) => (
+              <EmbedPostCard
+                key={post.id}
+                post={post}
+                showEngagement={showEngagement}
+                baseUrl={baseUrl}
+              />
+            ))}
+          </div>
 
-        {/* Infinite scroll loader */}
-        {nextCursor && (
-          <div ref={loaderRef} className="py-4 text-center">
-            {loadingMore && (
-              <div className="w-6 h-6 border-2 border-[var(--embed-accent)] border-t-transparent rounded-full animate-spin mx-auto" />
+          {/* Infinite scroll loader */}
+          {nextCursor && (
+            <div ref={loaderRef} className="py-4 text-center">
+              {loadingMore && (
+                <div className="w-6 h-6 border-2 border-[var(--embed-accent)] border-t-transparent rounded-full animate-spin mx-auto" />
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Horizontal layout with navigation arrows */
+        <div className="flex-1 relative overflow-hidden">
+          {/* Left Arrow */}
+          {canScrollLeft && (
+            <button
+              onClick={() => scrollToPost('left')}
+              className="absolute left-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-[var(--embed-bg)]/90 border border-[var(--embed-border)] flex items-center justify-center text-[var(--embed-fg)] hover:bg-[var(--embed-border)] transition shadow-lg"
+              aria-label="Previous post"
+            >
+              <ChevronLeft size={20} />
+            </button>
+          )}
+
+          {/* Right Arrow */}
+          {canScrollRight && posts.length > 1 && (
+            <button
+              onClick={() => scrollToPost('right')}
+              className="absolute right-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-[var(--embed-bg)]/90 border border-[var(--embed-border)] flex items-center justify-center text-[var(--embed-fg)] hover:bg-[var(--embed-border)] transition shadow-lg"
+              aria-label="Next post"
+            >
+              <ChevronRight size={20} />
+            </button>
+          )}
+
+          {/* Horizontal scrolling container */}
+          <div
+            ref={horizontalScrollRef}
+            className="flex gap-2 overflow-x-auto scrollbar-hide h-full p-2"
+            onScroll={checkScrollPosition}
+            style={{ scrollSnapType: 'x mandatory' }}
+          >
+            {posts.map((post) => (
+              <div
+                key={post.id}
+                data-post
+                className="flex-shrink-0 w-[280px] sm:w-[320px]"
+                style={{ scrollSnapAlign: 'start' }}
+              >
+                <EmbedPostCard
+                  post={post}
+                  showEngagement={showEngagement}
+                  baseUrl={baseUrl}
+                />
+              </div>
+            ))}
+
+            {/* Load more trigger for horizontal */}
+            {nextCursor && (
+              <div ref={loaderRef} className="flex-shrink-0 w-16 flex items-center justify-center">
+                {loadingMore && (
+                  <div className="w-6 h-6 border-2 border-[var(--embed-accent)] border-t-transparent rounded-full animate-spin" />
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Branding */}
       {showBranding && <EmbedBranding baseUrl={baseUrl} />}

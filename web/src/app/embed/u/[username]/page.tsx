@@ -44,6 +44,7 @@ function EmbedFeedContent() {
         showEngagement={config.showEngagement ?? true}
         showBranding={true} // Will be controlled by tier check in component
         baseUrl={baseUrl}
+        layout={config.layout || 'vertical'}
       />
     </div>
   );

@@ -5,7 +5,7 @@ import { Copy, Check, ExternalLink } from 'lucide-react';
 import { EmbedCustomizer } from './EmbedCustomizer';
 import { EmbedPreview } from './EmbedPreview';
 import { generateEmbedCode, generateEmbedUrl } from '@/types/embed';
-import type { EmbedConfigUnion, EmbedTheme, EmbedContentType } from '@/types/embed';
+import type { EmbedConfigUnion, EmbedTheme, EmbedContentType, EmbedLayout } from '@/types/embed';
 
 interface EmbedCodeGeneratorProps {
   username: string;
@@ -21,14 +21,22 @@ export function EmbedCodeGenerator({
   baseUrl,
 }: EmbedCodeGeneratorProps) {
   const [theme, setTheme] = useState<EmbedTheme>('dark');
+  const [fullWidth, setFullWidth] = useState(false);
   const [width, setWidth] = useState('400');
   const [height, setHeight] = useState('600');
   const [backgroundColor, setBackgroundColor] = useState('');
   const [accentColor, setAccentColor] = useState('');
   const [limit, setLimit] = useState(10);
   const [contentType, setContentType] = useState<EmbedContentType>('all');
+  const [layout, setLayout] = useState<EmbedLayout>('vertical');
   const [showEngagement, setShowEngagement] = useState(true);
+  const [borderRadius, setBorderRadius] = useState('12px');
+  const [borderWidth, setBorderWidth] = useState('1px');
+  const [borderColor, setBorderColor] = useState('');
   const [copied, setCopied] = useState(false);
+
+  // Compute actual width value
+  const actualWidth = fullWidth ? '100%' : (width.includes('%') || width.includes('px') ? width : `${width}px`);
 
   // Build config object
   const config: EmbedConfigUnion = mode === 'feed'
@@ -36,23 +44,30 @@ export function EmbedCodeGenerator({
         type: 'feed',
         username,
         theme,
-        width: width.includes('%') || width.includes('px') ? width : `${width}px`,
+        width: actualWidth,
         height: height.includes('%') || height.includes('px') ? height : `${height}px`,
         backgroundColor: backgroundColor || undefined,
         accentColor: accentColor || undefined,
         showEngagement,
         limit,
         contentType,
+        layout,
+        borderRadius: borderRadius || undefined,
+        borderWidth: borderWidth || undefined,
+        borderColor: borderColor || undefined,
       }
     : {
         type: 'post',
         postId: postId || '',
         theme,
-        width: width.includes('%') || width.includes('px') ? width : `${width}px`,
+        width: actualWidth,
         height: height.includes('%') || height.includes('px') ? height : `${height}px`,
         backgroundColor: backgroundColor || undefined,
         accentColor: accentColor || undefined,
         showEngagement,
+        borderRadius: borderRadius || undefined,
+        borderWidth: borderWidth || undefined,
+        borderColor: borderColor || undefined,
       };
 
   const embedCode = generateEmbedCode(config, baseUrl);
@@ -97,6 +112,8 @@ export function EmbedCodeGenerator({
             mode={mode}
             theme={theme}
             setTheme={setTheme}
+            fullWidth={fullWidth}
+            setFullWidth={setFullWidth}
             width={width}
             setWidth={setWidth}
             height={height}
@@ -109,8 +126,16 @@ export function EmbedCodeGenerator({
             setLimit={setLimit}
             contentType={contentType}
             setContentType={setContentType}
+            layout={layout}
+            setLayout={setLayout}
             showEngagement={showEngagement}
             setShowEngagement={setShowEngagement}
+            borderRadius={borderRadius}
+            setBorderRadius={setBorderRadius}
+            borderWidth={borderWidth}
+            setBorderWidth={setBorderWidth}
+            borderColor={borderColor}
+            setBorderColor={setBorderColor}
           />
 
           {/* Embed Code */}
