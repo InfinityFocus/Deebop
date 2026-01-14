@@ -39,15 +39,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await register(email, username, password, parsedBirthYear);
+    const result = await register(email, username, password, parsedBirthYear);
 
     return NextResponse.json({
       user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        displayName: user.displayName,
+        id: result.id,
+        email: result.email,
+        username: result.username,
+        displayName: result.displayName,
       },
+      needsVerification: result.needsVerification || false,
     });
   } catch (error) {
     console.error('Registration error:', error);

@@ -76,7 +76,13 @@ export function RegisterForm() {
         throw new Error(data.error || 'Registration failed');
       }
 
-      // Fetch full user profile
+      // If email verification is required, redirect to verification page
+      if (data.needsVerification) {
+        router.push(`/verification-pending?email=${encodeURIComponent(email)}`);
+        return;
+      }
+
+      // Fetch full user profile (for cases where verification is skipped)
       const profileRes = await fetch('/api/auth/me');
       const profileData = await profileRes.json();
 
@@ -84,7 +90,7 @@ export function RegisterForm() {
         setUser(profileData.user);
       }
 
-      // Redirect to home (no email verification in local dev)
+      // Redirect to home
       router.push('/home');
       router.refresh();
     } catch (err) {

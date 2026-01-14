@@ -149,6 +149,11 @@ model User {
   isDeactivated Boolean   @default(false) @map("is_deactivated")
   deactivatedAt DateTime? @map("deactivated_at")
 
+  // Email verification
+  emailVerified      Boolean   @default(false) @map("email_verified")
+  emailVerifyToken   String?   @map("email_verify_token")
+  emailVerifyExpires DateTime? @map("email_verify_expires")
+
   // Repost preferences
   allowReposts          Boolean  @default(true) @map("allow_reposts")
   requireRepostApproval Boolean  @default(false) @map("require_repost_approval")

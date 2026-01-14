@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import prisma from './db';
+import { sendVerificationEmail, generateVerificationToken, getVerificationExpiry } from './email';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'local-dev-secret-change-in-production'
@@ -233,6 +234,10 @@ export async function register(email: string, username: string, password: string
     throw new Error('Username is already taken');
   }
 
+  // Generate email verification token
+  const verifyToken = generateVerificationToken();
+  const verifyExpires = getVerificationExpiry();
+
   // Create Identity + Profile in a transaction
   const passwordHash = await hashPassword(password);
 
@@ -247,7 +252,7 @@ export async function register(email: string, username: string, password: string
       },
     });
 
-    // Create default Profile
+    // Create default Profile (emailVerified = false by default)
     const profile = await tx.user.create({
       data: {
         identityId: identity.id,
@@ -257,22 +262,30 @@ export async function register(email: string, username: string, password: string
         username: username.toLowerCase(),
         displayName: username,
         birthYear, // Duplicate for backward compat
+        emailVerified: false,
+        emailVerifyToken: verifyToken,
+        emailVerifyExpires: verifyExpires,
       },
     });
 
     return { identity, profile };
   });
 
-  // Create and set token with new structure
-  const token = await createToken({
-    identityId: result.identity.id,
-    profileId: result.profile.id,
-    email: result.identity.email,
-    username: result.profile.username,
-  });
-  await setAuthCookie(token);
+  // Send verification email
+  const emailResult = await sendVerificationEmail(
+    email.toLowerCase(),
+    verifyToken,
+    username
+  );
 
-  return result.profile;
+  if (!emailResult.success) {
+    console.error('Failed to send verification email:', emailResult.error);
+    // Don't throw - account is created, they can resend verification
+  }
+
+  // DON'T set auth cookie - user must verify email first
+  // Return profile with a flag indicating verification is needed
+  return { ...result.profile, needsVerification: true };
 }
 
 export async function login(email: string, password: string) {
@@ -297,6 +310,7 @@ export async function login(email: string, password: string) {
       throw new Error('Invalid email or password');
     }
 
+    // Legacy users are grandfathered in - treat as verified
     // Legacy user login - create token with userId as both identityId and profileId
     // This handles users who haven't been migrated yet
     const token = await createToken({
@@ -343,6 +357,12 @@ export async function login(email: string, password: string) {
 
   if (!defaultProfile) {
     throw new Error('No active profiles found for this account');
+  }
+
+  // Check email verification for NEW users only
+  // Existing users (emailVerified is null/undefined) are grandfathered in
+  if (defaultProfile.emailVerified === false) {
+    throw new Error('EMAIL_NOT_VERIFIED');
   }
 
   // Create and set token

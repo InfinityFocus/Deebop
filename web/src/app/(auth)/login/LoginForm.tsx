@@ -50,6 +50,11 @@ export function LoginForm() {
     } catch (err) {
       console.error('Login error:', err);
       if (err instanceof Error) {
+        // Check if email is not verified
+        if (err.message === 'EMAIL_NOT_VERIFIED') {
+          router.push(`/verification-pending?email=${encodeURIComponent(email)}`);
+          return;
+        }
         setError(err.message);
       } else {
         setError('An unexpected error occurred');
