@@ -9,7 +9,8 @@ export interface Parent {
   created_at: string;
 }
 
-export interface Child {
+// Database format (snake_case)
+export interface ChildDB {
   id: string;
   parent_id: string;
   username: string;
@@ -21,6 +22,21 @@ export interface Child {
   quiet_hours_start: string | null;
   quiet_hours_end: string | null;
   created_at: string;
+}
+
+// UI format (camelCase)
+export interface Child {
+  id: string;
+  parentId: string;
+  username: string;
+  displayName: string;
+  avatarId: string;
+  ageBand: AgeBand;
+  oversightMode: OversightMode;
+  messagingPaused: boolean;
+  quietHoursStart: string | null;
+  quietHoursEnd: string | null;
+  createdAt: string;
 }
 
 export type AgeBand = '6-8' | '9-10' | '11-12';
