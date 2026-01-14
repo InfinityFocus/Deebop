@@ -50,7 +50,8 @@ export async function GET() {
       .order('created_at', { ascending: false });
 
     // Group by conversation and get first (most recent) message
-    const lastMessageMap = new Map<string, typeof lastMessages[0]>();
+    type Message = NonNullable<typeof lastMessages>[number];
+    const lastMessageMap = new Map<string, Message>();
     (lastMessages || []).forEach((m) => {
       if (!lastMessageMap.has(m.conversation_id)) {
         lastMessageMap.set(m.conversation_id, m);
