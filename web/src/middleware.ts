@@ -32,6 +32,15 @@ async function verifyToken(token: string): Promise<boolean> {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Handle embed routes - allow iframe embedding
+  if (pathname.startsWith('/embed/')) {
+    const response = NextResponse.next();
+    // Allow embedding from any origin
+    response.headers.set('X-Frame-Options', 'ALLOWALL');
+    response.headers.set('Content-Security-Policy', 'frame-ancestors *;');
+    return response;
+  }
+
   // Get auth token from cookie
   const token = request.cookies.get(COOKIE_NAME)?.value;
   const isAuthenticated = token ? await verifyToken(token) : false;

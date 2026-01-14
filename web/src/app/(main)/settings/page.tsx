@@ -19,6 +19,7 @@ import {
   Trash2,
   AlertTriangle,
   Loader2,
+  Code,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
@@ -88,6 +89,17 @@ const settingsGroups: SettingsGroup[] = [
         icon: Heart,
         label: 'Wellbeing',
         description: 'Manage doom scroll reminders',
+      },
+    ],
+  },
+  {
+    title: 'Sharing',
+    items: [
+      {
+        href: '/settings/embed',
+        icon: Code,
+        label: 'Embed Feed',
+        description: 'Get code to embed your feed on websites',
       },
     ],
   },

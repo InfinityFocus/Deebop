@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { Heart, Bookmark, Share2, MoreHorizontal, Sparkles, Crown, Rocket, Flag, Pencil, Loader2, Podcast, Trash2, Repeat } from 'lucide-react';
+import { Heart, Bookmark, Share2, MoreHorizontal, Sparkles, Crown, Rocket, Flag, Pencil, Loader2, Podcast, Trash2, Repeat, Code } from 'lucide-react';
 import { PanoramaViewer } from '@/components/viewers/PanoramaViewer';
 import { AudioPlayer } from '@/components/audio';
 import { ImageCarousel } from '@/components/post/ImageCarousel';
@@ -11,6 +11,7 @@ import { BoostPostModal } from '@/components/ads';
 import { ReportModal } from '@/components/moderation/ReportModal';
 import { EditPostModal } from '@/components/post/EditPostModal';
 import { DeletePostModal } from '@/components/post/DeletePostModal';
+import { EmbedPostModal } from '@/components/embed';
 import { HeadlineOverlay } from '@/components/shared/HeadlineOverlay';
 import { TaggingOverlay } from '@/components/tagging';
 import { useAuth } from '@/hooks/useAuth';
@@ -170,6 +171,7 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEmbedModal, setShowEmbedModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -428,6 +430,19 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
                 <Share2 size={16} className="text-gray-400" aria-hidden="true" />
                 Share
               </button>
+              {post.visibility === 'public' && (
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    setShowEmbedModal(true);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-left text-white hover:bg-gray-700 transition"
+                  role="menuitem"
+                >
+                  <Code size={16} className="text-cyan-400" aria-hidden="true" />
+                  Embed Post
+                </button>
+              )}
               {!isOwnPost && (
                 <button
                   onClick={() => {
@@ -721,6 +736,14 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
           onSuccess={() => {
             window.location.reload();
           }}
+        />
+      )}
+
+      {/* Embed Modal */}
+      {showEmbedModal && (
+        <EmbedPostModal
+          postId={post.id}
+          onClose={() => setShowEmbedModal(false)}
         />
       )}
     </article>
