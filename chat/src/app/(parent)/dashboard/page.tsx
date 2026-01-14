@@ -1,0 +1,274 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import {
+  Users,
+  MessageCircle,
+  UserPlus,
+  Clock,
+  AlertCircle,
+  ArrowRight,
+  Bell,
+} from 'lucide-react';
+import { Button } from '@/components/shared';
+import { useAuthStore } from '@/stores/authStore';
+import type { Child } from '@/types';
+
+interface DashboardStats {
+  childCount: number;
+  pendingFriendRequests: number;
+  pendingMessages: number;
+  recentActivity: ActivityItem[];
+}
+
+interface ActivityItem {
+  id: string;
+  type: 'friend_request' | 'message' | 'child_created';
+  childName: string;
+  description: string;
+  createdAt: string;
+}
+
+export default function DashboardPage() {
+  const { user, children, setChildren, setPendingCount } = useAuthStore();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchDashboard() {
+      try {
+        // Fetch children
+        const childrenRes = await fetch('/api/parent/children');
+        const childrenData = await childrenRes.json();
+
+        if (childrenData.success) {
+          setChildren(childrenData.data);
+        }
+
+        // Fetch pending approvals count
+        const approvalsRes = await fetch('/api/parent/approvals');
+        const approvalsData = await approvalsRes.json();
+
+        if (approvalsData.success) {
+          const pendingCount = approvalsData.data.friendRequests.length +
+                              approvalsData.data.messages.length;
+          setPendingCount(pendingCount);
+
+          setStats({
+            childCount: childrenData.data?.length || 0,
+            pendingFriendRequests: approvalsData.data.friendRequests.length,
+            pendingMessages: approvalsData.data.messages.length,
+            recentActivity: approvalsData.data.recentActivity || [],
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchDashboard();
+  }, [setChildren, setPendingCount]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full min-h-[400px]">
+        <div className="text-gray-400">Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  const totalPending = (stats?.pendingFriendRequests || 0) + (stats?.pendingMessages || 0);
+
+  return (
+    <div className="p-6 max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-white mb-2">
+          Welcome back{user?.displayName ? `, ${user.displayName}` : ''}!
+        </h1>
+        <p className="text-gray-400">
+          Here&apos;s what&apos;s happening with your children&apos;s accounts.
+        </p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <StatCard
+          icon={Users}
+          label="Children"
+          value={stats?.childCount || 0}
+          href="/children"
+          color="primary"
+        />
+        <StatCard
+          icon={Bell}
+          label="Pending Approvals"
+          value={totalPending}
+          href="/approvals"
+          color={totalPending > 0 ? 'red' : 'gray'}
+          highlight={totalPending > 0}
+        />
+        <StatCard
+          icon={MessageCircle}
+          label="Pending Messages"
+          value={stats?.pendingMessages || 0}
+          href="/approvals"
+          color="cyan"
+        />
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* Pending Approvals */}
+        {totalPending > 0 && (
+          <div className="bg-dark-800 rounded-xl border border-red-500/20 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center">
+                <AlertCircle className="text-red-400" size={20} />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-white">Needs Your Attention</h2>
+                <p className="text-sm text-gray-400">
+                  {totalPending} item{totalPending !== 1 ? 's' : ''} waiting for approval
+                </p>
+              </div>
+            </div>
+            <Link href="/approvals">
+              <Button variant="outline" className="w-full">
+                Review Approvals
+                <ArrowRight size={16} className="ml-2" />
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {/* Add Child */}
+        {(stats?.childCount || 0) === 0 ? (
+          <div className="bg-dark-800 rounded-xl border border-primary-500/20 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-primary-500/10 rounded-lg flex items-center justify-center">
+                <UserPlus className="text-primary-400" size={20} />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-white">Get Started</h2>
+                <p className="text-sm text-gray-400">
+                  Create your first child account
+                </p>
+              </div>
+            </div>
+            <Link href="/children/new">
+              <Button className="w-full">
+                Add Child Account
+                <ArrowRight size={16} className="ml-2" />
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="bg-dark-800 rounded-xl border border-dark-700 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-primary-500/10 rounded-lg flex items-center justify-center">
+                <Users className="text-primary-400" size={20} />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-white">Your Children</h2>
+                <p className="text-sm text-gray-400">
+                  {stats?.childCount} account{stats?.childCount !== 1 ? 's' : ''} active
+                </p>
+              </div>
+            </div>
+            <Link href="/children">
+              <Button variant="outline" className="w-full">
+                Manage Children
+                <ArrowRight size={16} className="ml-2" />
+              </Button>
+            </Link>
+          </div>
+        )}
+      </div>
+
+      {/* Children Quick View */}
+      {children && children.length > 0 && (
+        <div className="bg-dark-800 rounded-xl border border-dark-700 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white">Children</h2>
+            <Link href="/children/new" className="text-primary-400 hover:text-primary-300 text-sm font-medium">
+              + Add Child
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {children.slice(0, 6).map((child) => (
+              <ChildQuickCard key={child.id} child={child} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  href,
+  color,
+  highlight,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: number;
+  href: string;
+  color: 'primary' | 'red' | 'cyan' | 'gray';
+  highlight?: boolean;
+}) {
+  const colors = {
+    primary: 'bg-primary-500/10 text-primary-400',
+    red: 'bg-red-500/10 text-red-400',
+    cyan: 'bg-cyan-500/10 text-cyan-400',
+    gray: 'bg-dark-700 text-gray-400',
+  };
+
+  return (
+    <Link href={href}>
+      <div className={`bg-dark-800 rounded-xl border p-4 hover:border-dark-600 transition-colors ${
+        highlight ? 'border-red-500/30' : 'border-dark-700'
+      }`}>
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colors[color]}`}>
+            <Icon size={20} />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-white">{value}</p>
+            <p className="text-sm text-gray-400">{label}</p>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function ChildQuickCard({ child }: { child: Child }) {
+  return (
+    <Link href={`/children/${child.id}`}>
+      <div className="bg-dark-700/50 rounded-lg p-4 hover:bg-dark-700 transition-colors">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-full flex items-center justify-center text-white font-bold">
+            {child.displayName.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-medium truncate">{child.displayName}</p>
+            <p className="text-sm text-gray-400">@{child.username}</p>
+          </div>
+          {child.messagingPaused && (
+            <div className="px-2 py-1 bg-yellow-500/10 text-yellow-400 text-xs rounded-full">
+              Paused
+            </div>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}
