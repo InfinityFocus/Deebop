@@ -125,7 +125,7 @@ export default function SettingsPage() {
             <Input
               label="Email"
               type="email"
-              value={user?.email || ''}
+              value={user?.type === 'parent' ? user.email : ''}
               disabled
               className="opacity-50"
             />
