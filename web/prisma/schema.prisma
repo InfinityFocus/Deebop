@@ -1483,3 +1483,30 @@ model PendingMediaDeletion {
   @@index([userId])
   @@map("pending_media_deletions")
 }
+
+// ============================================
+// Contact Messages (Admin Inbox)
+// ============================================
+
+model ContactMessage {
+  id        String               @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  status    ContactMessageStatus @default(unread)
+  notes     String?              // Admin notes
+  createdAt DateTime             @default(now()) @map("created_at")
+  updatedAt DateTime             @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("contact_messages")
+}
+
+enum ContactMessageStatus {
+  unread
+  read
+  replied
+  archived
+}

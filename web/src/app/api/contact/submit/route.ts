@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,13 +54,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Log the submission (MVP - no email service)
-    console.log('[CONTACT] New submission:', {
-      name: name.trim(),
-      email: email.trim(),
-      subject: subject || 'General',
-      message: message.trim(),
-      timestamp: new Date().toISOString(),
+    // Save to database
+    await prisma.contactMessage.create({
+      data: {
+        name: name.trim(),
+        email: email.trim(),
+        subject: subject || 'general',
+        message: message.trim(),
+      },
     });
 
     return NextResponse.json({

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Check, Crown, Zap, Sparkles, Loader2, ExternalLink } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
@@ -389,10 +390,10 @@ export function SubscriptionContent() {
           All plans include core features. Subscriptions can be canceled anytime.
         </p>
         <p className="text-sm mt-2">
-          Questions? Contact us at{' '}
-          <a href="mailto:support@deebop.com" className="text-emerald-400 hover:underline">
-            support@deebop.com
-          </a>
+          Questions?{' '}
+          <Link href="/contact" className="text-emerald-400 hover:underline">
+            Contact us
+          </Link>
         </p>
       </div>
     </div>

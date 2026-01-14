@@ -14,6 +14,7 @@ import {
   ExternalLink,
   Ban,
   BarChart3,
+  Inbox,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -34,6 +35,15 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
 }
 
 const adminSections = [
+  {
+    href: '/admin/inbox',
+    icon: Inbox,
+    label: 'Inbox',
+    description: 'Contact form messages from users',
+    color: 'text-cyan-400',
+    bgColor: 'bg-cyan-500/10',
+    borderColor: 'border-cyan-500/30',
+  },
   {
     href: '/admin/users',
     icon: Users,

@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
 import Footer from '@/components/layout/Footer';
 import { BackButton } from '@/components/shared/BackButton';
-import { MapPin, Clock } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Careers',
@@ -67,13 +67,14 @@ export default function CareersPage() {
               No open positions at the moment.
             </p>
             <p className="text-gray-500 text-sm">
-              Interested in joining us? Send your resume to{' '}
-              <a
-                href="mailto:careers@deebop.com"
-                className="text-purple-400 hover:text-purple-300"
+              Interested in joining us?{' '}
+              <Link
+                href="/contact"
+                className="text-emerald-400 hover:text-emerald-300"
               >
-                careers@deebop.com
-              </a>
+                Get in touch
+              </Link>
+              {' '}and tell us about yourself.
             </p>
           </div>
         </section>

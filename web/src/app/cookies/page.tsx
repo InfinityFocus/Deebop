@@ -86,10 +86,11 @@ export default function CookiesPage() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Contact Us</h2>
             <p className="text-gray-300 leading-relaxed">
-              If you have questions about our use of cookies, please contact us at{' '}
-              <a href="mailto:privacy@deebop.com" className="text-emerald-400 hover:text-emerald-300">
-                privacy@deebop.com
-              </a>
+              If you have questions about our use of cookies, please{' '}
+              <Link href="/contact" className="text-emerald-400 hover:text-emerald-300">
+                contact us
+              </Link>
+              .
             </p>
           </section>
         </div>

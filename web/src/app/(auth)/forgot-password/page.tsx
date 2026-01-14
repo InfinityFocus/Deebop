@@ -43,16 +43,16 @@ export default function ForgotPasswordPage() {
             </h2>
 
             <p className="text-gray-400 mb-6">
-              Password reset functionality is coming soon. In the meantime, please contact support if you need help accessing your account.
+              Password reset functionality is coming soon. In the meantime, please contact us if you need help accessing your account.
             </p>
 
-            <a
-              href="mailto:support@deebop.com"
+            <Link
+              href="/contact"
               className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 transition"
             >
               <Mail size={20} />
               Contact Support
-            </a>
+            </Link>
 
             <div className="mt-6 pt-6 border-t border-gray-800">
               <p className="text-sm text-gray-500">

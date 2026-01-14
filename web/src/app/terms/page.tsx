@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
 import Footer from '@/components/layout/Footer';
 import { BackButton } from '@/components/shared/BackButton';
 
@@ -126,10 +127,11 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">11. Contact</h2>
             <p className="text-gray-300 leading-relaxed">
-              If you have questions about these Terms, please contact us at{' '}
-              <a href="mailto:legal@deebop.com" className="text-purple-400 hover:text-purple-300">
-                legal@deebop.com
-              </a>
+              If you have questions about these Terms, please{' '}
+              <Link href="/contact" className="text-emerald-400 hover:text-emerald-300">
+                contact us
+              </Link>
+              .
             </p>
           </section>
         </div>
