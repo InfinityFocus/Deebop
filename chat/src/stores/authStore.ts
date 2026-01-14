@@ -9,6 +9,9 @@ interface AuthState {
   // For parents: list of their children
   children: Child[];
 
+  // Pending approvals count (for parent badge)
+  pendingCount: number;
+
   // Loading state
   isLoading: boolean;
 
@@ -18,6 +21,7 @@ interface AuthState {
   // Actions
   setUser: (user: AuthenticatedUser | null) => void;
   setChildren: (children: Child[]) => void;
+  setPendingCount: (count: number | ((prev: number) => number)) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   logout: () => void;
@@ -33,15 +37,19 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       children: [],
+      pendingCount: 0,
       isLoading: true,
       error: null,
 
       setUser: (user) => set({ user, error: null }),
       setChildren: (children) => set({ children }),
+      setPendingCount: (count) => set((state) => ({
+        pendingCount: typeof count === 'function' ? count(state.pendingCount) : count
+      })),
       setLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
 
-      logout: () => set({ user: null, children: [], error: null }),
+      logout: () => set({ user: null, children: [], pendingCount: 0, error: null }),
 
       isAuthenticated: () => get().user !== null,
       isParent: () => get().user?.type === 'parent',
