@@ -1,17 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { Send, Smile } from 'lucide-react';
+import { Send, Smile, Mic } from 'lucide-react';
 import { CHILD_SAFE_EMOJIS } from '@/types';
+import { VoiceRecorder } from './VoiceRecorder';
 
 interface Props {
-  onSend: (type: 'text' | 'emoji', content: string) => void;
+  onSend: (type: 'text' | 'emoji' | 'voice', content: string, voiceData?: { blob: Blob; duration: number }) => void;
   disabled?: boolean;
 }
 
 export function MessageInput({ onSend, disabled }: Props) {
   const [message, setMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +28,22 @@ export function MessageInput({ onSend, disabled }: Props) {
     // Insert emoji at the end of the message (picker stays open for multiple emojis)
     setMessage((prev) => prev + emoji);
   };
+
+  const handleVoiceRecordingComplete = (blob: Blob, duration: number) => {
+    onSend('voice', '', { blob, duration });
+    setShowVoiceRecorder(false);
+  };
+
+  // Show voice recorder interface
+  if (showVoiceRecorder) {
+    return (
+      <VoiceRecorder
+        onRecordingComplete={handleVoiceRecordingComplete}
+        onCancel={() => setShowVoiceRecorder(false)}
+        disabled={disabled}
+      />
+    );
+  }
 
   return (
     <div className="relative">
@@ -77,13 +95,28 @@ export function MessageInput({ onSend, disabled }: Props) {
           onFocus={() => setShowEmojiPicker(false)}
         />
 
-        <button
-          type="submit"
-          disabled={!message.trim() || disabled}
-          className="p-3 bg-cyan-500 text-white rounded-xl hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Send size={20} />
-        </button>
+        {/* Voice button - only show when no text */}
+        {!message.trim() && (
+          <button
+            type="button"
+            onClick={() => setShowVoiceRecorder(true)}
+            className="p-3 bg-dark-700 text-gray-400 hover:text-white rounded-xl transition-colors"
+            disabled={disabled}
+          >
+            <Mic size={20} />
+          </button>
+        )}
+
+        {/* Send button - only show when there's text */}
+        {message.trim() && (
+          <button
+            type="submit"
+            disabled={disabled}
+            className="p-3 bg-cyan-500 text-white rounded-xl hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Send size={20} />
+          </button>
+        )}
       </form>
     </div>
   );

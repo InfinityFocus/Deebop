@@ -19,7 +19,7 @@ export async function POST(
 
     const { id } = await params;
     const body = await request.json();
-    const { type, content, mediaKey, mediaDuration } = body;
+    const { type, content, mediaKey, mediaUrl, mediaDuration } = body;
 
     // Validate type
     if (!['text', 'emoji', 'voice'].includes(type)) {
@@ -151,6 +151,7 @@ export async function POST(
         type,
         content: content || null,
         media_key: mediaKey || null,
+        media_url: mediaUrl || null,
         media_duration_seconds: mediaDuration || null,
         status,
         delivered_at: status === 'delivered' ? new Date().toISOString() : null,

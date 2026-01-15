@@ -93,12 +93,49 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async (type: 'text' | 'emoji', content: string) => {
+  const handleSendMessage = async (
+    type: 'text' | 'emoji' | 'voice',
+    content: string,
+    voiceData?: { blob: Blob; duration: number }
+  ) => {
     try {
+      let mediaKey: string | undefined;
+      let mediaUrl: string | undefined;
+      let mediaDuration: number | undefined;
+
+      // Handle voice message upload
+      if (type === 'voice' && voiceData) {
+        const formData = new FormData();
+        formData.append('file', voiceData.blob, 'voice-message.webm');
+        formData.append('duration', voiceData.duration.toString());
+
+        const uploadResponse = await fetch('/api/child/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const uploadData = await uploadResponse.json();
+
+        if (!uploadData.success) {
+          console.error('Failed to upload voice message:', uploadData.error);
+          return;
+        }
+
+        mediaKey = uploadData.data.key;
+        mediaUrl = uploadData.data.url;
+        mediaDuration = voiceData.duration;
+      }
+
       const response = await fetch(`/api/child/conversations/${conversationId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, content }),
+        body: JSON.stringify({
+          type,
+          content: type === 'voice' ? null : content,
+          mediaKey,
+          mediaUrl,
+          mediaDuration,
+        }),
       });
 
       const data = await response.json();
@@ -110,9 +147,9 @@ export default function ChatPage() {
           {
             id: data.data.id,
             type,
-            content,
-            mediaUrl: null,
-            mediaDuration: null,
+            content: type === 'voice' ? null : content,
+            mediaUrl: mediaUrl || null,
+            mediaDuration: mediaDuration || null,
             status: data.data.status,
             createdAt: new Date().toISOString(),
             isFromMe: true,
@@ -198,15 +235,11 @@ function MessageBubble({ message }: { message: Message }) {
         {message.type === 'emoji' ? (
           <span className="text-3xl">{message.content}</span>
         ) : message.type === 'voice' ? (
-          <div className="flex items-center gap-2">
-            <span>🎤</span>
-            <span className="text-sm">Voice message</span>
-            {message.mediaDuration && (
-              <span className="text-xs opacity-70">
-                {Math.round(message.mediaDuration)}s
-              </span>
-            )}
-          </div>
+          <VoiceMessagePlayer
+            url={message.mediaUrl}
+            duration={message.mediaDuration}
+            isFromMe={isFromMe}
+          />
         ) : (
           <p>{message.content}</p>
         )}
@@ -243,6 +276,120 @@ function MessageBubble({ message }: { message: Message }) {
               })}
             </span>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VoiceMessagePlayer({
+  url,
+  duration,
+  isFromMe,
+}: {
+  url: string | null;
+  duration: number | null;
+  isFromMe: boolean;
+}) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const togglePlay = () => {
+    if (!audioRef.current || !url) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  const handleEnded = () => {
+    setIsPlaying(false);
+    setCurrentTime(0);
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+    }
+  };
+
+  if (!url) {
+    return (
+      <div className="flex items-center gap-2">
+        <span>🎤</span>
+        <span className="text-sm">Voice message</span>
+      </div>
+    );
+  }
+
+  const totalDuration = duration || 0;
+  const progress = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0;
+
+  return (
+    <div className="flex items-center gap-3 min-w-[180px]">
+      <audio
+        ref={audioRef}
+        src={url}
+        onTimeUpdate={handleTimeUpdate}
+        onEnded={handleEnded}
+        preload="metadata"
+      />
+
+      {/* Play/Pause button */}
+      <button
+        onClick={togglePlay}
+        className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+          isFromMe
+            ? 'bg-white/20 hover:bg-white/30'
+            : 'bg-dark-600 hover:bg-dark-500'
+        }`}
+      >
+        {isPlaying ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="4" width="4" height="16" rx="1" />
+            <rect x="14" y="4" width="4" height="16" rx="1" />
+          </svg>
+        ) : (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        )}
+      </button>
+
+      {/* Progress bar */}
+      <div className="flex-1">
+        <div
+          className={`h-1 rounded-full overflow-hidden ${
+            isFromMe ? 'bg-white/30' : 'bg-dark-600'
+          }`}
+        >
+          <div
+            className={`h-full transition-all duration-100 ${
+              isFromMe ? 'bg-white' : 'bg-cyan-500'
+            }`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <div className="flex justify-between mt-1">
+          <span className={`text-xs ${isFromMe ? 'text-cyan-100' : 'text-gray-400'}`}>
+            {formatTime(isPlaying ? currentTime : 0)}
+          </span>
+          <span className={`text-xs ${isFromMe ? 'text-cyan-100' : 'text-gray-400'}`}>
+            {formatTime(totalDuration)}
+          </span>
         </div>
       </div>
     </div>

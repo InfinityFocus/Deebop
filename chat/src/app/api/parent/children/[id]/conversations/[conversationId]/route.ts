@@ -69,7 +69,7 @@ export async function GET(
     // Get all messages in conversation (parents can see all statuses for monitoring)
     const { data: messages } = await supabase
       .from('messages')
-      .select('id, type, content, media_key, media_duration_seconds, status, created_at, sender_child_id')
+      .select('id, type, content, media_key, media_url, media_duration_seconds, status, created_at, sender_child_id')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
 
@@ -79,6 +79,7 @@ export async function GET(
       type: m.type,
       content: m.content,
       mediaKey: m.media_key,
+      mediaUrl: m.media_url,
       mediaDuration: m.media_duration_seconds,
       status: m.status,
       createdAt: m.created_at,

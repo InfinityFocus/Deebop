@@ -11,6 +11,7 @@ interface Message {
   type: 'text' | 'emoji' | 'voice';
   content: string | null;
   mediaKey: string | null;
+  mediaUrl: string | null;
   mediaDuration: number | null;
   status: 'pending' | 'pending_recipient' | 'approved' | 'delivered' | 'denied';
   createdAt: string;
@@ -235,10 +236,10 @@ export default function ConversationMonitorPage() {
                     {message.type === 'emoji' ? (
                       <span className="text-2xl">{message.content}</span>
                     ) : message.type === 'voice' ? (
-                      <span className="text-gray-400 text-sm">
-                        Voice message
-                        {message.mediaDuration && ` (${Math.round(message.mediaDuration)}s)`}
-                      </span>
+                      <VoicePlayer
+                        url={message.mediaUrl}
+                        duration={message.mediaDuration}
+                      />
                     ) : (
                       <p className="text-white text-sm">{message.content}</p>
                     )}
@@ -262,6 +263,107 @@ export default function ConversationMonitorPage() {
           </Link>{' '}
           page.
         </p>
+      </div>
+    </div>
+  );
+}
+
+function VoicePlayer({
+  url,
+  duration,
+}: {
+  url: string | null;
+  duration: number | null;
+}) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const togglePlay = () => {
+    if (!audioRef.current || !url) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  const handleEnded = () => {
+    setIsPlaying(false);
+    setCurrentTime(0);
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+    }
+  };
+
+  if (!url) {
+    return (
+      <span className="text-gray-400 text-sm">
+        Voice message {duration && `(${Math.round(duration)}s)`}
+      </span>
+    );
+  }
+
+  const totalDuration = duration || 0;
+  const progress = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0;
+
+  return (
+    <div className="flex items-center gap-3 min-w-[160px]">
+      <audio
+        ref={audioRef}
+        src={url}
+        onTimeUpdate={handleTimeUpdate}
+        onEnded={handleEnded}
+        preload="metadata"
+      />
+
+      {/* Play/Pause button */}
+      <button
+        onClick={togglePlay}
+        className="w-8 h-8 rounded-full bg-primary-500/20 hover:bg-primary-500/30 flex items-center justify-center transition-colors"
+      >
+        {isPlaying ? (
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-primary-400">
+            <rect x="6" y="4" width="4" height="16" rx="1" />
+            <rect x="14" y="4" width="4" height="16" rx="1" />
+          </svg>
+        ) : (
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-primary-400">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        )}
+      </button>
+
+      {/* Progress bar */}
+      <div className="flex-1">
+        <div className="h-1 bg-dark-600 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-primary-500 transition-all duration-100"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <div className="flex justify-between mt-1">
+          <span className="text-xs text-gray-500">
+            {formatDuration(isPlaying ? currentTime : 0)}
+          </span>
+          <span className="text-xs text-gray-500">
+            {formatDuration(totalDuration)}
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -56,7 +56,7 @@ export async function GET(
     // Get messages - show all statuses for sender, but only delivered/approved for recipient
     const { data: messages, error: messagesError } = await supabase
       .from('messages')
-      .select('id, type, content, media_key, media_duration_seconds, status, created_at, sender_child_id')
+      .select('id, type, content, media_key, media_url, media_duration_seconds, status, created_at, sender_child_id')
       .eq('conversation_id', id)
       .order('created_at', { ascending: true });
 
@@ -79,7 +79,7 @@ export async function GET(
       id: m.id,
       type: m.type as 'text' | 'emoji' | 'voice',
       content: m.content,
-      mediaUrl: m.media_key,
+      mediaUrl: m.media_url,
       mediaDuration: m.media_duration_seconds,
       status: m.status as 'pending' | 'approved' | 'delivered' | 'denied',
       createdAt: m.created_at,
