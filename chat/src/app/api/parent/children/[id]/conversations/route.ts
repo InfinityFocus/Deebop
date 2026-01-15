@@ -56,16 +56,29 @@ export async function GET(
 
     // Get last message for each conversation
     const conversationIds = (conversations || []).map((c) => c.id);
-    const { data: lastMessages } = conversationIds.length > 0
-      ? await supabase
-          .from('messages')
-          .select('id, conversation_id, content, type, created_at, sender_child_id, status')
-          .in('conversation_id', conversationIds)
-          .order('created_at', { ascending: false })
-      : { data: [] };
+
+    interface MessageRecord {
+      id: string;
+      conversation_id: string;
+      content: string | null;
+      type: string;
+      created_at: string;
+      sender_child_id: string;
+      status: string;
+    }
+
+    let lastMessages: MessageRecord[] = [];
+    if (conversationIds.length > 0) {
+      const { data } = await supabase
+        .from('messages')
+        .select('id, conversation_id, content, type, created_at, sender_child_id, status')
+        .in('conversation_id', conversationIds)
+        .order('created_at', { ascending: false });
+      lastMessages = (data || []) as MessageRecord[];
+    }
 
     // Group messages by conversation and get the last one
-    const lastMessageMap = new Map<string, typeof lastMessages[0]>();
+    const lastMessageMap = new Map<string, MessageRecord>();
     (lastMessages || []).forEach((m) => {
       if (!lastMessageMap.has(m.conversation_id)) {
         lastMessageMap.set(m.conversation_id, m);
