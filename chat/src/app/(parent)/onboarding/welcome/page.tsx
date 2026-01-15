@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShieldCheck, Users, Sliders, Check } from 'lucide-react';
+import { ShieldCheck, Users, Sliders } from 'lucide-react';
 
 export default function OnboardingWelcomePage() {
   return (
@@ -50,12 +50,14 @@ export default function OnboardingWelcomePage() {
         >
           Set up my family
         </Link>
-        <Link
+        <a
           href="/#how-it-works"
+          target="_blank"
+          rel="noopener noreferrer"
           className="btn btn-ghost w-full"
         >
           Learn how it works
-        </Link>
+        </a>
       </div>
     </div>
   );
