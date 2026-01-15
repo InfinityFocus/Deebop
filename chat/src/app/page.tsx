@@ -20,8 +20,9 @@ export default function LandingPage() {
             />
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Deebop Chat
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            <span className="logo-shimmer">Deebop</span>{' '}
+            <span className="text-white">Chat</span>
           </h1>
 
           <p className="text-xl text-gray-400 mb-8">

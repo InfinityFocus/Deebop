@@ -38,7 +38,7 @@ export function ChildNavbar() {
               height={36}
               className="rounded-xl"
             />
-            <span className="text-lg font-bold text-white">Chat</span>
+            <span className="text-lg font-bold logo-shimmer">Chat</span>
           </Link>
 
           {/* Navigation */}

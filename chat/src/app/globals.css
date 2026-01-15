@@ -96,3 +96,44 @@ body {
 .avatar-xl {
   @apply w-24 h-24;
 }
+
+/* Logo shimmer wave animation */
+@keyframes logo-shimmer {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+.logo-shimmer {
+  background: linear-gradient(
+    90deg,
+    #34d399 0%,
+    #6ee7b7 10%,
+    #facc15 20%,
+    #fde047 30%,
+    #22d3ee 40%,
+    #67e8f9 50%,
+    #34d399 60%,
+    #6ee7b7 70%,
+    #facc15 80%,
+    #fde047 90%,
+    #22d3ee 100%
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: logo-shimmer 8s linear infinite;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .logo-shimmer {
+    animation: none;
+    background: linear-gradient(90deg, #34d399, #22d3ee);
+    background-size: 100% auto;
+  }
+}

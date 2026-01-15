@@ -47,7 +47,10 @@ export function ParentSidebar() {
             className="rounded-xl"
           />
           <div>
-            <h1 className="text-lg font-bold text-white">Deebop Chat</h1>
+            <h1 className="text-lg font-bold">
+              <span className="logo-shimmer">Deebop</span>{' '}
+              <span className="text-white">Chat</span>
+            </h1>
             <p className="text-xs text-gray-500">Parent Dashboard</p>
           </div>
         </Link>
