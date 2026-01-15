@@ -52,9 +52,10 @@ export interface Friendship {
   requested_at: string;
   approved_at: string | null;
   approved_by_parent_id: string | null;
+  approved_by_recipient_parent_id: string | null;
 }
 
-export type FriendshipStatus = 'pending' | 'approved' | 'blocked';
+export type FriendshipStatus = 'pending' | 'pending_recipient' | 'approved' | 'blocked';
 
 export interface Conversation {
   id: string;

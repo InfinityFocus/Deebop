@@ -44,69 +44,128 @@ export async function POST(
     const childIds = (children || []).map((c) => c.id);
 
     if (type === 'friend_request') {
-      // Verify ownership of friend request
+      // Verify ownership of friend request (either as sender's parent or recipient's parent)
       const { data: fr } = await supabase
         .from('friendships')
-        .select('id, child_id, friend_child_id')
+        .select('id, child_id, friend_child_id, status')
         .eq('id', id)
         .single();
 
-      if (!fr || !childIds.includes(fr.child_id)) {
+      if (!fr) {
         return NextResponse.json(
           { success: false, error: 'Friend request not found' },
           { status: 404 }
         );
       }
 
+      // Determine if this parent is the sender's parent or recipient's parent
+      const isSenderParent = childIds.includes(fr.child_id);
+      const isRecipientParent = childIds.includes(fr.friend_child_id);
+
+      if (!isSenderParent && !isRecipientParent) {
+        return NextResponse.json(
+          { success: false, error: 'Friend request not found' },
+          { status: 404 }
+        );
+      }
+
+      // Validate the approval stage
+      if (isSenderParent && fr.status !== 'pending') {
+        return NextResponse.json(
+          { success: false, error: 'This request has already been processed' },
+          { status: 400 }
+        );
+      }
+      if (isRecipientParent && !isSenderParent && fr.status !== 'pending_recipient') {
+        return NextResponse.json(
+          { success: false, error: 'This request is not ready for your approval yet' },
+          { status: 400 }
+        );
+      }
+
       if (action === 'approve') {
-        // Update friendship status
-        await supabase
-          .from('friendships')
-          .update({
-            status: 'approved',
-            approved_at: new Date().toISOString(),
-            approved_by_parent_id: user.id,
-          })
-          .eq('id', id);
+        if (isSenderParent && fr.status === 'pending') {
+          // Stage 1: Sender's parent approves → move to pending_recipient
+          await supabase
+            .from('friendships')
+            .update({
+              status: 'pending_recipient',
+              approved_at: new Date().toISOString(),
+              approved_by_parent_id: user.id,
+            })
+            .eq('id', id);
 
-        // Create reciprocal friendship
-        await supabase
-          .from('friendships')
-          .upsert({
+          // Log action
+          await supabase.from('audit_log').insert({
+            parent_id: user.id,
+            child_id: fr.child_id,
+            action: 'friend_request_approved_by_sender_parent',
+            details: { friendshipId: id, friendChildId: fr.friend_child_id },
+          });
+        } else if (isRecipientParent && (fr.status === 'pending_recipient' || (isSenderParent && fr.status === 'pending'))) {
+          // Stage 2: Recipient's parent approves → fully approved
+          // (Also handles case where both children have same parent)
+          await supabase
+            .from('friendships')
+            .update({
+              status: 'approved',
+              approved_by_recipient_parent_id: user.id,
+              // If sender's parent hasn't approved yet (same parent case), set that too
+              ...(fr.status === 'pending' ? {
+                approved_at: new Date().toISOString(),
+                approved_by_parent_id: user.id,
+              } : {}),
+            })
+            .eq('id', id);
+
+          // Create reciprocal friendship
+          await supabase
+            .from('friendships')
+            .upsert({
+              child_id: fr.friend_child_id,
+              friend_child_id: fr.child_id,
+              status: 'approved',
+              approved_at: new Date().toISOString(),
+              approved_by_parent_id: user.id,
+            });
+
+          // Create conversation
+          const childA = fr.child_id < fr.friend_child_id ? fr.child_id : fr.friend_child_id;
+          const childB = fr.child_id < fr.friend_child_id ? fr.friend_child_id : fr.child_id;
+
+          await supabase
+            .from('conversations')
+            .upsert({
+              child_a_id: childA,
+              child_b_id: childB,
+            }, {
+              onConflict: 'child_a_id,child_b_id',
+            });
+
+          // Log action
+          await supabase.from('audit_log').insert({
+            parent_id: user.id,
             child_id: fr.friend_child_id,
-            friend_child_id: fr.child_id,
-            status: 'approved',
-            approved_at: new Date().toISOString(),
-            approved_by_parent_id: user.id,
+            action: 'friend_request_approved_by_recipient_parent',
+            details: { friendshipId: id, senderChildId: fr.child_id },
           });
-
-        // Create conversation if it doesn't exist
-        const childA = fr.child_id < fr.friend_child_id ? fr.child_id : fr.friend_child_id;
-        const childB = fr.child_id < fr.friend_child_id ? fr.friend_child_id : fr.child_id;
-
-        await supabase
-          .from('conversations')
-          .upsert({
-            child_a_id: childA,
-            child_b_id: childB,
-          }, {
-            onConflict: 'child_a_id,child_b_id',
-          });
+        }
       } else {
-        // Deny - block the request
+        // Deny - block the request (either parent can deny)
         await supabase
           .from('friendships')
           .update({ status: 'blocked' })
           .eq('id', id);
-      }
 
-      // Log action
-      await supabase.from('audit_log').insert({
-        parent_id: user.id,
-        child_id: fr.child_id,
-        action: action === 'approve' ? 'friend_request_approved' : 'friend_request_denied',
-        details: { friendshipId: id, friendChildId: fr.friend_child_id },
-      });
+        // Log action
+        const childIdForLog = isSenderParent ? fr.child_id : fr.friend_child_id;
+        await supabase.from('audit_log').insert({
+          parent_id: user.id,
+          child_id: childIdForLog,
+          action: 'friend_request_denied',
+          details: { friendshipId: id, deniedBy: isSenderParent ? 'sender_parent' : 'recipient_parent' },
+        });
+      }
     } else if (type === 'message') {
       // Verify ownership of message
       const { data: message } = await supabase

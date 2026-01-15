@@ -34,22 +34,38 @@ export async function GET() {
     const childIds = children.map((c) => c.id);
     const childMap = new Map(children.map((c) => [c.id, c]));
 
-    // Get pending friend requests where child is the requester
-    const { data: friendRequests } = await supabase
+    // Get pending friend requests where child is the requester (needs sender's parent approval)
+    const { data: outgoingRequests } = await supabase
       .from('friendships')
       .select('id, child_id, friend_child_id, requested_at')
       .in('child_id', childIds)
       .eq('status', 'pending');
 
-    // Get friend details separately to avoid Supabase type inference issues
-    const friendChildIds = (friendRequests || []).map((fr) => fr.friend_child_id);
-    const { data: friendDetails } = friendChildIds.length > 0
+    // Get pending friend requests where child is the recipient (needs recipient's parent approval)
+    const { data: incomingRequests } = await supabase
+      .from('friendships')
+      .select('id, child_id, friend_child_id, requested_at')
+      .in('friend_child_id', childIds)
+      .eq('status', 'pending_recipient');
+
+    // Combine both request types
+    const friendRequests = [
+      ...(outgoingRequests || []).map(fr => ({ ...fr, requestType: 'outgoing' as const })),
+      ...(incomingRequests || []).map(fr => ({ ...fr, requestType: 'incoming' as const })),
+    ];
+
+    // Get all child details (both senders and recipients)
+    const allChildIds = new Set([
+      ...(friendRequests || []).map((fr) => fr.friend_child_id),
+      ...(friendRequests || []).map((fr) => fr.child_id),
+    ]);
+    const { data: allChildDetails } = allChildIds.size > 0
       ? await supabase
           .from('children')
           .select('id, display_name, avatar_id')
-          .in('id', friendChildIds)
+          .in('id', Array.from(allChildIds))
       : { data: [] };
-    const friendMap = new Map((friendDetails || []).map((f) => [f.id, f]));
+    const friendMap = new Map((allChildDetails || []).map((f) => [f.id, f]));
 
     // Get pending messages from children
     const { data: pendingMessages } = await supabase
@@ -72,18 +88,28 @@ export async function GET() {
 
     // Transform friend requests
     const transformedFriendRequests = (friendRequests || []).map((fr) => {
-      const child = childMap.get(fr.child_id);
-      const friend = friendMap.get(fr.friend_child_id);
+      const sender = friendMap.get(fr.child_id) || childMap.get(fr.child_id);
+      const recipient = friendMap.get(fr.friend_child_id) || childMap.get(fr.friend_child_id);
+
+      // For outgoing: your child (sender) wants to add someone
+      // For incoming: someone wants to add your child (recipient)
+      const isOutgoing = fr.requestType === 'outgoing';
+      const yourChild = isOutgoing ? sender : recipient;
+      const otherChild = isOutgoing ? recipient : sender;
 
       return {
         id: fr.id,
         childId: fr.child_id,
-        childName: child?.display_name || 'Unknown',
-        childAvatar: child?.avatar_id || 'cat',
+        childName: sender?.display_name || 'Unknown',
+        childAvatar: sender?.avatar_id || 'cat',
         friendChildId: fr.friend_child_id,
-        friendName: friend?.display_name || 'Unknown',
-        friendAvatar: friend?.avatar_id || 'cat',
+        friendName: recipient?.display_name || 'Unknown',
+        friendAvatar: recipient?.avatar_id || 'cat',
         requestedAt: fr.requested_at,
+        requestType: fr.requestType, // 'outgoing' or 'incoming'
+        yourChildId: isOutgoing ? fr.child_id : fr.friend_child_id,
+        yourChildName: yourChild?.display_name || 'Unknown',
+        otherChildName: otherChild?.display_name || 'Unknown',
       };
     });
 
