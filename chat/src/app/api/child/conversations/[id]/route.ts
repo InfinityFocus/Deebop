@@ -64,14 +64,14 @@ export async function GET(
       console.error('Failed to fetch messages:', messagesError);
     }
 
-    // Filter messages: sender sees all their messages, recipient only sees delivered/approved
+    // Filter messages: sender sees all their messages, recipient sees delivered/approved and pending_recipient
     const filteredMessages = (messages || []).filter((m) => {
       if (m.sender_child_id === user.id) {
-        // Sender sees all their own messages (including pending)
+        // Sender sees all their own messages (including pending and pending_recipient)
         return true;
       }
-      // Recipient only sees delivered/approved messages
-      return m.status === 'delivered' || m.status === 'approved';
+      // Recipient sees delivered/approved messages, and pending_recipient (so they know a message is coming)
+      return m.status === 'delivered' || m.status === 'approved' || m.status === 'pending_recipient';
     });
 
     // Transform messages

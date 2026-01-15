@@ -80,7 +80,7 @@ export interface Message {
 
 export type MessageType = 'text' | 'emoji' | 'voice';
 
-export type MessageStatus = 'pending' | 'approved' | 'delivered' | 'denied';
+export type MessageStatus = 'pending' | 'pending_recipient' | 'approved' | 'delivered' | 'denied';
 
 export interface Approval {
   id: string;

@@ -67,14 +67,40 @@ export async function GET() {
       : { data: [] };
     const friendMap = new Map((allChildDetails || []).map((f) => [f.id, f]));
 
-    // Get pending messages from children
-    const { data: pendingMessages } = await supabase
+    // Get pending outgoing messages (sender's parent needs to approve)
+    const { data: outgoingMessages } = await supabase
       .from('messages')
       .select('id, conversation_id, sender_child_id, type, content, created_at')
       .in('sender_child_id', childIds)
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
       .limit(50);
+
+    // Get all conversations to find incoming messages pending recipient approval
+    const { data: childConversations } = await supabase
+      .from('conversations')
+      .select('id, child_a_id, child_b_id')
+      .or(childIds.map(id => `child_a_id.eq.${id},child_b_id.eq.${id}`).join(','));
+
+    const childConvIds = (childConversations || []).map(c => c.id);
+
+    // Get pending incoming messages (recipient's parent needs to approve)
+    const { data: incomingMessages } = childConvIds.length > 0
+      ? await supabase
+          .from('messages')
+          .select('id, conversation_id, sender_child_id, type, content, created_at')
+          .in('conversation_id', childConvIds)
+          .not('sender_child_id', 'in', `(${childIds.join(',')})`)
+          .eq('status', 'pending_recipient')
+          .order('created_at', { ascending: false })
+          .limit(50)
+      : { data: [] };
+
+    // Combine both message types
+    const pendingMessages = [
+      ...(outgoingMessages || []).map(m => ({ ...m, messageType: 'outgoing' as const })),
+      ...(incomingMessages || []).map(m => ({ ...m, messageType: 'incoming' as const })),
+    ];
 
     // Get conversation details separately
     const conversationIds = [...new Set((pendingMessages || []).map((m) => m.conversation_id))];
@@ -113,36 +139,45 @@ export async function GET() {
       };
     });
 
-    // Get recipient names for messages
-    const messageRecipientIds = new Set<string>();
+    // Get all other child IDs involved in messages (senders and recipients)
+    const messageOtherChildIds = new Set<string>();
     (pendingMessages || []).forEach((m) => {
       const conv = conversationMap.get(m.conversation_id);
       if (conv) {
         const recipientId = conv.child_a_id === m.sender_child_id
           ? conv.child_b_id
           : conv.child_a_id;
-        messageRecipientIds.add(recipientId);
+        messageOtherChildIds.add(recipientId);
+        messageOtherChildIds.add(m.sender_child_id);
       }
     });
 
-    let recipientMap = new Map<string, { display_name: string; avatar_id: string }>();
-    if (messageRecipientIds.size > 0) {
-      const { data: recipients } = await supabase
+    let otherChildMap = new Map<string, { display_name: string; avatar_id: string }>();
+    if (messageOtherChildIds.size > 0) {
+      const { data: otherChildren } = await supabase
         .from('children')
         .select('id, display_name, avatar_id')
-        .in('id', Array.from(messageRecipientIds));
+        .in('id', Array.from(messageOtherChildIds));
 
-      recipientMap = new Map((recipients || []).map((r) => [r.id, r]));
+      otherChildMap = new Map((otherChildren || []).map((r) => [r.id, r]));
     }
 
     // Transform messages
     const transformedMessages = (pendingMessages || []).map((m) => {
-      const sender = childMap.get(m.sender_child_id);
+      const sender = childMap.get(m.sender_child_id) || otherChildMap.get(m.sender_child_id);
       const conv = conversationMap.get(m.conversation_id);
       const recipientId = conv
         ? (conv.child_a_id === m.sender_child_id ? conv.child_b_id : conv.child_a_id)
         : null;
-      const recipient = recipientId ? recipientMap.get(recipientId) : null;
+      const recipient = recipientId
+        ? (childMap.get(recipientId) || otherChildMap.get(recipientId))
+        : null;
+
+      // For outgoing: your child is the sender
+      // For incoming: your child is the recipient
+      const isOutgoing = m.messageType === 'outgoing';
+      const yourChild = isOutgoing ? sender : recipient;
+      const otherChild = isOutgoing ? recipient : sender;
 
       return {
         id: m.id,
@@ -150,10 +185,16 @@ export async function GET() {
         senderChildId: m.sender_child_id,
         senderName: sender?.display_name || 'Unknown',
         senderAvatar: sender?.avatar_id || 'cat',
+        recipientId: recipientId,
         recipientName: recipient?.display_name || 'Unknown',
+        recipientAvatar: recipient?.avatar_id || 'cat',
         type: m.type as 'text' | 'emoji' | 'voice',
         content: m.content,
         createdAt: m.created_at,
+        messageType: m.messageType, // 'outgoing' or 'incoming'
+        yourChildId: isOutgoing ? m.sender_child_id : recipientId,
+        yourChildName: yourChild?.display_name || 'Unknown',
+        otherChildName: otherChild?.display_name || 'Unknown',
       };
     });
 

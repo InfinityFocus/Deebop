@@ -14,7 +14,7 @@ interface Message {
   content: string | null;
   mediaUrl: string | null;
   mediaDuration: number | null;
-  status: 'pending' | 'approved' | 'delivered' | 'denied';
+  status: 'pending' | 'pending_recipient' | 'approved' | 'delivered' | 'denied';
   createdAt: string;
   isFromMe: boolean;
 }
@@ -220,7 +220,13 @@ function MessageBubble({ message }: { message: Message }) {
           {message.status === 'pending' && (
             <>
               <Clock size={12} />
-              <span>Waiting for approval</span>
+              <span>Waiting for your parent</span>
+            </>
+          )}
+          {message.status === 'pending_recipient' && (
+            <>
+              <Clock size={12} />
+              <span>Waiting for their parent</span>
             </>
           )}
           {message.status === 'denied' && (

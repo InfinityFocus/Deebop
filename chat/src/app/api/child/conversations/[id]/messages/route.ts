@@ -66,35 +66,43 @@ export async function POST(
       );
     }
 
-    // Check if messaging is paused for this child
-    const { data: child } = await supabase
+    // Get sender child details
+    const { data: senderChild } = await supabase
       .from('children')
       .select('messaging_paused, oversight_mode, parent_id')
       .eq('id', user.id)
       .single();
 
-    if (child?.messaging_paused) {
+    if (senderChild?.messaging_paused) {
       return NextResponse.json(
         { success: false, error: 'Messaging is paused for your account' },
         { status: 403 }
       );
     }
 
-    // Determine message status based on oversight mode
-    let status: 'pending' | 'delivered' = 'delivered';
-    const oversightMode = child?.oversight_mode || 'approve_first';
+    // Get recipient child details
+    const recipientId = conversation.child_a_id === user.id
+      ? conversation.child_b_id
+      : conversation.child_a_id;
 
-    if (oversightMode === 'approve_all') {
-      // Every message needs approval
-      status = 'pending';
-    } else if (oversightMode === 'approve_first') {
-      // Check if this is first message to this friend
-      const friendId =
-        conversation.child_a_id === user.id
-          ? conversation.child_b_id
-          : conversation.child_a_id;
+    const { data: recipientChild } = await supabase
+      .from('children')
+      .select('oversight_mode, parent_id')
+      .eq('id', recipientId)
+      .single();
 
-      const { data: existingMessages } = await supabase
+    // Determine message status based on BOTH children's oversight modes
+    let status: 'pending' | 'pending_recipient' | 'delivered' = 'delivered';
+    const senderOversightMode = senderChild?.oversight_mode || 'approve_first';
+    const recipientOversightMode = recipientChild?.oversight_mode || 'approve_first';
+
+    // Check if sender's parent needs to approve first
+    let senderParentNeedsApproval = false;
+    if (senderOversightMode === 'approve_all') {
+      senderParentNeedsApproval = true;
+    } else if (senderOversightMode === 'approve_first') {
+      // Check if this is first message from sender to this friend
+      const { data: existingSentMessages } = await supabase
         .from('messages')
         .select('id')
         .eq('conversation_id', id)
@@ -102,12 +110,37 @@ export async function POST(
         .in('status', ['delivered', 'approved'])
         .limit(1);
 
-      if (!existingMessages || existingMessages.length === 0) {
-        // First message to this friend needs approval
-        status = 'pending';
+      if (!existingSentMessages || existingSentMessages.length === 0) {
+        senderParentNeedsApproval = true;
       }
     }
-    // If oversight_mode is 'monitor', status stays 'delivered'
+
+    // Check if recipient's parent needs to approve
+    let recipientParentNeedsApproval = false;
+    if (recipientOversightMode === 'approve_all') {
+      recipientParentNeedsApproval = true;
+    } else if (recipientOversightMode === 'approve_first') {
+      // Check if this is first message received from this sender
+      const { data: existingReceivedMessages } = await supabase
+        .from('messages')
+        .select('id')
+        .eq('conversation_id', id)
+        .eq('sender_child_id', user.id)
+        .in('status', ['delivered', 'approved'])
+        .limit(1);
+
+      if (!existingReceivedMessages || existingReceivedMessages.length === 0) {
+        recipientParentNeedsApproval = true;
+      }
+    }
+
+    // Set initial status based on approval requirements
+    if (senderParentNeedsApproval) {
+      status = 'pending'; // Waiting for sender's parent
+    } else if (recipientParentNeedsApproval) {
+      status = 'pending_recipient'; // Sender's parent done, waiting for recipient's parent
+    }
+    // If neither needs approval (both in monitor mode), status stays 'delivered'
 
     // Create message
     const { data: message, error } = await supabase

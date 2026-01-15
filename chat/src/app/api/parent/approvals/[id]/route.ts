@@ -167,44 +167,164 @@ export async function POST(
         });
       }
     } else if (type === 'message') {
-      // Verify ownership of message
+      // Get message with conversation details
       const { data: message } = await supabase
         .from('messages')
-        .select('id, sender_child_id, conversation_id')
+        .select('id, sender_child_id, conversation_id, status')
         .eq('id', id)
         .single();
 
-      if (!message || !childIds.includes(message.sender_child_id)) {
+      if (!message) {
         return NextResponse.json(
           { success: false, error: 'Message not found' },
           { status: 404 }
         );
       }
 
-      // Update message status
-      const newStatus = action === 'approve' ? 'delivered' : 'denied';
-      await supabase
-        .from('messages')
-        .update({
-          status: newStatus,
-          delivered_at: action === 'approve' ? new Date().toISOString() : null,
-        })
-        .eq('id', id);
+      // Get conversation to determine recipient
+      const { data: conversation } = await supabase
+        .from('conversations')
+        .select('child_a_id, child_b_id')
+        .eq('id', message.conversation_id)
+        .single();
 
-      // Log approval
-      await supabase.from('approvals').insert({
-        message_id: id,
-        parent_id: user.id,
-        decision: action === 'approve' ? 'approved' : 'denied',
-      });
+      if (!conversation) {
+        return NextResponse.json(
+          { success: false, error: 'Conversation not found' },
+          { status: 404 }
+        );
+      }
 
-      // Log action
-      await supabase.from('audit_log').insert({
-        parent_id: user.id,
-        child_id: message.sender_child_id,
-        action: action === 'approve' ? 'message_approved' : 'message_denied',
-        details: { messageId: id, conversationId: message.conversation_id },
-      });
+      const recipientId = conversation.child_a_id === message.sender_child_id
+        ? conversation.child_b_id
+        : conversation.child_a_id;
+
+      // Determine if this parent is sender's parent or recipient's parent
+      const isSenderParent = childIds.includes(message.sender_child_id);
+      const isRecipientParent = childIds.includes(recipientId);
+
+      if (!isSenderParent && !isRecipientParent) {
+        return NextResponse.json(
+          { success: false, error: 'Message not found' },
+          { status: 404 }
+        );
+      }
+
+      // Validate the approval stage
+      if (isSenderParent && message.status !== 'pending') {
+        return NextResponse.json(
+          { success: false, error: 'This message has already been processed' },
+          { status: 400 }
+        );
+      }
+      if (isRecipientParent && !isSenderParent && message.status !== 'pending_recipient') {
+        return NextResponse.json(
+          { success: false, error: 'This message is not ready for your approval yet' },
+          { status: 400 }
+        );
+      }
+
+      if (action === 'approve') {
+        if (isSenderParent && message.status === 'pending') {
+          // Stage 1: Sender's parent approves
+          // Check if recipient's parent also needs to approve
+          const { data: recipientChild } = await supabase
+            .from('children')
+            .select('oversight_mode')
+            .eq('id', recipientId)
+            .single();
+
+          const recipientOversightMode = recipientChild?.oversight_mode || 'approve_first';
+          let recipientNeedsApproval = false;
+
+          if (recipientOversightMode === 'approve_all') {
+            recipientNeedsApproval = true;
+          } else if (recipientOversightMode === 'approve_first') {
+            // Check if first message from this sender to recipient
+            const { data: existingMessages } = await supabase
+              .from('messages')
+              .select('id')
+              .eq('conversation_id', message.conversation_id)
+              .eq('sender_child_id', message.sender_child_id)
+              .in('status', ['delivered', 'approved'])
+              .limit(1);
+
+            if (!existingMessages || existingMessages.length === 0) {
+              recipientNeedsApproval = true;
+            }
+          }
+
+          const newStatus = recipientNeedsApproval ? 'pending_recipient' : 'delivered';
+          await supabase
+            .from('messages')
+            .update({
+              status: newStatus,
+              approved_by_sender_parent_id: user.id,
+              delivered_at: newStatus === 'delivered' ? new Date().toISOString() : null,
+            })
+            .eq('id', id);
+
+          // Log action
+          await supabase.from('audit_log').insert({
+            parent_id: user.id,
+            child_id: message.sender_child_id,
+            action: 'message_approved_by_sender_parent',
+            details: { messageId: id, conversationId: message.conversation_id, nextStatus: newStatus },
+          });
+        } else if (isRecipientParent && (message.status === 'pending_recipient' || (isSenderParent && message.status === 'pending'))) {
+          // Stage 2: Recipient's parent approves → fully delivered
+          // (Also handles case where both children have same parent)
+          await supabase
+            .from('messages')
+            .update({
+              status: 'delivered',
+              approved_by_recipient_parent_id: user.id,
+              delivered_at: new Date().toISOString(),
+              // If sender's parent hasn't approved yet (same parent case), set that too
+              ...(message.status === 'pending' ? {
+                approved_by_sender_parent_id: user.id,
+              } : {}),
+            })
+            .eq('id', id);
+
+          // Log action
+          await supabase.from('audit_log').insert({
+            parent_id: user.id,
+            child_id: recipientId,
+            action: 'message_approved_by_recipient_parent',
+            details: { messageId: id, conversationId: message.conversation_id, senderChildId: message.sender_child_id },
+          });
+        }
+
+        // Log approval record
+        await supabase.from('approvals').insert({
+          message_id: id,
+          parent_id: user.id,
+          decision: 'approved',
+        });
+      } else {
+        // Deny - either parent can deny
+        await supabase
+          .from('messages')
+          .update({ status: 'denied' })
+          .eq('id', id);
+
+        // Log approval record
+        await supabase.from('approvals').insert({
+          message_id: id,
+          parent_id: user.id,
+          decision: 'denied',
+        });
+
+        // Log action
+        const childIdForLog = isSenderParent ? message.sender_child_id : recipientId;
+        await supabase.from('audit_log').insert({
+          parent_id: user.id,
+          child_id: childIdForLog,
+          action: 'message_denied',
+          details: { messageId: id, deniedBy: isSenderParent ? 'sender_parent' : 'recipient_parent' },
+        });
+      }
     } else {
       return NextResponse.json(
         { success: false, error: 'Invalid type' },
