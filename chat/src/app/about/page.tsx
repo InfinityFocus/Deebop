@@ -100,8 +100,7 @@ export default function AboutPage() {
             <p className="text-gray-300">
               We&apos;re committed to creating technology that supports healthy childhood
               development. Deebop Chat is designed to foster real friendships, not screen
-              addiction. We continuously work with child safety experts to ensure our
-              platform remains a trusted choice for families.
+              addiction.
             </p>
           </div>
 
