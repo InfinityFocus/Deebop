@@ -15,6 +15,10 @@ interface FriendRequest {
   friendName: string;
   friendAvatar: string;
   requestedAt: string;
+  requestType: 'outgoing' | 'incoming';
+  yourChildId: string;
+  yourChildName: string;
+  otherChildName: string;
 }
 
 interface PendingMessage {
@@ -23,10 +27,16 @@ interface PendingMessage {
   senderChildId: string;
   senderName: string;
   senderAvatar: string;
+  recipientId: string | null;
   recipientName: string;
+  recipientAvatar: string;
   type: 'text' | 'emoji' | 'voice';
   content: string | null;
   createdAt: string;
+  messageType: 'outgoing' | 'incoming';
+  yourChildId: string | null;
+  yourChildName: string;
+  otherChildName: string;
 }
 
 export default function ApprovalsPage() {
@@ -201,6 +211,8 @@ function FriendRequestCard({
   onDeny: () => void;
   isProcessing: boolean;
 }) {
+  const isOutgoing = request.requestType === 'outgoing';
+
   return (
     <div className="bg-dark-800 rounded-xl border border-dark-700 p-4">
       <div className="flex items-center gap-4">
@@ -211,13 +223,23 @@ function FriendRequestCard({
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="text-white">
-            <span className="font-semibold">{request.childName}</span>
-            <span className="text-gray-400"> wants to be friends with </span>
-            <span className="font-semibold">{request.friendName}</span>
-          </p>
-          <p className="text-sm text-gray-500">
-            {new Date(request.requestedAt).toLocaleDateString()}
+          {isOutgoing ? (
+            <p className="text-white">
+              <span className="font-semibold text-primary-400">{request.yourChildName}</span>
+              <span className="text-gray-400"> wants to add </span>
+              <span className="font-semibold">{request.otherChildName}</span>
+              <span className="text-gray-400"> as a friend</span>
+            </p>
+          ) : (
+            <p className="text-white">
+              <span className="font-semibold">{request.otherChildName}</span>
+              <span className="text-gray-400"> wants to add </span>
+              <span className="font-semibold text-primary-400">{request.yourChildName}</span>
+              <span className="text-gray-400"> as a friend</span>
+            </p>
+          )}
+          <p className="text-sm text-gray-500 mt-1">
+            {isOutgoing ? 'Approve to send request' : 'Incoming request'} · {new Date(request.requestedAt).toLocaleDateString()}
           </p>
         </div>
 
@@ -252,6 +274,8 @@ function MessageCard({
   onDeny: () => void;
   isProcessing: boolean;
 }) {
+  const isOutgoing = message.messageType === 'outgoing';
+
   return (
     <div className="bg-dark-800 rounded-xl border border-dark-700 p-4">
       <div className="flex items-start gap-4">
@@ -259,9 +283,19 @@ function MessageCard({
 
         <div className="flex-1 min-w-0">
           <p className="text-white mb-1">
-            <span className="font-semibold">{message.senderName}</span>
-            <span className="text-gray-400"> → </span>
-            <span>{message.recipientName}</span>
+            {isOutgoing ? (
+              <>
+                <span className="font-semibold text-primary-400">{message.yourChildName}</span>
+                <span className="text-gray-400"> → </span>
+                <span className="font-semibold">{message.otherChildName}</span>
+              </>
+            ) : (
+              <>
+                <span className="font-semibold">{message.otherChildName}</span>
+                <span className="text-gray-400"> → </span>
+                <span className="font-semibold text-primary-400">{message.yourChildName}</span>
+              </>
+            )}
           </p>
 
           {message.type === 'text' && (
@@ -282,7 +316,7 @@ function MessageCard({
           )}
 
           <p className="text-xs text-gray-500 mt-2">
-            {new Date(message.createdAt).toLocaleString()}
+            {isOutgoing ? 'Outgoing message' : 'Incoming message'} · {new Date(message.createdAt).toLocaleString()}
           </p>
         </div>
 
