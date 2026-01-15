@@ -50,14 +50,12 @@ export default function OnboardingWelcomePage() {
         >
           Set up my family
         </Link>
-        <a
-          href="/#how-it-works"
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          href="/onboarding/how-it-works"
           className="btn btn-ghost w-full"
         >
           Learn how it works
-        </a>
+        </Link>
       </div>
     </div>
   );
