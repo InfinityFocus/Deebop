@@ -16,6 +16,7 @@ import {
   Sparkles,
   Users,
 } from 'lucide-react';
+import Footer from '@/components/Footer';
 
 export default function LandingPage() {
   return (
@@ -254,11 +255,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-6 px-4 text-center text-gray-500 text-sm">
-        <p>
-          &copy; {new Date().getFullYear()} Deebop Chat. Made with care for families.
-        </p>
-      </footer>
+      <Footer />
     </main>
   );
 }
