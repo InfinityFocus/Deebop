@@ -45,6 +45,7 @@ export default function ApprovalsPage() {
   const [messages, setMessages] = useState<PendingMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
 
   const fetchApprovals = async () => {
     try {
@@ -69,6 +70,7 @@ export default function ApprovalsPage() {
 
   const handleFriendRequest = async (id: string, action: 'approve' | 'deny') => {
     setProcessingIds((prev) => new Set(prev).add(`friend-${id}`));
+    setError(null);
 
     try {
       const response = await fetch(`/api/parent/approvals/${id}`, {
@@ -77,12 +79,18 @@ export default function ApprovalsPage() {
         body: JSON.stringify({ type: 'friend_request', action }),
       });
 
-      if (response.ok) {
+      const data = await response.json();
+
+      if (data.success) {
         setFriendRequests((prev) => prev.filter((r) => r.id !== id));
         setPendingCount((c) => Math.max(0, c - 1));
+      } else {
+        setError(data.error || 'Failed to process friend request');
+        console.error('Friend request error:', data.error);
       }
-    } catch (error) {
-      console.error('Failed to process friend request:', error);
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+      console.error('Failed to process friend request:', err);
     } finally {
       setProcessingIds((prev) => {
         const next = new Set(prev);
@@ -94,6 +102,7 @@ export default function ApprovalsPage() {
 
   const handleMessage = async (id: string, action: 'approve' | 'deny') => {
     setProcessingIds((prev) => new Set(prev).add(`message-${id}`));
+    setError(null);
 
     try {
       const response = await fetch(`/api/parent/approvals/${id}`, {
@@ -102,12 +111,18 @@ export default function ApprovalsPage() {
         body: JSON.stringify({ type: 'message', action }),
       });
 
-      if (response.ok) {
+      const data = await response.json();
+
+      if (data.success) {
         setMessages((prev) => prev.filter((m) => m.id !== id));
         setPendingCount((c) => Math.max(0, c - 1));
+      } else {
+        setError(data.error || 'Failed to process message');
+        console.error('Message error:', data.error);
       }
-    } catch (error) {
-      console.error('Failed to process message:', error);
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+      console.error('Failed to process message:', err);
     } finally {
       setProcessingIds((prev) => {
         const next = new Set(prev);
@@ -136,6 +151,20 @@ export default function ApprovalsPage() {
           Review and approve friend requests and messages
         </p>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="flex items-center gap-3 p-4 mb-6 bg-red-500/10 border border-red-500/20 rounded-xl">
+          <AlertCircle className="text-red-400 flex-shrink-0" size={20} />
+          <p className="text-red-400 text-sm">{error}</p>
+          <button
+            onClick={() => setError(null)}
+            className="ml-auto text-red-400 hover:text-red-300"
+          >
+            &times;
+          </button>
+        </div>
+      )}
 
       {totalPending === 0 ? (
         <div className="bg-dark-800 rounded-xl border border-dark-700 p-12 text-center">

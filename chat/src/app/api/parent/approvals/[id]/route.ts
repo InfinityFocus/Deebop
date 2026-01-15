@@ -132,7 +132,7 @@ export async function POST(
           });
         } else if (isSenderParent && fr.status === 'pending') {
           // Stage 1: Sender's parent approves → move to pending_recipient
-          await supabase
+          const { error: updateError } = await supabase
             .from('friendships')
             .update({
               status: 'pending_recipient',
@@ -140,6 +140,14 @@ export async function POST(
               approved_by_parent_id: user.id,
             })
             .eq('id', id);
+
+          if (updateError) {
+            console.error('Failed to update friendship to pending_recipient:', updateError);
+            return NextResponse.json(
+              { success: false, error: `Database error: ${updateError.message}` },
+              { status: 500 }
+            );
+          }
 
           // Log action
           await supabase.from('audit_log').insert({
@@ -150,7 +158,7 @@ export async function POST(
           });
         } else if (isRecipientParent && fr.status === 'pending_recipient') {
           // Stage 2: Recipient's parent approves → fully approved
-          await supabase
+          const { error: updateError } = await supabase
             .from('friendships')
             .update({
               status: 'approved',
@@ -158,8 +166,16 @@ export async function POST(
             })
             .eq('id', id);
 
+          if (updateError) {
+            console.error('Failed to update friendship status:', updateError);
+            return NextResponse.json(
+              { success: false, error: `Database error: ${updateError.message}` },
+              { status: 500 }
+            );
+          }
+
           // Create reciprocal friendship
-          await supabase
+          const { error: reciprocalError } = await supabase
             .from('friendships')
             .upsert({
               child_id: fr.friend_child_id,
@@ -167,13 +183,19 @@ export async function POST(
               status: 'approved',
               approved_at: new Date().toISOString(),
               approved_by_parent_id: user.id,
+            }, {
+              onConflict: 'child_id,friend_child_id',
             });
+
+          if (reciprocalError) {
+            console.error('Failed to create reciprocal friendship:', reciprocalError);
+          }
 
           // Create conversation
           const childA = fr.child_id < fr.friend_child_id ? fr.child_id : fr.friend_child_id;
           const childB = fr.child_id < fr.friend_child_id ? fr.friend_child_id : fr.child_id;
 
-          await supabase
+          const { error: convError } = await supabase
             .from('conversations')
             .upsert({
               child_a_id: childA,
@@ -181,6 +203,10 @@ export async function POST(
             }, {
               onConflict: 'child_a_id,child_b_id',
             });
+
+          if (convError) {
+            console.error('Failed to create conversation:', convError);
+          }
 
           // Log action
           await supabase.from('audit_log').insert({
