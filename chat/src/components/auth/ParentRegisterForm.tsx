@@ -64,8 +64,8 @@ export function ParentRegisterForm() {
       // Update store
       setUser(data.data.user);
 
-      // Redirect to dashboard
-      router.push('/dashboard');
+      // Redirect to onboarding
+      router.push('/onboarding/welcome');
     } catch (err) {
       console.error('Registration error:', err);
       setError('Something went wrong. Please try again.');
