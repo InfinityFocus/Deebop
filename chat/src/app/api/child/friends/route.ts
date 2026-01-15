@@ -17,15 +17,20 @@ export async function GET() {
     // Get friendships where current child is either child_id or friend_child_id
     const { data: friendships } = await supabase
       .from('chat.friendships')
-      .select(`
-        id,
-        child_id,
-        friend_child_id,
-        status,
-        friend:chat.children!friend_child_id(id, username, display_name, avatar_id)
-      `)
+      .select('id, child_id, friend_child_id, status')
       .eq('child_id', user.id)
       .in('status', ['approved', 'pending']);
+
+    // Get friend details separately to avoid Supabase type inference issues
+    const friendChildIds = (friendships || []).map((f) => f.friend_child_id);
+    const { data: friendDetails } = friendChildIds.length > 0
+      ? await supabase
+          .from('chat.children')
+          .select('id, username, display_name, avatar_id')
+          .in('id', friendChildIds)
+      : { data: [] };
+
+    const friendMap = new Map((friendDetails || []).map((f) => [f.id, f]));
 
     // Get conversations for approved friends
     const approvedFriendIds = (friendships || [])
@@ -48,7 +53,7 @@ export async function GET() {
 
     // Transform data
     const friends = (friendships || []).map((f) => {
-      const friend = f.friend as { id: string; username: string; display_name: string; avatar_id: string } | null;
+      const friend = friendMap.get(f.friend_child_id);
 
       return {
         id: f.id,
