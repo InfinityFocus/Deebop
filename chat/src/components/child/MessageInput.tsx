@@ -19,6 +19,7 @@ export function MessageInput({ onSend, disabled }: Props) {
 
     onSend('text', message.trim());
     setMessage('');
+    setShowEmojiPicker(false);
   };
 
   const handleEmojiClick = (emoji: string) => {
