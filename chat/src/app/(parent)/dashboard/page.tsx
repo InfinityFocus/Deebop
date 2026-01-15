@@ -330,9 +330,9 @@ function InviteParentsCard() {
 
   return (
     <div className="bg-gradient-to-r from-primary-500/10 to-cyan-500/10 rounded-xl border border-primary-500/20 p-6 mb-8">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-primary-500/20 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-primary-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
             <Share2 className="text-primary-400" size={24} />
           </div>
           <div>
@@ -343,12 +343,12 @@ function InviteParentsCard() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:flex-shrink-0">
           <Button
             variant="outline"
             size="sm"
             onClick={handleCopy}
-            className="whitespace-nowrap"
+            className="whitespace-nowrap flex-1 sm:flex-initial"
           >
             {copied ? (
               <>
@@ -362,7 +362,7 @@ function InviteParentsCard() {
               </>
             )}
           </Button>
-          <Button size="sm" onClick={handleShare}>
+          <Button size="sm" onClick={handleShare} className="flex-1 sm:flex-initial">
             <Share2 size={16} className="mr-1" />
             Share
           </Button>

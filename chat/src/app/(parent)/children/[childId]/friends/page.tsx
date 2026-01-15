@@ -147,35 +147,39 @@ export default function ChildFriendsPage() {
           {friends.map((friend) => (
             <div
               key={friend.friendshipId}
-              className="bg-dark-800 rounded-xl border border-dark-700 p-4 flex items-center justify-between"
+              className="bg-dark-800 rounded-xl border border-dark-700 p-4"
             >
-              <div className="flex items-center gap-3">
-                <Avatar avatarId={friend.avatarId} size="md" />
-                <div>
-                  <p className="text-white font-medium">{friend.displayName}</p>
-                  <p className="text-sm text-gray-500">@{friend.username}</p>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Avatar avatarId={friend.avatarId} size="md" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-white font-medium">{friend.displayName}</p>
+                      {getStatusBadge(friend.status)}
+                    </div>
+                    <p className="text-sm text-gray-500">@{friend.username}</p>
+                  </div>
                 </div>
-                {getStatusBadge(friend.status)}
-              </div>
 
-              <div className="flex items-center gap-2">
-                {friend.conversationId && friend.status === 'approved' && (
-                  <Link href={`/children/${childId}/conversations/${friend.conversationId}`}>
-                    <Button variant="ghost" size="sm">
-                      <MessageCircle size={16} className="mr-1" />
-                      View Chat
-                    </Button>
-                  </Link>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemoveFriend(friend.friendshipId)}
-                  isLoading={deletingId === friend.friendshipId}
-                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                >
-                  <Trash2 size={16} />
-                </Button>
+                <div className="flex items-center gap-2 sm:flex-shrink-0">
+                  {friend.conversationId && friend.status === 'approved' && (
+                    <Link href={`/children/${childId}/conversations/${friend.conversationId}`} className="flex-1 sm:flex-initial">
+                      <Button variant="ghost" size="sm" className="w-full sm:w-auto">
+                        <MessageCircle size={16} className="mr-1" />
+                        View Chat
+                      </Button>
+                    </Link>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveFriend(friend.friendshipId)}
+                    isLoading={deletingId === friend.friendshipId}
+                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                </div>
               </div>
             </div>
           ))}

@@ -244,45 +244,48 @@ function FriendRequestCard({
 
   return (
     <div className="bg-dark-800 rounded-xl border border-dark-700 p-4">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <Avatar avatarId={request.childAvatar} size="md" />
-          <span className="text-gray-500">→</span>
-          <Avatar avatarId={request.friendAvatar} size="md" />
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Avatar avatarId={request.childAvatar} size="md" />
+            <span className="text-gray-500">→</span>
+            <Avatar avatarId={request.friendAvatar} size="md" />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            {isOutgoing ? (
+              <p className="text-white text-sm sm:text-base">
+                <span className="font-semibold text-primary-400">{request.yourChildName}</span>
+                <span className="text-gray-400"> wants to add </span>
+                <span className="font-semibold">{request.otherChildName}</span>
+                <span className="text-gray-400"> as a friend</span>
+              </p>
+            ) : (
+              <p className="text-white text-sm sm:text-base">
+                <span className="font-semibold">{request.otherChildName}</span>
+                <span className="text-gray-400"> wants to add </span>
+                <span className="font-semibold text-primary-400">{request.yourChildName}</span>
+                <span className="text-gray-400"> as a friend</span>
+              </p>
+            )}
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">
+              {isOutgoing ? 'Approve to send request' : 'Incoming request'} · {new Date(request.requestedAt).toLocaleDateString()}
+            </p>
+          </div>
         </div>
 
-        <div className="flex-1 min-w-0">
-          {isOutgoing ? (
-            <p className="text-white">
-              <span className="font-semibold text-primary-400">{request.yourChildName}</span>
-              <span className="text-gray-400"> wants to add </span>
-              <span className="font-semibold">{request.otherChildName}</span>
-              <span className="text-gray-400"> as a friend</span>
-            </p>
-          ) : (
-            <p className="text-white">
-              <span className="font-semibold">{request.otherChildName}</span>
-              <span className="text-gray-400"> wants to add </span>
-              <span className="font-semibold text-primary-400">{request.yourChildName}</span>
-              <span className="text-gray-400"> as a friend</span>
-            </p>
-          )}
-          <p className="text-sm text-gray-500 mt-1">
-            {isOutgoing ? 'Approve to send request' : 'Incoming request'} · {new Date(request.requestedAt).toLocaleDateString()}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:flex-shrink-0">
           <Button
             variant="outline"
             size="sm"
             onClick={onDeny}
             disabled={isProcessing}
+            className="flex-1 sm:flex-initial"
           >
             <XCircle size={16} className="mr-1" />
             Deny
           </Button>
-          <Button size="sm" onClick={onApprove} isLoading={isProcessing}>
+          <Button size="sm" onClick={onApprove} isLoading={isProcessing} className="flex-1 sm:flex-initial">
             <CheckCircle size={16} className="mr-1" />
             Approve
           </Button>
@@ -307,59 +310,64 @@ function MessageCard({
 
   return (
     <div className="bg-dark-800 rounded-xl border border-dark-700 p-4">
-      <div className="flex items-start gap-4">
-        <Avatar avatarId={message.senderAvatar} size="md" />
+      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+        <div className="flex items-start gap-4 flex-1 min-w-0">
+          <Avatar avatarId={message.senderAvatar} size="md" />
 
-        <div className="flex-1 min-w-0">
-          <p className="text-white mb-1">
-            {isOutgoing ? (
-              <>
-                <span className="font-semibold text-primary-400">{message.yourChildName}</span>
-                <span className="text-gray-400"> → </span>
-                <span className="font-semibold">{message.otherChildName}</span>
-              </>
-            ) : (
-              <>
-                <span className="font-semibold">{message.otherChildName}</span>
-                <span className="text-gray-400"> → </span>
-                <span className="font-semibold text-primary-400">{message.yourChildName}</span>
-              </>
+          <div className="flex-1 min-w-0">
+            <p className="text-white mb-1 text-sm sm:text-base">
+              {isOutgoing ? (
+                <>
+                  <span className="font-semibold text-primary-400">{message.yourChildName}</span>
+                  <span className="text-gray-400"> → </span>
+                  <span className="font-semibold">{message.otherChildName}</span>
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold">{message.otherChildName}</span>
+                  <span className="text-gray-400"> → </span>
+                  <span className="font-semibold text-primary-400">{message.yourChildName}</span>
+                </>
+              )}
+            </p>
+
+            {message.type === 'text' && (
+              <div className="bg-dark-700 rounded-lg p-3 text-gray-300 text-sm sm:text-base">
+                {message.content}
+              </div>
             )}
-          </p>
 
-          {message.type === 'text' && (
-            <div className="bg-dark-700 rounded-lg p-3 text-gray-300">
-              {message.content}
-            </div>
-          )}
+            {message.type === 'emoji' && (
+              <div className="text-3xl">{message.content}</div>
+            )}
 
-          {message.type === 'emoji' && (
-            <div className="text-3xl">{message.content}</div>
-          )}
+            {message.type === 'voice' && (
+              <div className="flex items-center gap-2 bg-dark-700 rounded-lg p-3">
+                <AlertCircle size={16} className="text-gray-500" />
+                <span className="text-gray-400 text-sm">Voice message</span>
+              </div>
+            )}
 
-          {message.type === 'voice' && (
-            <div className="flex items-center gap-2 bg-dark-700 rounded-lg p-3">
-              <AlertCircle size={16} className="text-gray-500" />
-              <span className="text-gray-400 text-sm">Voice message</span>
-            </div>
-          )}
-
-          <p className="text-xs text-gray-500 mt-2">
-            {isOutgoing ? 'Outgoing message' : 'Incoming message'} · {new Date(message.createdAt).toLocaleString()}
-          </p>
+            <p className="text-xs text-gray-500 mt-2">
+              {isOutgoing ? 'Outgoing message' : 'Incoming message'} · {new Date(message.createdAt).toLocaleString()}
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:flex-shrink-0">
           <Button
             variant="outline"
             size="sm"
             onClick={onDeny}
             disabled={isProcessing}
+            className="flex-1 sm:flex-initial"
           >
-            <XCircle size={16} />
+            <XCircle size={16} className="sm:mr-0" />
+            <span className="ml-1 sm:hidden">Deny</span>
           </Button>
-          <Button size="sm" onClick={onApprove} isLoading={isProcessing}>
-            <CheckCircle size={16} />
+          <Button size="sm" onClick={onApprove} isLoading={isProcessing} className="flex-1 sm:flex-initial">
+            <CheckCircle size={16} className="sm:mr-0" />
+            <span className="ml-1 sm:hidden">Approve</span>
           </Button>
         </div>
       </div>

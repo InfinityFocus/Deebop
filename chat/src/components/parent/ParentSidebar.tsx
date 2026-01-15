@@ -35,7 +35,7 @@ export function ParentSidebar() {
   };
 
   return (
-    <aside className="w-64 bg-dark-800 border-r border-dark-700 flex flex-col h-screen sticky top-0">
+    <aside className="hidden md:flex w-64 bg-dark-800 border-r border-dark-700 flex-col h-screen sticky top-0">
       {/* Header */}
       <div className="p-4 border-b border-dark-700">
         <Link href="/dashboard" className="flex items-center gap-3">

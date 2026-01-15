@@ -41,13 +41,13 @@ export default function ChildrenPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">Children</h1>
           <p className="text-gray-400">Manage your children&apos;s accounts</p>
         </div>
-        <Link href="/children/new">
-          <Button>
+        <Link href="/children/new" className="sm:flex-shrink-0">
+          <Button className="w-full sm:w-auto">
             <UserPlus size={18} className="mr-2" />
             Add Child
           </Button>
@@ -90,29 +90,31 @@ function ChildCard({ child }: { child: Child }) {
   };
 
   return (
-    <div className="bg-dark-800 rounded-xl border border-dark-700 p-6">
-      <div className="flex items-center gap-4">
-        <Avatar avatarId={child.avatarId} size="lg" />
+    <div className="bg-dark-800 rounded-xl border border-dark-700 p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <Avatar avatarId={child.avatarId} size="lg" />
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-lg font-semibold text-white">{child.displayName}</h3>
-            {child.messagingPaused && (
-              <span className="px-2 py-0.5 bg-yellow-500/10 text-yellow-400 text-xs rounded-full">
-                Paused
-              </span>
-            )}
-          </div>
-          <p className="text-gray-400">@{child.username}</p>
-          <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-            <span>Age: {child.ageBand}</span>
-            <span>•</span>
-            <span>{oversightLabels[child.oversightMode]}</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <h3 className="text-lg font-semibold text-white">{child.displayName}</h3>
+              {child.messagingPaused && (
+                <span className="px-2 py-0.5 bg-yellow-500/10 text-yellow-400 text-xs rounded-full">
+                  Paused
+                </span>
+              )}
+            </div>
+            <p className="text-gray-400">@{child.username}</p>
+            <div className="flex items-center gap-2 sm:gap-4 mt-2 text-sm text-gray-500 flex-wrap">
+              <span>Age: {child.ageBand}</span>
+              <span className="hidden sm:inline">•</span>
+              <span>{oversightLabels[child.oversightMode]}</span>
+            </div>
           </div>
         </div>
 
-        <Link href={`/children/${child.id}`}>
-          <Button variant="outline" size="sm">
+        <Link href={`/children/${child.id}`} className="sm:flex-shrink-0">
+          <Button variant="outline" size="sm" className="w-full sm:w-auto">
             <Settings size={16} className="mr-1" />
             Settings
           </Button>

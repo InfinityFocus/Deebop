@@ -51,14 +51,14 @@ export function ChildNavbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg transition-colors ${
                     isActive
                       ? 'bg-cyan-500/10 text-cyan-400'
                       : 'text-gray-400 hover:text-white hover:bg-dark-700'
                   }`}
                 >
                   <Icon size={20} />
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-medium text-sm sm:text-base">{item.label}</span>
                 </Link>
               );
             })}

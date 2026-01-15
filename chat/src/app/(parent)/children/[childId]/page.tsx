@@ -309,12 +309,12 @@ export default function ChildSettingsPage() {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between">
-          <Button variant="outline" onClick={() => setShowDeleteConfirm(true)}>
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <Button variant="outline" onClick={() => setShowDeleteConfirm(true)} className="w-full sm:w-auto">
             <Trash2 size={16} className="mr-2" />
             Delete Account
           </Button>
-          <Button onClick={handleSave} isLoading={isSaving}>
+          <Button onClick={handleSave} isLoading={isSaving} className="w-full sm:w-auto">
             <Save size={16} className="mr-2" />
             Save Changes
           </Button>
