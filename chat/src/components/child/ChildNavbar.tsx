@@ -61,7 +61,7 @@ export function ChildNavbar() {
 
           {/* User Menu */}
           <div className="flex items-center gap-2">
-            {user && (
+            {user && user.type === 'child' && (
               <div className="flex items-center gap-2">
                 <Avatar avatarId={user.avatarId || 'cat'} size="sm" />
                 <span className="text-sm text-gray-300 hidden sm:block">

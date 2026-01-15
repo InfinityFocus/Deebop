@@ -31,18 +31,23 @@ export function MessageInput({ onSend, disabled }: Props) {
       {/* Emoji Picker */}
       {showEmojiPicker && (
         <div className="absolute bottom-full left-0 right-0 mb-2 bg-dark-800 rounded-xl border border-dark-700 p-3 max-h-64 overflow-y-auto">
-          <div className="grid grid-cols-8 gap-1">
-            {CHILD_SAFE_EMOJIS.map((emoji) => (
-              <button
-                key={emoji}
-                type="button"
-                onClick={() => handleEmojiClick(emoji)}
-                className="p-2 text-xl hover:bg-dark-700 rounded-lg transition-colors"
-              >
-                {emoji}
-              </button>
-            ))}
-          </div>
+          {CHILD_SAFE_EMOJIS.map((category) => (
+            <div key={category.name} className="mb-3">
+              <div className="text-xs text-gray-500 mb-1">{category.name}</div>
+              <div className="grid grid-cols-8 gap-1">
+                {category.emojis.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => handleEmojiClick(emoji)}
+                    className="p-2 text-xl hover:bg-dark-700 rounded-lg transition-colors"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

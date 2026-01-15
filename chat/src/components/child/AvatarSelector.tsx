@@ -27,9 +27,9 @@ export function AvatarSelector({ selected, onSelect, size = 'md' }: Props) {
               ? 'bg-primary-500/20 ring-2 ring-primary-500 scale-110'
               : 'bg-dark-700 hover:bg-dark-600 hover:scale-105'
           }`}
-          title={avatar.label}
+          title={avatar.name}
         >
-          <span role="img" aria-label={avatar.label}>
+          <span role="img" aria-label={avatar.name}>
             {avatar.emoji}
           </span>
         </button>
@@ -60,9 +60,9 @@ export function Avatar({
   return (
     <div
       className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center ${className}`}
-      title={avatar.label}
+      title={avatar.name}
     >
-      <span role="img" aria-label={avatar.label}>
+      <span role="img" aria-label={avatar.name}>
         {avatar.emoji}
       </span>
     </div>

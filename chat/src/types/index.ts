@@ -170,29 +170,32 @@ export interface ParentPollResponse {
 // Extended Types (with relations)
 // ==========================================
 
+// Helper type for child data returned from database queries
+type ChildSummary = Pick<ChildDB, 'id' | 'username' | 'display_name' | 'avatar_id'>;
+
 export interface MessageWithSender extends Message {
-  sender: Pick<Child, 'id' | 'username' | 'display_name' | 'avatar_id'>;
+  sender: ChildSummary;
 }
 
 export interface FriendshipWithChild extends Friendship {
-  friend: Pick<Child, 'id' | 'username' | 'display_name' | 'avatar_id'>;
+  friend: ChildSummary;
 }
 
 export interface FriendRequestWithChildren extends Friendship {
-  child: Pick<Child, 'id' | 'username' | 'display_name' | 'avatar_id'>;
-  friend: Pick<Child, 'id' | 'username' | 'display_name' | 'avatar_id'>;
+  child: ChildSummary;
+  friend: ChildSummary;
 }
 
 export interface MessageForApproval extends Message {
-  sender: Pick<Child, 'id' | 'username' | 'display_name' | 'avatar_id'>;
+  sender: ChildSummary;
   conversation: {
     id: string;
-    otherChild: Pick<Child, 'id' | 'username' | 'display_name' | 'avatar_id'>;
+    otherChild: ChildSummary;
   };
 }
 
 export interface ConversationWithFriend extends Conversation {
-  friend: Pick<Child, 'id' | 'username' | 'display_name' | 'avatar_id'>;
+  friend: ChildSummary;
   lastMessage: Message | null;
   unreadCount: number;
 }
@@ -255,6 +258,7 @@ export interface SendMessageInput {
 export interface Avatar {
   id: string;
   name: string;
+  emoji: string;
   category: AvatarCategory;
 }
 
@@ -262,27 +266,27 @@ export type AvatarCategory = 'animals' | 'objects' | 'characters';
 
 export const AVATARS: Avatar[] = [
   // Animals
-  { id: 'cat', name: 'Cat', category: 'animals' },
-  { id: 'dog', name: 'Dog', category: 'animals' },
-  { id: 'panda', name: 'Panda', category: 'animals' },
-  { id: 'rabbit', name: 'Rabbit', category: 'animals' },
-  { id: 'bear', name: 'Bear', category: 'animals' },
-  { id: 'fox', name: 'Fox', category: 'animals' },
-  { id: 'owl', name: 'Owl', category: 'animals' },
-  { id: 'penguin', name: 'Penguin', category: 'animals' },
+  { id: 'cat', name: 'Cat', emoji: '🐱', category: 'animals' },
+  { id: 'dog', name: 'Dog', emoji: '🐶', category: 'animals' },
+  { id: 'panda', name: 'Panda', emoji: '🐼', category: 'animals' },
+  { id: 'rabbit', name: 'Rabbit', emoji: '🐰', category: 'animals' },
+  { id: 'bear', name: 'Bear', emoji: '🐻', category: 'animals' },
+  { id: 'fox', name: 'Fox', emoji: '🦊', category: 'animals' },
+  { id: 'owl', name: 'Owl', emoji: '🦉', category: 'animals' },
+  { id: 'penguin', name: 'Penguin', emoji: '🐧', category: 'animals' },
   // Objects
-  { id: 'rocket', name: 'Rocket', category: 'objects' },
-  { id: 'star', name: 'Star', category: 'objects' },
-  { id: 'rainbow', name: 'Rainbow', category: 'objects' },
-  { id: 'flower', name: 'Flower', category: 'objects' },
-  { id: 'cloud', name: 'Cloud', category: 'objects' },
-  { id: 'sun', name: 'Sun', category: 'objects' },
-  { id: 'moon', name: 'Moon', category: 'objects' },
+  { id: 'rocket', name: 'Rocket', emoji: '🚀', category: 'objects' },
+  { id: 'star', name: 'Star', emoji: '⭐', category: 'objects' },
+  { id: 'rainbow', name: 'Rainbow', emoji: '🌈', category: 'objects' },
+  { id: 'flower', name: 'Flower', emoji: '🌸', category: 'objects' },
+  { id: 'cloud', name: 'Cloud', emoji: '☁️', category: 'objects' },
+  { id: 'sun', name: 'Sun', emoji: '☀️', category: 'objects' },
+  { id: 'moon', name: 'Moon', emoji: '🌙', category: 'objects' },
   // Characters
-  { id: 'robot', name: 'Robot', category: 'characters' },
-  { id: 'astronaut', name: 'Astronaut', category: 'characters' },
-  { id: 'superhero', name: 'Superhero', category: 'characters' },
-  { id: 'wizard', name: 'Wizard', category: 'characters' },
+  { id: 'robot', name: 'Robot', emoji: '🤖', category: 'characters' },
+  { id: 'astronaut', name: 'Astronaut', emoji: '👨‍🚀', category: 'characters' },
+  { id: 'superhero', name: 'Superhero', emoji: '🦸', category: 'characters' },
+  { id: 'wizard', name: 'Wizard', emoji: '🧙', category: 'characters' },
 ];
 
 // ==========================================

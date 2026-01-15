@@ -50,7 +50,7 @@ export function ParentSidebar() {
       </div>
 
       {/* User Info */}
-      {user && (
+      {user && user.type === 'parent' && (
         <div className="p-4 border-b border-dark-700">
           <p className="text-sm text-gray-400">Signed in as</p>
           <p className="text-white font-medium truncate">
