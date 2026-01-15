@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { MessageCircle, Shield, Users, Mic } from 'lucide-react';
+import Image from 'next/image';
+import { Shield, Users, Mic } from 'lucide-react';
 
 export default function LandingPage() {
   return (
@@ -8,8 +9,15 @@ export default function LandingPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
         <div className="text-center max-w-2xl mx-auto">
           {/* Logo/Icon */}
-          <div className="w-20 h-20 bg-gradient-to-br from-primary-400 to-primary-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary-500/20">
-            <MessageCircle size={40} className="text-white" />
+          <div className="w-20 h-20 mx-auto mb-6">
+            <Image
+              src="/icon.png"
+              alt="Deebop Chat"
+              width={80}
+              height={80}
+              className="rounded-2xl shadow-lg shadow-primary-500/20"
+              priority
+            />
           </div>
 
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">

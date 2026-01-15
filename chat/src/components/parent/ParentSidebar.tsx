@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -9,7 +10,6 @@ import {
   Bell,
   Settings,
   LogOut,
-  MessageCircle,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -39,9 +39,13 @@ export function ParentSidebar() {
       {/* Header */}
       <div className="p-4 border-b border-dark-700">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center">
-            <MessageCircle size={24} className="text-white" />
-          </div>
+          <Image
+            src="/icon.png"
+            alt="Deebop Chat"
+            width={40}
+            height={40}
+            className="rounded-xl"
+          />
           <div>
             <h1 className="text-lg font-bold text-white">Deebop Chat</h1>
             <p className="text-xs text-gray-500">Parent Dashboard</p>
