@@ -6,10 +6,12 @@ import {
   Users,
   MessageCircle,
   UserPlus,
-  Clock,
   AlertCircle,
   ArrowRight,
   Bell,
+  Share2,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/shared';
 import { useAuthStore } from '@/stores/authStore';
@@ -119,6 +121,9 @@ export default function DashboardPage() {
           color="cyan"
         />
       </div>
+
+      {/* Invite Parents Card */}
+      <InviteParentsCard />
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -270,5 +275,122 @@ function ChildQuickCard({ child }: { child: Child }) {
         </div>
       </div>
     </Link>
+  );
+}
+
+function InviteParentsCard() {
+  const [copied, setCopied] = useState(false);
+  const [showShareOptions, setShowShareOptions] = useState(false);
+
+  const inviteUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/parent/register`
+    : '';
+
+  const inviteMessage = `Join me on Deebop Chat - a safe messaging app for kids! Sign up here: ${inviteUrl}`;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join Deebop Chat',
+          text: 'Join me on Deebop Chat - a safe messaging app for kids!',
+          url: inviteUrl,
+        });
+      } catch (err) {
+        // User cancelled or share failed, show manual options
+        if ((err as Error).name !== 'AbortError') {
+          setShowShareOptions(true);
+        }
+      }
+    } else {
+      setShowShareOptions(true);
+    }
+  };
+
+  const shareViaEmail = () => {
+    const subject = encodeURIComponent('Join me on Deebop Chat');
+    const body = encodeURIComponent(inviteMessage);
+    window.open(`mailto:?subject=${subject}&body=${body}`);
+  };
+
+  const shareViaWhatsApp = () => {
+    const text = encodeURIComponent(inviteMessage);
+    window.open(`https://wa.me/?text=${text}`);
+  };
+
+  return (
+    <div className="bg-gradient-to-r from-primary-500/10 to-cyan-500/10 rounded-xl border border-primary-500/20 p-6 mb-8">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-primary-500/20 rounded-xl flex items-center justify-center">
+            <Share2 className="text-primary-400" size={24} />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-white mb-1">Invite Other Parents</h2>
+            <p className="text-sm text-gray-400">
+              Know other parents whose kids would like to chat? Invite them to join!
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopy}
+            className="whitespace-nowrap"
+          >
+            {copied ? (
+              <>
+                <Check size={16} className="mr-1 text-green-400" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy size={16} className="mr-1" />
+                Copy Link
+              </>
+            )}
+          </Button>
+          <Button size="sm" onClick={handleShare}>
+            <Share2 size={16} className="mr-1" />
+            Share
+          </Button>
+        </div>
+      </div>
+
+      {/* Share Options Modal/Dropdown */}
+      {showShareOptions && (
+        <div className="mt-4 pt-4 border-t border-dark-700">
+          <p className="text-sm text-gray-400 mb-3">Share via:</p>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={shareViaEmail}>
+              Email
+            </Button>
+            <Button variant="outline" size="sm" onClick={shareViaWhatsApp}>
+              WhatsApp
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowShareOptions(false)}
+              className="text-gray-400"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
