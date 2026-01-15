@@ -56,11 +56,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Strip codec suffix from content type (e.g., 'audio/webm;codecs=opus' -> 'audio/webm')
+    // Supabase storage doesn't accept MIME types with codec parameters
+    const contentType = file.type.split(';')[0];
+
     // Upload to storage
     const { key, url } = await uploadVoiceMessage(
       user.id,
       file,
-      file.type
+      contentType
     );
 
     return NextResponse.json({
