@@ -84,7 +84,53 @@ export async function POST(
       }
 
       if (action === 'approve') {
-        if (isSenderParent && fr.status === 'pending') {
+        // Check if this is same-parent case (both children belong to this parent)
+        const isSameParent = isSenderParent && isRecipientParent;
+
+        if (isSameParent && fr.status === 'pending') {
+          // Same parent - approve both stages at once
+          await supabase
+            .from('friendships')
+            .update({
+              status: 'approved',
+              approved_at: new Date().toISOString(),
+              approved_by_parent_id: user.id,
+              approved_by_recipient_parent_id: user.id,
+            })
+            .eq('id', id);
+
+          // Create reciprocal friendship
+          await supabase
+            .from('friendships')
+            .upsert({
+              child_id: fr.friend_child_id,
+              friend_child_id: fr.child_id,
+              status: 'approved',
+              approved_at: new Date().toISOString(),
+              approved_by_parent_id: user.id,
+            });
+
+          // Create conversation
+          const childA = fr.child_id < fr.friend_child_id ? fr.child_id : fr.friend_child_id;
+          const childB = fr.child_id < fr.friend_child_id ? fr.friend_child_id : fr.child_id;
+
+          await supabase
+            .from('conversations')
+            .upsert({
+              child_a_id: childA,
+              child_b_id: childB,
+            }, {
+              onConflict: 'child_a_id,child_b_id',
+            });
+
+          // Log action
+          await supabase.from('audit_log').insert({
+            parent_id: user.id,
+            child_id: fr.child_id,
+            action: 'friend_request_approved_by_same_parent',
+            details: { friendshipId: id, senderChildId: fr.child_id, recipientChildId: fr.friend_child_id },
+          });
+        } else if (isSenderParent && fr.status === 'pending') {
           // Stage 1: Sender's parent approves → move to pending_recipient
           await supabase
             .from('friendships')
@@ -102,19 +148,13 @@ export async function POST(
             action: 'friend_request_approved_by_sender_parent',
             details: { friendshipId: id, friendChildId: fr.friend_child_id },
           });
-        } else if (isRecipientParent && (fr.status === 'pending_recipient' || (isSenderParent && fr.status === 'pending'))) {
+        } else if (isRecipientParent && fr.status === 'pending_recipient') {
           // Stage 2: Recipient's parent approves → fully approved
-          // (Also handles case where both children have same parent)
           await supabase
             .from('friendships')
             .update({
               status: 'approved',
               approved_by_recipient_parent_id: user.id,
-              // If sender's parent hasn't approved yet (same parent case), set that too
-              ...(fr.status === 'pending' ? {
-                approved_at: new Date().toISOString(),
-                approved_by_parent_id: user.id,
-              } : {}),
             })
             .eq('id', id);
 
@@ -225,7 +265,29 @@ export async function POST(
       }
 
       if (action === 'approve') {
-        if (isSenderParent && message.status === 'pending') {
+        // Check if this is same-parent case (both children belong to this parent)
+        const isSameParent = isSenderParent && isRecipientParent;
+
+        if (isSameParent && message.status === 'pending') {
+          // Same parent - approve both stages at once
+          await supabase
+            .from('messages')
+            .update({
+              status: 'delivered',
+              approved_by_sender_parent_id: user.id,
+              approved_by_recipient_parent_id: user.id,
+              delivered_at: new Date().toISOString(),
+            })
+            .eq('id', id);
+
+          // Log action
+          await supabase.from('audit_log').insert({
+            parent_id: user.id,
+            child_id: message.sender_child_id,
+            action: 'message_approved_by_same_parent',
+            details: { messageId: id, conversationId: message.conversation_id, recipientChildId: recipientId },
+          });
+        } else if (isSenderParent && message.status === 'pending') {
           // Stage 1: Sender's parent approves
           // Check if recipient's parent also needs to approve
           const { data: recipientChild } = await supabase
@@ -271,19 +333,14 @@ export async function POST(
             action: 'message_approved_by_sender_parent',
             details: { messageId: id, conversationId: message.conversation_id, nextStatus: newStatus },
           });
-        } else if (isRecipientParent && (message.status === 'pending_recipient' || (isSenderParent && message.status === 'pending'))) {
+        } else if (isRecipientParent && message.status === 'pending_recipient') {
           // Stage 2: Recipient's parent approves → fully delivered
-          // (Also handles case where both children have same parent)
           await supabase
             .from('messages')
             .update({
               status: 'delivered',
               approved_by_recipient_parent_id: user.id,
               delivered_at: new Date().toISOString(),
-              // If sender's parent hasn't approved yet (same parent case), set that too
-              ...(message.status === 'pending' ? {
-                approved_by_sender_parent_id: user.id,
-              } : {}),
             })
             .eq('id', id);
 

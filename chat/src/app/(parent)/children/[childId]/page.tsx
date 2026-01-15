@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Trash2, AlertCircle, Pause, Play } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, AlertCircle, Pause, Play, Users, MessageSquare, ChevronRight } from 'lucide-react';
 import { Button, Input } from '@/components/shared';
 import { Avatar, AvatarSelector } from '@/components/child/AvatarSelector';
 import { OversightSelector } from '@/components/parent/OversightSelector';
@@ -178,6 +178,39 @@ export default function ChildSettingsPage() {
       )}
 
       <div className="space-y-6">
+        {/* Monitor Section */}
+        <div className="bg-dark-800 rounded-xl border border-dark-700 p-6">
+          <h2 className="text-lg font-semibold text-white mb-4">Monitor</h2>
+          <div className="space-y-2">
+            <Link
+              href={`/children/${childId}/friends`}
+              className="flex items-center justify-between p-4 rounded-lg bg-dark-700 hover:bg-dark-600 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <Users className="text-primary-400" size={20} />
+                <div>
+                  <p className="text-white font-medium">View Friends</p>
+                  <p className="text-sm text-gray-500">See who {child?.displayName} is friends with</p>
+                </div>
+              </div>
+              <ChevronRight className="text-gray-500" size={20} />
+            </Link>
+            <Link
+              href={`/children/${childId}/conversations`}
+              className="flex items-center justify-between p-4 rounded-lg bg-dark-700 hover:bg-dark-600 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <MessageSquare className="text-primary-400" size={20} />
+                <div>
+                  <p className="text-white font-medium">View Conversations</p>
+                  <p className="text-sm text-gray-500">Monitor {child?.displayName}&apos;s messages</p>
+                </div>
+              </div>
+              <ChevronRight className="text-gray-500" size={20} />
+            </Link>
+          </div>
+        </div>
+
         {/* Profile Section */}
         <div className="bg-dark-800 rounded-xl border border-dark-700 p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Profile</h2>
