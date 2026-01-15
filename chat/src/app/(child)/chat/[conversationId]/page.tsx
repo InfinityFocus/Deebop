@@ -51,7 +51,19 @@ export default function ChatPage() {
 
       if (data.success) {
         setConversation(data.data.conversation);
-        setMessages(data.data.messages);
+        // Merge server messages with local state to preserve optimistic updates
+        setMessages((prevMessages) => {
+          const serverMessages: Message[] = data.data.messages;
+          const serverMessageIds = new Set(serverMessages.map((m: Message) => m.id));
+
+          // Keep optimistic messages that aren't yet on server
+          const optimisticMessages = prevMessages.filter(
+            (m) => !serverMessageIds.has(m.id)
+          );
+
+          // Combine: server messages take precedence, then optimistic ones at the end
+          return [...serverMessages, ...optimisticMessages];
+        });
       } else {
         setError(data.error || 'Failed to load chat');
       }

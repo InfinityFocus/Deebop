@@ -53,16 +53,25 @@ export async function GET(
       .eq('id', friendId)
       .single();
 
-    // Get messages
+    // Get messages - show all statuses for sender, but only delivered/approved for recipient
     const { data: messages } = await supabase
       .from('messages')
       .select('id, type, content, media_url, media_duration_seconds, status, created_at, sender_child_id')
       .eq('conversation_id', id)
-      .neq('status', 'denied') // Don't show denied messages to recipient
       .order('created_at', { ascending: true });
 
+    // Filter messages: sender sees all their messages, recipient only sees delivered/approved
+    const filteredMessages = (messages || []).filter((m) => {
+      if (m.sender_child_id === user.id) {
+        // Sender sees all their own messages (including pending)
+        return true;
+      }
+      // Recipient only sees delivered/approved messages
+      return m.status === 'delivered' || m.status === 'approved';
+    });
+
     // Transform messages
-    const transformedMessages = (messages || []).map((m) => ({
+    const transformedMessages = filteredMessages.map((m) => ({
       id: m.id,
       type: m.type as 'text' | 'emoji' | 'voice',
       content: m.content,
