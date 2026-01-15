@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Send, Smile } from 'lucide-react';
 import { CHILD_SAFE_EMOJIS } from '@/types';
 
@@ -12,7 +12,6 @@ interface Props {
 export function MessageInput({ onSend, disabled }: Props) {
   const [message, setMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,23 +22,8 @@ export function MessageInput({ onSend, disabled }: Props) {
   };
 
   const handleEmojiClick = (emoji: string) => {
-    // Insert emoji at cursor position or at end
-    const input = inputRef.current;
-    if (input) {
-      const start = input.selectionStart || message.length;
-      const end = input.selectionEnd || message.length;
-      const newMessage = message.slice(0, start) + emoji + message.slice(end);
-      setMessage(newMessage);
-
-      // Focus back on input and set cursor after emoji
-      setTimeout(() => {
-        input.focus();
-        const newCursorPos = start + emoji.length;
-        input.setSelectionRange(newCursorPos, newCursorPos);
-      }, 0);
-    } else {
-      setMessage(message + emoji);
-    }
+    // Insert emoji at the end of the message (picker stays open for multiple emojis)
+    setMessage((prev) => prev + emoji);
   };
 
   return (
@@ -83,7 +67,6 @@ export function MessageInput({ onSend, disabled }: Props) {
         </button>
 
         <input
-          ref={inputRef}
           type="text"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
