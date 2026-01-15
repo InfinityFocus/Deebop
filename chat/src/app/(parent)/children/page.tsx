@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { UserPlus, Settings, MessageCircle, Users } from 'lucide-react';
+import { UserPlus, Settings, Users } from 'lucide-react';
 import { Button } from '@/components/shared';
 import { Avatar } from '@/components/child/AvatarSelector';
 import type { Child } from '@/types';
@@ -111,20 +111,12 @@ function ChildCard({ child }: { child: Child }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link href={`/children/${child.id}/messages`}>
-            <Button variant="outline" size="sm">
-              <MessageCircle size={16} className="mr-1" />
-              Messages
-            </Button>
-          </Link>
-          <Link href={`/children/${child.id}`}>
-            <Button variant="outline" size="sm">
-              <Settings size={16} className="mr-1" />
-              Settings
-            </Button>
-          </Link>
-        </div>
+        <Link href={`/children/${child.id}`}>
+          <Button variant="outline" size="sm">
+            <Settings size={16} className="mr-1" />
+            Settings
+          </Button>
+        </Link>
       </div>
     </div>
   );
