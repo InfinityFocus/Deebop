@@ -16,7 +16,7 @@ export async function GET() {
 
     // Get all children IDs for this parent
     const { data: children } = await supabase
-      .from('chat.children')
+      .from('children')
       .select('id, display_name, avatar_id')
       .eq('parent_id', user.id);
 
@@ -36,7 +36,7 @@ export async function GET() {
 
     // Get pending friend requests where child is the requester
     const { data: friendRequests } = await supabase
-      .from('chat.friendships')
+      .from('friendships')
       .select('id, child_id, friend_child_id, requested_at')
       .in('child_id', childIds)
       .eq('status', 'pending');
@@ -45,7 +45,7 @@ export async function GET() {
     const friendChildIds = (friendRequests || []).map((fr) => fr.friend_child_id);
     const { data: friendDetails } = friendChildIds.length > 0
       ? await supabase
-          .from('chat.children')
+          .from('children')
           .select('id, display_name, avatar_id')
           .in('id', friendChildIds)
       : { data: [] };
@@ -53,7 +53,7 @@ export async function GET() {
 
     // Get pending messages from children
     const { data: pendingMessages } = await supabase
-      .from('chat.messages')
+      .from('messages')
       .select('id, conversation_id, sender_child_id, type, content, created_at')
       .in('sender_child_id', childIds)
       .eq('status', 'pending')
@@ -64,7 +64,7 @@ export async function GET() {
     const conversationIds = [...new Set((pendingMessages || []).map((m) => m.conversation_id))];
     const { data: conversations } = conversationIds.length > 0
       ? await supabase
-          .from('chat.conversations')
+          .from('conversations')
           .select('id, child_a_id, child_b_id')
           .in('id', conversationIds)
       : { data: [] };
@@ -102,7 +102,7 @@ export async function GET() {
     let recipientMap = new Map<string, { display_name: string; avatar_id: string }>();
     if (messageRecipientIds.size > 0) {
       const { data: recipients } = await supabase
-        .from('chat.children')
+        .from('children')
         .select('id, display_name, avatar_id')
         .in('id', Array.from(messageRecipientIds));
 

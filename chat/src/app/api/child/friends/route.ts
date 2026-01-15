@@ -16,7 +16,7 @@ export async function GET() {
 
     // Get friendships where current child is either child_id or friend_child_id
     const { data: friendships } = await supabase
-      .from('chat.friendships')
+      .from('friendships')
       .select('id, child_id, friend_child_id, status')
       .eq('child_id', user.id)
       .in('status', ['approved', 'pending']);
@@ -25,7 +25,7 @@ export async function GET() {
     const friendChildIds = (friendships || []).map((f) => f.friend_child_id);
     const { data: friendDetails } = friendChildIds.length > 0
       ? await supabase
-          .from('chat.children')
+          .from('children')
           .select('id, username, display_name, avatar_id')
           .in('id', friendChildIds)
       : { data: [] };
@@ -41,7 +41,7 @@ export async function GET() {
 
     if (approvedFriendIds.length > 0) {
       const { data: conversations } = await supabase
-        .from('chat.conversations')
+        .from('conversations')
         .select('id, child_a_id, child_b_id')
         .or(`child_a_id.eq.${user.id},child_b_id.eq.${user.id}`);
 
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     // Check if friend exists
     const { data: friend } = await supabase
-      .from('chat.children')
+      .from('children')
       .select('id')
       .eq('id', friendChildId)
       .single();
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
 
     // Check if already friends or pending
     const { data: existing } = await supabase
-      .from('chat.friendships')
+      .from('friendships')
       .select('id, status')
       .eq('child_id', user.id)
       .eq('friend_child_id', friendChildId)
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
 
     // Create friend request
     const { data: friendship, error } = await supabase
-      .from('chat.friendships')
+      .from('friendships')
       .insert({
         child_id: user.id,
         friend_child_id: friendChildId,

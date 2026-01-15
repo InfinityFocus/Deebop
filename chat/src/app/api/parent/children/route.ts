@@ -15,7 +15,7 @@ export async function GET() {
     }
 
     const { data: children, error } = await supabase
-      .from('chat.children')
+      .from('children')
       .select('*')
       .eq('parent_id', user.id)
       .order('created_at', { ascending: false });
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     // Check if username is taken
     const { data: existing } = await supabase
-      .from('chat.children')
+      .from('children')
       .select('id')
       .eq('username', username)
       .single();
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
 
     // Create child
     const { data: child, error } = await supabase
-      .from('chat.children')
+      .from('children')
       .insert({
         parent_id: user.id,
         username,
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log action
-    await supabase.from('chat.audit_log').insert({
+    await supabase.from('audit_log').insert({
       parent_id: user.id,
       child_id: child.id,
       action: 'child_created',

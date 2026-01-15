@@ -20,7 +20,7 @@ export async function GET(
     const { id } = await params;
 
     const { data: child, error } = await supabase
-      .from('chat.children')
+      .from('children')
       .select('*')
       .eq('id', id)
       .eq('parent_id', user.id)
@@ -78,7 +78,7 @@ export async function PATCH(
 
     // Verify ownership
     const { data: existing } = await supabase
-      .from('chat.children')
+      .from('children')
       .select('id')
       .eq('id', id)
       .eq('parent_id', user.id)
@@ -103,7 +103,7 @@ export async function PATCH(
     if (body.quietHoursEnd !== undefined) updates.quiet_hours_end = body.quietHoursEnd;
 
     const { data: child, error } = await supabase
-      .from('chat.children')
+      .from('children')
       .update(updates)
       .eq('id', id)
       .select()
@@ -118,7 +118,7 @@ export async function PATCH(
     }
 
     // Log action
-    await supabase.from('chat.audit_log').insert({
+    await supabase.from('audit_log').insert({
       parent_id: user.id,
       child_id: id,
       action: 'child_updated',
@@ -169,7 +169,7 @@ export async function DELETE(
 
     // Verify ownership
     const { data: existing } = await supabase
-      .from('chat.children')
+      .from('children')
       .select('id, username, display_name')
       .eq('id', id)
       .eq('parent_id', user.id)
@@ -183,7 +183,7 @@ export async function DELETE(
     }
 
     // Log action before deletion
-    await supabase.from('chat.audit_log').insert({
+    await supabase.from('audit_log').insert({
       parent_id: user.id,
       child_id: id,
       action: 'child_deleted',
@@ -192,7 +192,7 @@ export async function DELETE(
 
     // Delete child (cascades to messages, friendships, etc.)
     const { error } = await supabase
-      .from('chat.children')
+      .from('children')
       .delete()
       .eq('id', id);
 

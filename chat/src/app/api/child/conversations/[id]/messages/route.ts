@@ -46,7 +46,7 @@ export async function POST(
 
     // Get conversation and verify access
     const { data: conversation } = await supabase
-      .from('chat.conversations')
+      .from('conversations')
       .select('id, child_a_id, child_b_id')
       .eq('id', id)
       .single();
@@ -68,7 +68,7 @@ export async function POST(
 
     // Check if messaging is paused for this child
     const { data: child } = await supabase
-      .from('chat.children')
+      .from('children')
       .select('messaging_paused, oversight_mode, parent_id')
       .eq('id', user.id)
       .single();
@@ -95,7 +95,7 @@ export async function POST(
           : conversation.child_a_id;
 
       const { data: existingMessages } = await supabase
-        .from('chat.messages')
+        .from('messages')
         .select('id')
         .eq('conversation_id', id)
         .eq('sender_child_id', user.id)
@@ -111,7 +111,7 @@ export async function POST(
 
     // Create message
     const { data: message, error } = await supabase
-      .from('chat.messages')
+      .from('messages')
       .insert({
         conversation_id: id,
         sender_child_id: user.id,

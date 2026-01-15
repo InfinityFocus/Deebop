@@ -16,7 +16,7 @@ export async function GET() {
 
     // Get all conversations for this child
     const { data: conversations } = await supabase
-      .from('chat.conversations')
+      .from('conversations')
       .select(`
         id,
         child_a_id,
@@ -35,7 +35,7 @@ export async function GET() {
     );
 
     const { data: friends } = await supabase
-      .from('chat.children')
+      .from('children')
       .select('id, username, display_name, avatar_id')
       .in('id', friendIds);
 
@@ -44,7 +44,7 @@ export async function GET() {
     // Get last message for each conversation
     const conversationIds = conversations.map((c) => c.id);
     const { data: lastMessages } = await supabase
-      .from('chat.messages')
+      .from('messages')
       .select('conversation_id, type, content, status, created_at, sender_child_id')
       .in('conversation_id', conversationIds)
       .order('created_at', { ascending: false });

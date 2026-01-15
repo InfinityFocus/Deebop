@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     // Find user by username
     const { data: child } = await supabase
-      .from('chat.children')
+      .from('children')
       .select('id, username, display_name, avatar_id')
       .eq('username', username.toLowerCase())
       .single();
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     // Check if already friends or has pending request
     const { data: existing } = await supabase
-      .from('chat.friendships')
+      .from('friendships')
       .select('id, status')
       .eq('child_id', user.id)
       .eq('friend_child_id', child.id)

@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     // Get current password hash
     const { data: parent } = await supabase
-      .from('chat.parents')
+      .from('parents')
       .select('password_hash')
       .eq('id', user.id)
       .single();
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     // Update password
     const { error } = await supabase
-      .from('chat.parents')
+      .from('parents')
       .update({ password_hash: newHash })
       .eq('id', user.id);
 

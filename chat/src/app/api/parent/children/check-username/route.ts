@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     // Check if username exists
     const { data: existing } = await supabase
-      .from('chat.children')
+      .from('children')
       .select('id')
       .eq('username', username.toLowerCase())
       .single();

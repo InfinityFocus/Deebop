@@ -18,7 +18,7 @@ export async function PATCH(request: NextRequest) {
     const { displayName } = body;
 
     const { error } = await supabase
-      .from('chat.parents')
+      .from('parents')
       .update({ display_name: displayName || null })
       .eq('id', user.id);
 

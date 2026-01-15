@@ -21,7 +21,7 @@ export async function GET(
 
     // Get conversation and verify access
     const { data: conversation } = await supabase
-      .from('chat.conversations')
+      .from('conversations')
       .select('id, child_a_id, child_b_id')
       .eq('id', id)
       .single();
@@ -48,14 +48,14 @@ export async function GET(
         : conversation.child_a_id;
 
     const { data: friend } = await supabase
-      .from('chat.children')
+      .from('children')
       .select('id, username, display_name, avatar_id')
       .eq('id', friendId)
       .single();
 
     // Get messages
     const { data: messages } = await supabase
-      .from('chat.messages')
+      .from('messages')
       .select('id, type, content, media_url, media_duration_seconds, status, created_at, sender_child_id')
       .eq('conversation_id', id)
       .neq('status', 'denied') // Don't show denied messages to recipient

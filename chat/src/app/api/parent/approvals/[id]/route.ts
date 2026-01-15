@@ -37,7 +37,7 @@ export async function POST(
 
     // Get all children IDs for this parent
     const { data: children } = await supabase
-      .from('chat.children')
+      .from('children')
       .select('id')
       .eq('parent_id', user.id);
 
@@ -46,7 +46,7 @@ export async function POST(
     if (type === 'friend_request') {
       // Verify ownership of friend request
       const { data: fr } = await supabase
-        .from('chat.friendships')
+        .from('friendships')
         .select('id, child_id, friend_child_id')
         .eq('id', id)
         .single();
@@ -61,7 +61,7 @@ export async function POST(
       if (action === 'approve') {
         // Update friendship status
         await supabase
-          .from('chat.friendships')
+          .from('friendships')
           .update({
             status: 'approved',
             approved_at: new Date().toISOString(),
@@ -71,7 +71,7 @@ export async function POST(
 
         // Create reciprocal friendship
         await supabase
-          .from('chat.friendships')
+          .from('friendships')
           .upsert({
             child_id: fr.friend_child_id,
             friend_child_id: fr.child_id,
@@ -85,7 +85,7 @@ export async function POST(
         const childB = fr.child_id < fr.friend_child_id ? fr.friend_child_id : fr.child_id;
 
         await supabase
-          .from('chat.conversations')
+          .from('conversations')
           .upsert({
             child_a_id: childA,
             child_b_id: childB,
@@ -95,13 +95,13 @@ export async function POST(
       } else {
         // Deny - block the request
         await supabase
-          .from('chat.friendships')
+          .from('friendships')
           .update({ status: 'blocked' })
           .eq('id', id);
       }
 
       // Log action
-      await supabase.from('chat.audit_log').insert({
+      await supabase.from('audit_log').insert({
         parent_id: user.id,
         child_id: fr.child_id,
         action: action === 'approve' ? 'friend_request_approved' : 'friend_request_denied',
@@ -110,7 +110,7 @@ export async function POST(
     } else if (type === 'message') {
       // Verify ownership of message
       const { data: message } = await supabase
-        .from('chat.messages')
+        .from('messages')
         .select('id, sender_child_id, conversation_id')
         .eq('id', id)
         .single();
@@ -125,7 +125,7 @@ export async function POST(
       // Update message status
       const newStatus = action === 'approve' ? 'delivered' : 'denied';
       await supabase
-        .from('chat.messages')
+        .from('messages')
         .update({
           status: newStatus,
           delivered_at: action === 'approve' ? new Date().toISOString() : null,
@@ -133,14 +133,14 @@ export async function POST(
         .eq('id', id);
 
       // Log approval
-      await supabase.from('chat.approvals').insert({
+      await supabase.from('approvals').insert({
         message_id: id,
         parent_id: user.id,
         decision: action === 'approve' ? 'approved' : 'denied',
       });
 
       // Log action
-      await supabase.from('chat.audit_log').insert({
+      await supabase.from('audit_log').insert({
         parent_id: user.id,
         child_id: message.sender_child_id,
         action: action === 'approve' ? 'message_approved' : 'message_denied',
