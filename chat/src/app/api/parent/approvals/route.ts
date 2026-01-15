@@ -37,40 +37,43 @@ export async function GET() {
     // Get pending friend requests where child is the requester
     const { data: friendRequests } = await supabase
       .from('chat.friendships')
-      .select(`
-        id,
-        child_id,
-        friend_child_id,
-        requested_at,
-        friend:chat.children!friend_child_id(id, display_name, avatar_id)
-      `)
+      .select('id, child_id, friend_child_id, requested_at')
       .in('child_id', childIds)
       .eq('status', 'pending');
+
+    // Get friend details separately to avoid Supabase type inference issues
+    const friendChildIds = (friendRequests || []).map((fr) => fr.friend_child_id);
+    const { data: friendDetails } = friendChildIds.length > 0
+      ? await supabase
+          .from('chat.children')
+          .select('id, display_name, avatar_id')
+          .in('id', friendChildIds)
+      : { data: [] };
+    const friendMap = new Map((friendDetails || []).map((f) => [f.id, f]));
 
     // Get pending messages from children
     const { data: pendingMessages } = await supabase
       .from('chat.messages')
-      .select(`
-        id,
-        conversation_id,
-        sender_child_id,
-        type,
-        content,
-        created_at,
-        conversation:chat.conversations!inner(
-          child_a_id,
-          child_b_id
-        )
-      `)
+      .select('id, conversation_id, sender_child_id, type, content, created_at')
       .in('sender_child_id', childIds)
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
       .limit(50);
 
+    // Get conversation details separately
+    const conversationIds = [...new Set((pendingMessages || []).map((m) => m.conversation_id))];
+    const { data: conversations } = conversationIds.length > 0
+      ? await supabase
+          .from('chat.conversations')
+          .select('id, child_a_id, child_b_id')
+          .in('id', conversationIds)
+      : { data: [] };
+    const conversationMap = new Map((conversations || []).map((c) => [c.id, c]));
+
     // Transform friend requests
     const transformedFriendRequests = (friendRequests || []).map((fr) => {
       const child = childMap.get(fr.child_id);
-      const friend = fr.friend as { id: string; display_name: string; avatar_id: string } | null;
+      const friend = friendMap.get(fr.friend_child_id);
 
       return {
         id: fr.id,
@@ -87,11 +90,13 @@ export async function GET() {
     // Get recipient names for messages
     const messageRecipientIds = new Set<string>();
     (pendingMessages || []).forEach((m) => {
-      const conv = m.conversation as { child_a_id: string; child_b_id: string };
-      const recipientId = conv.child_a_id === m.sender_child_id
-        ? conv.child_b_id
-        : conv.child_a_id;
-      messageRecipientIds.add(recipientId);
+      const conv = conversationMap.get(m.conversation_id);
+      if (conv) {
+        const recipientId = conv.child_a_id === m.sender_child_id
+          ? conv.child_b_id
+          : conv.child_a_id;
+        messageRecipientIds.add(recipientId);
+      }
     });
 
     let recipientMap = new Map<string, { display_name: string; avatar_id: string }>();
@@ -107,11 +112,11 @@ export async function GET() {
     // Transform messages
     const transformedMessages = (pendingMessages || []).map((m) => {
       const sender = childMap.get(m.sender_child_id);
-      const conv = m.conversation as { child_a_id: string; child_b_id: string };
-      const recipientId = conv.child_a_id === m.sender_child_id
-        ? conv.child_b_id
-        : conv.child_a_id;
-      const recipient = recipientMap.get(recipientId);
+      const conv = conversationMap.get(m.conversation_id);
+      const recipientId = conv
+        ? (conv.child_a_id === m.sender_child_id ? conv.child_b_id : conv.child_a_id)
+        : null;
+      const recipient = recipientId ? recipientMap.get(recipientId) : null;
 
       return {
         id: m.id,
