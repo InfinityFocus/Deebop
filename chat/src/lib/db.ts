@@ -676,3 +676,364 @@ export async function getAuditLog(parentId: string, limit = 50, cursor?: string)
 
   return data || [];
 }
+
+// ==========================================
+// Admin Queries
+// ==========================================
+
+export async function getAdminStats() {
+  const client = getServiceClient();
+
+  // Get all counts in parallel
+  const [
+    parentsResult,
+    childrenResult,
+    conversationsResult,
+    pendingMessagesResult,
+    pendingFriendshipsResult,
+    messagesTodayResult,
+    deniedMessagesResult,
+    totalMessagesResult,
+  ] = await Promise.all([
+    client.schema('chat').from('parents').select('id', { count: 'exact', head: true }),
+    client.schema('chat').from('children').select('id', { count: 'exact', head: true }),
+    client.schema('chat').from('conversations').select('id', { count: 'exact', head: true }),
+    client.schema('chat').from('messages').select('id', { count: 'exact', head: true }).in('status', ['pending', 'pending_recipient']),
+    client.schema('chat').from('friendships').select('id', { count: 'exact', head: true }).in('status', ['pending', 'pending_recipient']),
+    client.schema('chat').from('messages').select('id', { count: 'exact', head: true }).gte('created_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
+    client.schema('chat').from('messages').select('id', { count: 'exact', head: true }).eq('status', 'denied'),
+    client.schema('chat').from('messages').select('id', { count: 'exact', head: true }),
+  ]);
+
+  const totalParents = parentsResult.count || 0;
+  const totalChildren = childrenResult.count || 0;
+  const totalConversations = conversationsResult.count || 0;
+  const pendingMessages = pendingMessagesResult.count || 0;
+  const pendingFriendships = pendingFriendshipsResult.count || 0;
+  const messagesToday = messagesTodayResult.count || 0;
+  const deniedMessages = deniedMessagesResult.count || 0;
+  const totalMessages = totalMessagesResult.count || 0;
+
+  const denialRate = totalMessages > 0 ? Math.round((deniedMessages / totalMessages) * 100) : 0;
+
+  return {
+    totalParents,
+    totalChildren,
+    totalConversations,
+    pendingApprovals: pendingMessages + pendingFriendships,
+    pendingMessages,
+    pendingFriendships,
+    messagesToday,
+    denialRate,
+  };
+}
+
+export async function getAllParents(
+  search?: string,
+  page = 1,
+  limit = 20
+) {
+  const client = getServiceClient();
+  const offset = (page - 1) * limit;
+
+  let query = client
+    .schema('chat')
+    .from('parents')
+    .select('*', { count: 'exact' });
+
+  if (search) {
+    query = query.or(`email.ilike.%${search}%,display_name.ilike.%${search}%`);
+  }
+
+  const { data, error, count } = await query
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return {
+    parents: data || [],
+    total: count || 0,
+    page,
+    totalPages: Math.ceil((count || 0) / limit),
+  };
+}
+
+export async function getAllChildren(
+  filters: {
+    search?: string;
+    ageBand?: string;
+    oversightMode?: string;
+    messagingPaused?: boolean;
+  },
+  page = 1,
+  limit = 20
+) {
+  const client = getServiceClient();
+  const offset = (page - 1) * limit;
+
+  let query = client
+    .schema('chat')
+    .from('children')
+    .select(`
+      *,
+      parent:parent_id(id, email, display_name)
+    `, { count: 'exact' });
+
+  if (filters.search) {
+    query = query.or(`username.ilike.%${filters.search}%,display_name.ilike.%${filters.search}%`);
+  }
+  if (filters.ageBand) {
+    query = query.eq('age_band', filters.ageBand);
+  }
+  if (filters.oversightMode) {
+    query = query.eq('oversight_mode', filters.oversightMode);
+  }
+  if (filters.messagingPaused !== undefined) {
+    query = query.eq('messaging_paused', filters.messagingPaused);
+  }
+
+  const { data, error, count } = await query
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return {
+    children: data || [],
+    total: count || 0,
+    page,
+    totalPages: Math.ceil((count || 0) / limit),
+  };
+}
+
+export async function getAllConversations(
+  filters: {
+    hasPending?: boolean;
+  },
+  page = 1,
+  limit = 20
+) {
+  const client = getServiceClient();
+  const offset = (page - 1) * limit;
+
+  const { data, error, count } = await client
+    .schema('chat')
+    .from('conversations')
+    .select(`
+      *,
+      child_a:child_a_id(id, username, display_name, avatar_id),
+      child_b:child_b_id(id, username, display_name, avatar_id)
+    `, { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  // Get message counts for each conversation
+  const conversationsWithCounts = await Promise.all(
+    (data || []).map(async (conv) => {
+      const { count: messageCount } = await client
+        .schema('chat')
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('conversation_id', conv.id);
+
+      const { count: pendingCount } = await client
+        .schema('chat')
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('conversation_id', conv.id)
+        .in('status', ['pending', 'pending_recipient']);
+
+      // Get last message
+      const { data: lastMessages } = await client
+        .schema('chat')
+        .from('messages')
+        .select('content, type, created_at, status')
+        .eq('conversation_id', conv.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      return {
+        ...conv,
+        messageCount: messageCount || 0,
+        pendingCount: pendingCount || 0,
+        lastMessage: lastMessages?.[0] || null,
+      };
+    })
+  );
+
+  // Filter by pending if needed
+  let filteredConversations = conversationsWithCounts;
+  if (filters.hasPending) {
+    filteredConversations = conversationsWithCounts.filter(c => c.pendingCount > 0);
+  }
+
+  return {
+    conversations: filteredConversations,
+    total: count || 0,
+    page,
+    totalPages: Math.ceil((count || 0) / limit),
+  };
+}
+
+export async function getConversationById(conversationId: string) {
+  const client = getServiceClient();
+
+  const { data: conversation, error: convError } = await client
+    .schema('chat')
+    .from('conversations')
+    .select(`
+      *,
+      child_a:child_a_id(id, username, display_name, avatar_id, parent_id),
+      child_b:child_b_id(id, username, display_name, avatar_id, parent_id)
+    `)
+    .eq('id', conversationId)
+    .single();
+
+  if (convError) {
+    throw new Error(`Database error: ${convError.message}`);
+  }
+
+  // Get all messages (including all statuses for admin)
+  const { data: messages, error: msgError } = await client
+    .schema('chat')
+    .from('messages')
+    .select(`
+      *,
+      sender:sender_child_id(id, username, display_name, avatar_id)
+    `)
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true });
+
+  if (msgError) {
+    throw new Error(`Database error: ${msgError.message}`);
+  }
+
+  return {
+    conversation,
+    messages: messages || [],
+  };
+}
+
+export async function searchMessages(
+  filters: {
+    search?: string;
+    status?: string;
+    type?: string;
+    fromDate?: string;
+    toDate?: string;
+  },
+  page = 1,
+  limit = 20
+) {
+  const client = getServiceClient();
+  const offset = (page - 1) * limit;
+
+  let query = client
+    .schema('chat')
+    .from('messages')
+    .select(`
+      *,
+      sender:sender_child_id(id, username, display_name, avatar_id),
+      conversation:conversation_id(
+        id,
+        child_a:child_a_id(id, username, display_name),
+        child_b:child_b_id(id, username, display_name)
+      )
+    `, { count: 'exact' });
+
+  if (filters.search) {
+    query = query.ilike('content', `%${filters.search}%`);
+  }
+  if (filters.status) {
+    query = query.eq('status', filters.status);
+  }
+  if (filters.type) {
+    query = query.eq('type', filters.type);
+  }
+  if (filters.fromDate) {
+    query = query.gte('created_at', filters.fromDate);
+  }
+  if (filters.toDate) {
+    query = query.lte('created_at', filters.toDate);
+  }
+
+  const { data, error, count } = await query
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return {
+    messages: data || [],
+    total: count || 0,
+    page,
+    totalPages: Math.ceil((count || 0) / limit),
+  };
+}
+
+export async function getAllAuditLogs(
+  filters: {
+    action?: string;
+    parentEmail?: string;
+    fromDate?: string;
+    toDate?: string;
+  },
+  page = 1,
+  limit = 50
+) {
+  const client = getServiceClient();
+  const offset = (page - 1) * limit;
+
+  let query = client
+    .schema('chat')
+    .from('audit_log')
+    .select(`
+      *,
+      parent:parent_id(id, email, display_name),
+      child:child_id(id, username, display_name)
+    `, { count: 'exact' });
+
+  if (filters.action) {
+    query = query.eq('action', filters.action);
+  }
+  if (filters.fromDate) {
+    query = query.gte('created_at', filters.fromDate);
+  }
+  if (filters.toDate) {
+    query = query.lte('created_at', filters.toDate);
+  }
+
+  const { data, error, count } = await query
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  // Filter by parent email if needed (post-filter since it's a joined field)
+  let filteredData = data || [];
+  if (filters.parentEmail) {
+    filteredData = filteredData.filter((log: { parent?: { email?: string } }) =>
+      log.parent?.email?.toLowerCase().includes(filters.parentEmail!.toLowerCase())
+    );
+  }
+
+  return {
+    logs: filteredData,
+    total: count || 0,
+    page,
+    totalPages: Math.ceil((count || 0) / limit),
+  };
+}
