@@ -15,13 +15,13 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || undefined;
     const status = searchParams.get('status') || undefined;
     const type = searchParams.get('type') || undefined;
-    const from = searchParams.get('from') || undefined;
-    const to = searchParams.get('to') || undefined;
+    const fromDate = searchParams.get('from') || undefined;
+    const toDate = searchParams.get('to') || undefined;
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
 
     const result = await searchMessages(
-      { search, status, type, from, to },
+      { search, status, type, fromDate, toDate },
       page,
       limit
     );
