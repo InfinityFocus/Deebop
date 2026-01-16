@@ -14,8 +14,8 @@ interface ChildSummary {
 
 interface Conversation {
   id: string;
-  child_a: ChildSummary;
-  child_b: ChildSummary;
+  child_a: ChildSummary | null;
+  child_b: ChildSummary | null;
   created_at: string;
   messageCount: number;
   pendingCount: number;
@@ -142,15 +142,15 @@ export default function AdminConversations() {
             >
               {/* Avatars */}
               <div className="flex -space-x-2">
-                <Avatar avatarId={conversation.child_a.avatar_id} size="md" />
-                <Avatar avatarId={conversation.child_b.avatar_id} size="md" />
+                <Avatar avatarId={conversation.child_a?.avatar_id || 'bear'} size="md" />
+                <Avatar avatarId={conversation.child_b?.avatar_id || 'bear'} size="md" />
               </div>
 
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="text-white font-medium truncate">
-                    {conversation.child_a.display_name} & {conversation.child_b.display_name}
+                    {conversation.child_a?.display_name || 'Unknown'} & {conversation.child_b?.display_name || 'Unknown'}
                   </h3>
                   {conversation.pendingCount > 0 && (
                     <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full">
@@ -159,7 +159,7 @@ export default function AdminConversations() {
                   )}
                 </div>
                 <p className="text-sm text-gray-500 truncate">
-                  @{conversation.child_a.username} · @{conversation.child_b.username}
+                  @{conversation.child_a?.username || '?'} · @{conversation.child_b?.username || '?'}
                 </p>
                 <p className="text-sm text-gray-400 truncate mt-1">
                   {getMessagePreview(conversation)}

@@ -15,20 +15,25 @@ interface ChildSummary {
 
 interface Message {
   id: string;
-  sender_id: string;
+  sender_child_id: string;
   type: string;
   content: string | null;
   voice_url: string | null;
   status: string;
   created_at: string;
   reviewed_at: string | null;
+  sender: ChildSummary | null;
+}
+
+interface Conversation {
+  id: string;
+  child_a: ChildSummary | null;
+  child_b: ChildSummary | null;
+  created_at: string;
 }
 
 interface ConversationDetail {
-  id: string;
-  child_a: ChildSummary;
-  child_b: ChildSummary;
-  created_at: string;
+  conversation: Conversation;
   messages: Message[];
 }
 
@@ -94,12 +99,9 @@ export default function AdminConversationDetail() {
     return colors[status] || 'bg-gray-500/20 text-gray-400';
   };
 
-  const getSenderInfo = (senderId: string) => {
-    if (!data) return null;
-    if (senderId === data.child_a.id) return data.child_a;
-    if (senderId === data.child_b.id) return data.child_b;
-    return null;
-  };
+  const conv = data?.conversation;
+  const childA = conv?.child_a;
+  const childB = conv?.child_b;
 
   if (isLoading) {
     return (
@@ -126,7 +128,7 @@ export default function AdminConversationDetail() {
     );
   }
 
-  if (!data) {
+  if (!data || !conv) {
     return (
       <div className="space-y-6">
         <button
@@ -153,15 +155,15 @@ export default function AdminConversationDetail() {
         </Link>
         <div className="flex items-center gap-3">
           <div className="flex -space-x-2">
-            <Avatar avatarId={data.child_a.avatar_id} size="md" />
-            <Avatar avatarId={data.child_b.avatar_id} size="md" />
+            <Avatar avatarId={childA?.avatar_id || 'bear'} size="md" />
+            <Avatar avatarId={childB?.avatar_id || 'bear'} size="md" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">
-              {data.child_a.display_name} & {data.child_b.display_name}
+              {childA?.display_name || 'Unknown'} & {childB?.display_name || 'Unknown'}
             </h1>
             <p className="text-sm text-gray-500">
-              @{data.child_a.username} · @{data.child_b.username}
+              @{childA?.username || '?'} · @{childB?.username || '?'}
             </p>
           </div>
         </div>
@@ -170,7 +172,7 @@ export default function AdminConversationDetail() {
       {/* Stats */}
       <div className="flex items-center gap-6 text-sm text-gray-400">
         <span>{data.messages.length} messages</span>
-        <span>Started {formatTime(data.created_at)}</span>
+        <span>Started {formatTime(conv.created_at)}</span>
       </div>
 
       {/* Messages */}
@@ -179,8 +181,8 @@ export default function AdminConversationDetail() {
           <div className="text-center py-12 text-gray-500">No messages in this conversation</div>
         ) : (
           data.messages.map((message) => {
-            const sender = getSenderInfo(message.sender_id);
-            const isChildA = message.sender_id === data.child_a.id;
+            const sender = message.sender;
+            const isChildA = message.sender_child_id === childA?.id;
 
             return (
               <div
@@ -195,7 +197,7 @@ export default function AdminConversationDetail() {
                 {/* Message */}
                 <div className={`flex-1 max-w-[70%] ${isChildA ? '' : 'flex flex-col items-end'}`}>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm text-gray-400">{sender?.display_name}</span>
+                    <span className="text-sm text-gray-400">{sender?.display_name || 'Unknown'}</span>
                     <span className="text-xs text-gray-600">{formatTime(message.created_at)}</span>
                   </div>
 
