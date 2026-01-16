@@ -17,12 +17,20 @@ import {
 interface AuditLog {
   id: string;
   parent_id: string;
-  parent_email: string;
   action: string;
   child_id: string | null;
-  child_username: string | null;
   details: Record<string, unknown> | null;
   created_at: string;
+  parent: {
+    id: string;
+    email: string;
+    display_name: string | null;
+  } | null;
+  child: {
+    id: string;
+    username: string;
+    display_name: string;
+  } | null;
 }
 
 interface PaginatedResponse {
@@ -240,7 +248,7 @@ export default function AdminAudit() {
                   <td className="p-4 text-sm text-gray-400 whitespace-nowrap">
                     {formatTime(log.created_at)}
                   </td>
-                  <td className="p-4 text-sm text-gray-300">{log.parent_email}</td>
+                  <td className="p-4 text-sm text-gray-300">{log.parent?.email || '—'}</td>
                   <td className="p-4">
                     <span
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs ${getActionColor(
@@ -252,7 +260,7 @@ export default function AdminAudit() {
                     </span>
                   </td>
                   <td className="p-4 text-sm text-gray-400">
-                    {log.child_username ? `@${log.child_username}` : '—'}
+                    {log.child?.username ? `@${log.child.username}` : '—'}
                   </td>
                   <td className="p-4 text-xs">{formatDetails(log.details)}</td>
                 </tr>
