@@ -44,6 +44,7 @@ export async function GET(
         ageBand: child.age_band,
         oversightMode: child.oversight_mode,
         messagingPaused: child.messaging_paused,
+        voiceMessagingEnabled: child.voice_messaging_enabled,
         quietHoursStart: child.quiet_hours_start,
         quietHoursEnd: child.quiet_hours_end,
         createdAt: child.created_at,
@@ -99,6 +100,7 @@ export async function PATCH(
     if (body.ageBand !== undefined) updates.age_band = body.ageBand;
     if (body.oversightMode !== undefined) updates.oversight_mode = body.oversightMode;
     if (body.messagingPaused !== undefined) updates.messaging_paused = body.messagingPaused;
+    if (body.voiceMessagingEnabled !== undefined) updates.voice_messaging_enabled = body.voiceMessagingEnabled;
     if (body.quietHoursStart !== undefined) updates.quiet_hours_start = body.quietHoursStart;
     if (body.quietHoursEnd !== undefined) updates.quiet_hours_end = body.quietHoursEnd;
 
@@ -136,6 +138,7 @@ export async function PATCH(
         ageBand: child.age_band,
         oversightMode: child.oversight_mode,
         messagingPaused: child.messaging_paused,
+        voiceMessagingEnabled: child.voice_messaging_enabled,
         quietHoursStart: child.quiet_hours_start,
         quietHoursEnd: child.quiet_hours_end,
         createdAt: child.created_at,

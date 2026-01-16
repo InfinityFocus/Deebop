@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Trash2, AlertCircle, Pause, Play, Users, MessageSquare, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, AlertCircle, Pause, Play, Users, MessageSquare, ChevronRight, Mic, MicOff } from 'lucide-react';
 import { Button, Input } from '@/components/shared';
 import { Avatar, AvatarSelector } from '@/components/child/AvatarSelector';
 import { OversightSelector } from '@/components/parent/OversightSelector';
@@ -34,6 +34,7 @@ export default function ChildSettingsPage() {
   const [ageBand, setAgeBand] = useState<AgeBand>('6-8');
   const [oversightMode, setOversightMode] = useState<OversightMode>('approve_first');
   const [messagingPaused, setMessagingPaused] = useState(false);
+  const [voiceMessagingEnabled, setVoiceMessagingEnabled] = useState(true);
   const [quietHoursStart, setQuietHoursStart] = useState('');
   const [quietHoursEnd, setQuietHoursEnd] = useState('');
 
@@ -51,6 +52,7 @@ export default function ChildSettingsPage() {
           setAgeBand(c.ageBand);
           setOversightMode(c.oversightMode);
           setMessagingPaused(c.messagingPaused);
+          setVoiceMessagingEnabled(c.voiceMessagingEnabled);
           setQuietHoursStart(c.quietHoursStart || '');
           setQuietHoursEnd(c.quietHoursEnd || '');
         } else {
@@ -81,6 +83,7 @@ export default function ChildSettingsPage() {
           ageBand,
           oversightMode,
           messagingPaused,
+          voiceMessagingEnabled,
           quietHoursStart: quietHoursStart || null,
           quietHoursEnd: quietHoursEnd || null,
         }),
@@ -281,6 +284,35 @@ export default function ChildSettingsPage() {
                   {messagingPaused
                     ? 'Your child cannot send or receive messages'
                     : 'Your child can send and receive messages'}
+                </p>
+              </div>
+            </button>
+          </div>
+
+          <div className="mb-6">
+            <h3 className="text-sm font-medium text-gray-300 mb-3">Voice Messages</h3>
+            <button
+              type="button"
+              onClick={() => setVoiceMessagingEnabled(!voiceMessagingEnabled)}
+              className={`flex items-center gap-3 w-full p-4 rounded-lg border-2 transition-colors ${
+                voiceMessagingEnabled
+                  ? 'border-primary-500 bg-primary-500/10'
+                  : 'border-dark-600 hover:border-dark-500'
+              }`}
+            >
+              {voiceMessagingEnabled ? (
+                <Mic className="text-primary-400" size={20} />
+              ) : (
+                <MicOff className="text-gray-400" size={20} />
+              )}
+              <div className="text-left">
+                <p className={voiceMessagingEnabled ? 'text-white' : 'text-gray-400'}>
+                  {voiceMessagingEnabled ? 'Voice Messages Enabled' : 'Voice Messages Disabled'}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {voiceMessagingEnabled
+                    ? 'Your child can send and receive voice messages'
+                    : 'Your child can only use text and emoji messages'}
                 </p>
               </div>
             </button>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { uploadVoiceMessage } from '@/lib/storage';
+import { getChildById } from '@/lib/db';
 
 // Max voice message duration (30 seconds)
 const MAX_DURATION_SECONDS = 30;
@@ -16,6 +17,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
+      );
+    }
+
+    // Check if voice messaging is enabled for this child
+    const child = await getChildById(user.id);
+    if (!child || !child.voice_messaging_enabled) {
+      return NextResponse.json(
+        { success: false, error: 'Voice messaging is not enabled for your account' },
+        { status: 403 }
       );
     }
 

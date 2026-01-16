@@ -8,9 +8,10 @@ import { VoiceRecorder } from './VoiceRecorder';
 interface Props {
   onSend: (type: 'text' | 'emoji' | 'voice', content: string, voiceData?: { blob: Blob; duration: number }) => void;
   disabled?: boolean;
+  voiceEnabled?: boolean;
 }
 
-export function MessageInput({ onSend, disabled }: Props) {
+export function MessageInput({ onSend, disabled, voiceEnabled = true }: Props) {
   const [message, setMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
@@ -95,8 +96,8 @@ export function MessageInput({ onSend, disabled }: Props) {
           onFocus={() => setShowEmojiPicker(false)}
         />
 
-        {/* Voice button - only show when no text */}
-        {!message.trim() && (
+        {/* Voice button - only show when no text and voice is enabled */}
+        {!message.trim() && voiceEnabled && (
           <button
             type="button"
             onClick={() => setShowVoiceRecorder(true)}

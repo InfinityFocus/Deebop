@@ -242,6 +242,7 @@ export async function updateChild(
     messaging_paused?: boolean;
     quiet_hours_start?: string | null;
     quiet_hours_end?: string | null;
+    voice_messaging_enabled?: boolean;
   }
 ) {
   const client = getServiceClient();

@@ -22,6 +22,7 @@ export interface ChildDB {
   messaging_paused: boolean;
   quiet_hours_start: string | null;
   quiet_hours_end: string | null;
+  voice_messaging_enabled: boolean;
   created_at: string;
 }
 
@@ -37,6 +38,7 @@ export interface Child {
   messagingPaused: boolean;
   quietHoursStart: string | null;
   quietHoursEnd: string | null;
+  voiceMessagingEnabled: boolean;
   createdAt: string;
 }
 
@@ -130,6 +132,7 @@ export interface AuthenticatedChild {
   ageBand: AgeBand;
   oversightMode: OversightMode;
   messagingPaused: boolean;
+  voiceMessagingEnabled: boolean;
 }
 
 export type AuthenticatedUser = AuthenticatedParent | AuthenticatedChild;
@@ -243,6 +246,7 @@ export interface UpdateChildInput {
   messagingPaused?: boolean;
   quietHoursStart?: string | null;
   quietHoursEnd?: string | null;
+  voiceMessagingEnabled?: boolean;
 }
 
 export interface SendMessageInput {

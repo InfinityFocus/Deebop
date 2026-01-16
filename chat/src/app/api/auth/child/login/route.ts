@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
           ageBand: child.age_band,
           oversightMode: child.oversight_mode,
           messagingPaused: child.messaging_paused,
+          voiceMessagingEnabled: child.voice_messaging_enabled,
         },
       },
     });

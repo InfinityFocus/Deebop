@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Clock, AlertCircle } from 'lucide-react';
 import { Avatar } from '@/components/child/AvatarSelector';
 import { MessageInput } from '@/components/child/MessageInput';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore, isChildUser } from '@/stores/authStore';
 
 interface Message {
   id: string;
@@ -214,7 +214,10 @@ export default function ChatPage() {
 
       {/* Input */}
       <div className="pt-4 border-t border-dark-700">
-        <MessageInput onSend={handleSendMessage} />
+        <MessageInput
+          onSend={handleSendMessage}
+          voiceEnabled={isChildUser(user) ? user.voiceMessagingEnabled : true}
+        />
       </div>
     </div>
   );
