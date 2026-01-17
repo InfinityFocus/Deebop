@@ -18,6 +18,7 @@ import {
   Monitor,
 } from 'lucide-react';
 import Footer from '@/components/Footer';
+import InstallButton from '@/components/InstallButton';
 
 export default function LandingPage() {
   return (
@@ -52,12 +53,18 @@ export default function LandingPage() {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
             <Link
               href="/parent/register"
               className="btn btn-primary text-lg px-8 py-4"
             >
               Get started
+            </Link>
+            <Link
+              href="/login"
+              className="btn btn-secondary text-lg px-8 py-4"
+            >
+              Log in
             </Link>
             <a
               href="#how-it-works"
@@ -65,6 +72,7 @@ export default function LandingPage() {
             >
               How it works
             </a>
+            <InstallButton className="text-lg px-8 py-4" />
           </div>
         </div>
       </section>
