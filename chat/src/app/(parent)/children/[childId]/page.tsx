@@ -31,7 +31,7 @@ export default function ChildSettingsPage() {
 
   // Form state
   const [displayName, setDisplayName] = useState('');
-  const [avatarId, setAvatarId] = useState('cat');
+  const [avatarId, setAvatarId] = useState('a1');
   const [ageBand, setAgeBand] = useState<AgeBand>('6-8');
   const [oversightMode, setOversightMode] = useState<OversightMode>('approve_first');
   const [messagingPaused, setMessagingPaused] = useState(false);

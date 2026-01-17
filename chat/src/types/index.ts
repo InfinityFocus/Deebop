@@ -414,36 +414,32 @@ export interface SendMessageInput {
 export interface Avatar {
   id: string;
   name: string;
-  emoji: string;
-  category: AvatarCategory;
+  image: string;
 }
 
-export type AvatarCategory = 'animals' | 'objects' | 'characters';
-
 export const AVATARS: Avatar[] = [
-  // Animals
-  { id: 'cat', name: 'Cat', emoji: '🐱', category: 'animals' },
-  { id: 'dog', name: 'Dog', emoji: '🐶', category: 'animals' },
-  { id: 'panda', name: 'Panda', emoji: '🐼', category: 'animals' },
-  { id: 'rabbit', name: 'Rabbit', emoji: '🐰', category: 'animals' },
-  { id: 'bear', name: 'Bear', emoji: '🐻', category: 'animals' },
-  { id: 'fox', name: 'Fox', emoji: '🦊', category: 'animals' },
-  { id: 'owl', name: 'Owl', emoji: '🦉', category: 'animals' },
-  { id: 'penguin', name: 'Penguin', emoji: '🐧', category: 'animals' },
-  // Objects
-  { id: 'rocket', name: 'Rocket', emoji: '🚀', category: 'objects' },
-  { id: 'star', name: 'Star', emoji: '⭐', category: 'objects' },
-  { id: 'rainbow', name: 'Rainbow', emoji: '🌈', category: 'objects' },
-  { id: 'flower', name: 'Flower', emoji: '🌸', category: 'objects' },
-  { id: 'cloud', name: 'Cloud', emoji: '☁️', category: 'objects' },
-  { id: 'sun', name: 'Sun', emoji: '☀️', category: 'objects' },
-  { id: 'moon', name: 'Moon', emoji: '🌙', category: 'objects' },
-  // Characters
-  { id: 'robot', name: 'Robot', emoji: '🤖', category: 'characters' },
-  { id: 'astronaut', name: 'Astronaut', emoji: '👨‍🚀', category: 'characters' },
-  { id: 'superhero', name: 'Superhero', emoji: '🦸', category: 'characters' },
-  { id: 'wizard', name: 'Wizard', emoji: '🧙', category: 'characters' },
+  { id: 'a1', name: 'Avatar 1', image: '/avatars/a1.jpg' },
+  { id: 'a2', name: 'Avatar 2', image: '/avatars/a2.jpg' },
+  { id: 'a3', name: 'Avatar 3', image: '/avatars/a3.jpg' },
+  { id: 'a4', name: 'Avatar 4', image: '/avatars/a4.jpg' },
+  { id: 'a5', name: 'Avatar 5', image: '/avatars/a5.jpg' },
+  { id: 'a6', name: 'Avatar 6', image: '/avatars/a6.jpg' },
+  { id: 'a7', name: 'Avatar 7', image: '/avatars/a7.jpg' },
+  { id: 'a8', name: 'Avatar 8', image: '/avatars/a8.jpg' },
+  { id: 'a9', name: 'Avatar 9', image: '/avatars/a9.jpg' },
+  { id: 'a10', name: 'Avatar 10', image: '/avatars/a10.jpg' },
+  { id: 'a11', name: 'Avatar 11', image: '/avatars/a11.jpg' },
+  { id: 'a12', name: 'Avatar 12', image: '/avatars/a12.jpg' },
+  { id: 'a13', name: 'Avatar 13', image: '/avatars/a13.jpg' },
+  { id: 'a14', name: 'Avatar 14', image: '/avatars/a14.jpg' },
+  { id: 'a15', name: 'Avatar 15', image: '/avatars/a15.jpg' },
+  { id: 'a16', name: 'Avatar 16', image: '/avatars/a16.jpg' },
+  { id: 'a18', name: 'Avatar 18', image: '/avatars/a18.jpg' },
+  { id: 'a19', name: 'Avatar 19', image: '/avatars/a19.jpg' },
 ];
+
+// Default avatar for new users or fallback
+export const DEFAULT_AVATAR_ID = 'a1';
 
 // ==========================================
 // Emoji Types

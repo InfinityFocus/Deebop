@@ -22,7 +22,7 @@ export function CreateChildForm() {
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [avatarId, setAvatarId] = useState('cat');
+  const [avatarId, setAvatarId] = useState('a1');
   const [ageBand, setAgeBand] = useState<AgeBand>('6-8');
   const [oversightMode, setOversightMode] = useState<OversightMode>('approve_first');
   const [error, setError] = useState('');

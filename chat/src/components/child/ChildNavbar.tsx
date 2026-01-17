@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Users, MessageCircle, LogOut } from 'lucide-react';
+import { Users, MessageCircle, LogOut, Settings } from 'lucide-react';
 import { Avatar } from '@/components/child/AvatarSelector';
 import { useAuthStore } from '@/stores/authStore';
 
 const navItems = [
   { href: '/friends', label: 'Friends', icon: Users },
   { href: '/chats', label: 'Chats', icon: MessageCircle },
+  { href: '/settings', label: 'Me', icon: Settings },
 ];
 
 export function ChildNavbar() {

@@ -25,6 +25,7 @@ interface AuthState {
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 
   // Computed
   isAuthenticated: () => boolean;
@@ -50,6 +51,21 @@ export const useAuthStore = create<AuthState>()(
       setError: (error) => set({ error }),
 
       logout: () => set({ user: null, children: [], pendingCount: 0, error: null }),
+
+      refreshUser: async () => {
+        try {
+          const response = await fetch('/api/auth/me');
+          const data = await response.json();
+          if (data.success && data.data.user) {
+            set({ user: data.data.user });
+            if (data.data.children) {
+              set({ children: data.data.children });
+            }
+          }
+        } catch (error) {
+          console.error('Failed to refresh user:', error);
+        }
+      },
 
       isAuthenticated: () => get().user !== null,
       isParent: () => get().user?.type === 'parent',
