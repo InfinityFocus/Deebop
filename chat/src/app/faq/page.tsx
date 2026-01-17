@@ -70,6 +70,10 @@ const faqs = [
         a: 'Quiet hours let you set times when your child won\'t receive message notifications, such as during school hours or bedtime. Messages are still delivered but notifications are silenced.',
       },
       {
+        q: 'What is the Wrap-up Timer?',
+        a: 'The Wrap-up Timer lets you pause your child\'s chat for a set duration. You can use it for dinner time, homework, or bedtime. Your child sees a friendly countdown before the timer starts, and the chat unlocks automatically when the time is up. You can also end or extend the timer at any time.',
+      },
+      {
         q: 'Can I see my child\'s conversations?',
         a: 'Yes. Parents can view all of their child\'s conversations and message history at any time through the parent dashboard.',
       },
