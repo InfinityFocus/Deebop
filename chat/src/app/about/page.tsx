@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShieldCheck, Heart, Users, Monitor } from 'lucide-react';
+import { ShieldCheck, Heart, Users, Monitor, MessageSquare } from 'lucide-react';
 import Footer from '@/components/Footer';
 
 export const metadata = {
@@ -107,6 +107,21 @@ export default function AboutPage() {
                     <p className="text-sm text-gray-400">
                       We don&apos;t show ads to children or use feeds designed to maximise engagement.
                       Messages appear because people send them, not because an algorithm decided.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-dark-800 rounded-xl border border-dark-700 p-5">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-primary-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <MessageSquare className="text-primary-400" size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-white mb-1">Text and voice notes only</h3>
+                    <p className="text-sm text-gray-400">
+                      No photo sharing or video calls. This is intentional and aligned with
+                      privacy-first, child-appropriate communication.
                     </p>
                   </div>
                 </div>

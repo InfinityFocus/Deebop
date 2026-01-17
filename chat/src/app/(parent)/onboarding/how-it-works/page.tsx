@@ -115,6 +115,8 @@ export default function OnboardingHowItWorksPage() {
             <CannotItem text="Be discovered publicly" />
             <CannotItem text="Join group chats without approval" />
             <CannotItem text="Receive unsolicited messages" />
+            <CannotItem text="Share photos or videos" />
+            <CannotItem text="Make video calls" />
           </ul>
         </div>
       </section>

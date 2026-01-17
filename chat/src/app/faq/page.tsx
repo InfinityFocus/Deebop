@@ -49,8 +49,12 @@ const faqs = [
         a: 'No. Children can only receive messages from friends that you have explicitly approved. There is no way for strangers to discover or contact your child.',
       },
       {
-        q: 'Can my child share photos or their location?',
-        a: 'No. Deebop Chat only supports text messages, emojis, and voice notes. Children cannot share photos, videos, or location information.',
+        q: 'Can my child share photos or make video calls?',
+        a: 'No, and this is intentional. Photos and video can reveal more than intended and are harder to keep private. Deebop Chat focuses on text, emojis, and voice notes to provide a safer first messaging experience.',
+      },
+      {
+        q: 'Why doesn\'t Deebop Chat support photo sharing or video calls?',
+        a: 'This is a deliberate design choice. Visual media and live video introduce risks that are difficult to moderate and can compromise children\'s privacy. By focusing on text and voice notes, we provide a safer, more age-appropriate communication experience for children aged 6-12.',
       },
       {
         q: 'What data do you collect about my child?',

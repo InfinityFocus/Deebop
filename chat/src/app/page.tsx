@@ -16,6 +16,7 @@ import {
   Sparkles,
   Users,
   Monitor,
+  MessageSquareText,
 } from 'lucide-react';
 import Footer from '@/components/Footer';
 import InstallButton from '@/components/InstallButton';
@@ -80,7 +81,7 @@ export default function LandingPage() {
       {/* Trust Section - 4 Pillars */}
       <section className="px-4 py-12 bg-dark-800/30">
         <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
             <TrustCard
               icon={<ShieldCheck className="text-primary-400" size={28} />}
               title="Approved friends only"
@@ -100,6 +101,11 @@ export default function LandingPage() {
               icon={<Monitor className="text-primary-400" size={28} />}
               title="Works where kids already are"
               description="Use it on desktop, Chromebook, or tablet. Installable as an app, no phone required."
+            />
+            <TrustCard
+              icon={<MessageSquareText className="text-primary-400" size={28} />}
+              title="Text and voice only"
+              description="No photo sharing or video calls. A deliberate choice to keep communication age-appropriate."
             />
           </div>
         </div>
@@ -168,7 +174,12 @@ export default function LandingPage() {
                 <CannotItem text="Be discovered publicly" />
                 <CannotItem text="Join group chats without approval" />
                 <CannotItem text="Receive unsolicited messages" />
+                <CannotItem text="Share photos or videos" />
+                <CannotItem text="Make video calls" />
               </ul>
+              <p className="text-xs text-gray-500 mt-4">
+                This is intentional, not a missing feature.
+              </p>
             </div>
           </div>
         </div>
