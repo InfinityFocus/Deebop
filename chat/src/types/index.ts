@@ -411,35 +411,52 @@ export interface SendMessageInput {
 // Avatar Types
 // ==========================================
 
+export type AvatarCategory = 'children' | 'animals';
+
 export interface Avatar {
   id: string;
   name: string;
   image: string;
+  category: AvatarCategory;
 }
 
 export const AVATARS: Avatar[] = [
-  { id: 'a1', name: 'Avatar 1', image: '/avatars/a1.jpg' },
-  { id: 'a2', name: 'Avatar 2', image: '/avatars/a2.jpg' },
-  { id: 'a3', name: 'Avatar 3', image: '/avatars/a3.jpg' },
-  { id: 'a4', name: 'Avatar 4', image: '/avatars/a4.jpg' },
-  { id: 'a5', name: 'Avatar 5', image: '/avatars/a5.jpg' },
-  { id: 'a6', name: 'Avatar 6', image: '/avatars/a6.jpg' },
-  { id: 'a7', name: 'Avatar 7', image: '/avatars/a7.jpg' },
-  { id: 'a8', name: 'Avatar 8', image: '/avatars/a8.jpg' },
-  { id: 'a9', name: 'Avatar 9', image: '/avatars/a9.jpg' },
-  { id: 'a10', name: 'Avatar 10', image: '/avatars/a10.jpg' },
-  { id: 'a11', name: 'Avatar 11', image: '/avatars/a11.jpg' },
-  { id: 'a12', name: 'Avatar 12', image: '/avatars/a12.jpg' },
-  { id: 'a13', name: 'Avatar 13', image: '/avatars/a13.jpg' },
-  { id: 'a14', name: 'Avatar 14', image: '/avatars/a14.jpg' },
-  { id: 'a15', name: 'Avatar 15', image: '/avatars/a15.jpg' },
-  { id: 'a16', name: 'Avatar 16', image: '/avatars/a16.jpg' },
-  { id: 'a18', name: 'Avatar 18', image: '/avatars/a18.jpg' },
-  { id: 'a19', name: 'Avatar 19', image: '/avatars/a19.jpg' },
+  // Children avatars
+  { id: 'a1', name: 'Child 1', image: '/avatars/a1.jpg', category: 'children' },
+  { id: 'a2', name: 'Child 2', image: '/avatars/a2.jpg', category: 'children' },
+  { id: 'a3', name: 'Child 3', image: '/avatars/a3.jpg', category: 'children' },
+  { id: 'a4', name: 'Child 4', image: '/avatars/a4.jpg', category: 'children' },
+  { id: 'a5', name: 'Child 5', image: '/avatars/a5.jpg', category: 'children' },
+  { id: 'a7', name: 'Child 7', image: '/avatars/a7.jpg', category: 'children' },
+  { id: 'a8', name: 'Child 8', image: '/avatars/a8.jpg', category: 'children' },
+  { id: 'a9', name: 'Child 9', image: '/avatars/a9.jpg', category: 'children' },
+  { id: 'a10', name: 'Child 10', image: '/avatars/a10.jpg', category: 'children' },
+  { id: 'a11', name: 'Child 11', image: '/avatars/a11.jpg', category: 'children' },
+  { id: 'a12', name: 'Child 12', image: '/avatars/a12.jpg', category: 'children' },
+  { id: 'a13', name: 'Child 13', image: '/avatars/a13.jpg', category: 'children' },
+  { id: 'a14', name: 'Child 14', image: '/avatars/a14.jpg', category: 'children' },
+  { id: 'a15', name: 'Child 15', image: '/avatars/a15.jpg', category: 'children' },
+  { id: 'a16', name: 'Child 16', image: '/avatars/a16.jpg', category: 'children' },
+  { id: 'a18', name: 'Child 18', image: '/avatars/a18.jpg', category: 'children' },
+  { id: 'a19', name: 'Child 19', image: '/avatars/a19.jpg', category: 'children' },
+  // Animal avatars
+  { id: 'a6', name: 'Dog', image: '/avatars/a6.jpg', category: 'animals' },
+  { id: 'animal_bear_1', name: 'Bear', image: '/avatars/animal_bear_1.jpg', category: 'animals' },
+  { id: 'animal_bunny_1', name: 'Bunny', image: '/avatars/animal_bunny_1.jpg', category: 'animals' },
+  { id: 'animal_cat_1', name: 'Cat', image: '/avatars/animal_cat_1.jpg', category: 'animals' },
+  { id: 'animal_fox_1', name: 'Fox', image: '/avatars/animal_fox_1.jpg', category: 'animals' },
+  { id: 'animal_frog_1', name: 'Frog', image: '/avatars/animal_frog_1.jpg', category: 'animals' },
+  { id: 'animal_guinea_1', name: 'Guinea Pig', image: '/avatars/animal_guinea_1.jpg', category: 'animals' },
+  { id: 'animal_koala_1', name: 'Koala', image: '/avatars/animal_koala_1.jpg', category: 'animals' },
+  { id: 'animal_tiger_1', name: 'Tiger', image: '/avatars/animal_tiger_1.jpg', category: 'animals' },
 ];
 
 // Default avatar for new users or fallback
 export const DEFAULT_AVATAR_ID = 'a1';
+
+// Helper to get avatars by category
+export const getAvatarsByCategory = (category: AvatarCategory) =>
+  AVATARS.filter((a) => a.category === category);
 
 // ==========================================
 // Emoji Types
