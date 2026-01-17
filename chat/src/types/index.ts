@@ -441,14 +441,21 @@ export const AVATARS: Avatar[] = [
   { id: 'a19', name: 'Child 19', image: '/avatars/a19.jpg', category: 'children' },
   // Animal avatars
   { id: 'a6', name: 'Dog', image: '/avatars/a6.jpg', category: 'animals' },
+  { id: 'animal_axolotl_1', name: 'Axolotl', image: '/avatars/animal_axolotl_1.jpg', category: 'animals' },
   { id: 'animal_bear_1', name: 'Bear', image: '/avatars/animal_bear_1.jpg', category: 'animals' },
   { id: 'animal_bunny_1', name: 'Bunny', image: '/avatars/animal_bunny_1.jpg', category: 'animals' },
   { id: 'animal_cat_1', name: 'Cat', image: '/avatars/animal_cat_1.jpg', category: 'animals' },
+  { id: 'animal_dog_2', name: 'Dog 2', image: '/avatars/animal_dog_2.jpg', category: 'animals' },
   { id: 'animal_fox_1', name: 'Fox', image: '/avatars/animal_fox_1.jpg', category: 'animals' },
+  { id: 'animal_fox_2', name: 'Fox 2', image: '/avatars/animal_fox_2.jpg', category: 'animals' },
   { id: 'animal_frog_1', name: 'Frog', image: '/avatars/animal_frog_1.jpg', category: 'animals' },
   { id: 'animal_guinea_1', name: 'Guinea Pig', image: '/avatars/animal_guinea_1.jpg', category: 'animals' },
+  { id: 'animal_hedgehog_1', name: 'Hedgehog', image: '/avatars/animal_hedgehog_1.jpg', category: 'animals' },
   { id: 'animal_koala_1', name: 'Koala', image: '/avatars/animal_koala_1.jpg', category: 'animals' },
+  { id: 'animal_squirrel_1', name: 'Squirrel', image: '/avatars/animal_squirrel_1.jpg', category: 'animals' },
   { id: 'animal_tiger_1', name: 'Tiger', image: '/avatars/animal_tiger_1.jpg', category: 'animals' },
+  { id: 'animal_unicorn_1', name: 'Unicorn', image: '/avatars/animal_unicorn_1.jpg', category: 'animals' },
+  { id: 'animal_weasel_1', name: 'Weasel', image: '/avatars/animal_weasel_1.jpg', category: 'animals' },
 ];
 
 // Default avatar for new users or fallback

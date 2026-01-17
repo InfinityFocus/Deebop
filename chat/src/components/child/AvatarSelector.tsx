@@ -2,10 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { AVATARS, DEFAULT_AVATAR_ID } from '@/types';
+import { ChevronLeft, ChevronRight, User, PawPrint } from 'lucide-react';
+import { AVATARS, DEFAULT_AVATAR_ID, getAvatarsByCategory, type AvatarCategory } from '@/types';
 
 const AVATARS_PER_PAGE = 12;
+
+const CATEGORY_CONFIG: { id: AvatarCategory; label: string; icon: typeof User }[] = [
+  { id: 'children', label: 'People', icon: User },
+  { id: 'animals', label: 'Animals', icon: PawPrint },
+];
 
 interface Props {
   selected: string;
@@ -14,22 +19,33 @@ interface Props {
 }
 
 export function AvatarSelector({ selected, onSelect, size = 'md' }: Props) {
+  const [category, setCategory] = useState<AvatarCategory>('children');
   const [page, setPage] = useState(0);
 
-  const totalPages = Math.ceil(AVATARS.length / AVATARS_PER_PAGE);
+  const categoryAvatars = getAvatarsByCategory(category);
+  const totalPages = Math.ceil(categoryAvatars.length / AVATARS_PER_PAGE);
   const startIndex = page * AVATARS_PER_PAGE;
-  const visibleAvatars = AVATARS.slice(startIndex, startIndex + AVATARS_PER_PAGE);
+  const visibleAvatars = categoryAvatars.slice(startIndex, startIndex + AVATARS_PER_PAGE);
 
-  // If selected avatar is not on current page, navigate to its page
+  // When selected avatar changes, switch to its category and page
   useEffect(() => {
-    const selectedIndex = AVATARS.findIndex((a) => a.id === selected);
+    const selectedAvatar = AVATARS.find((a) => a.id === selected);
+    if (selectedAvatar && selectedAvatar.category !== category) {
+      setCategory(selectedAvatar.category);
+    }
+  }, [selected]);
+
+  // When category changes, find if selected avatar is in this category
+  useEffect(() => {
+    const avatarsInCategory = getAvatarsByCategory(category);
+    const selectedIndex = avatarsInCategory.findIndex((a) => a.id === selected);
     if (selectedIndex !== -1) {
       const selectedPage = Math.floor(selectedIndex / AVATARS_PER_PAGE);
-      if (selectedPage !== page) {
-        setPage(selectedPage);
-      }
+      setPage(selectedPage);
+    } else {
+      setPage(0);
     }
-  }, [selected]); // Only run when selected changes, not page
+  }, [category, selected]);
 
   const sizeClasses = {
     sm: 'w-12 h-12',
@@ -42,6 +58,37 @@ export function AvatarSelector({ selected, onSelect, size = 'md' }: Props) {
 
   return (
     <div className="space-y-4">
+      {/* Category Tabs */}
+      <div className="flex gap-2">
+        {CATEGORY_CONFIG.map((cat) => {
+          const Icon = cat.icon;
+          const isActive = category === cat.id;
+          const count = getAvatarsByCategory(cat.id).length;
+
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => {
+                setCategory(cat.id);
+                setPage(0);
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                isActive
+                  ? 'bg-primary-500/20 text-primary-400'
+                  : 'bg-dark-700 text-gray-400 hover:bg-dark-600 hover:text-white'
+              }`}
+            >
+              <Icon size={16} />
+              {cat.label}
+              <span className={`text-xs ${isActive ? 'text-primary-400/70' : 'text-gray-500'}`}>
+                ({count})
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Avatar Grid */}
       <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 sm:gap-3">
         {visibleAvatars.map((avatar) => (
