@@ -238,8 +238,50 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FAQ Teaser Section */}
+      {/* Pricing Section */}
       <section className="px-4 py-16">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+            Try free for 14 days
+          </h2>
+          <p className="text-lg text-gray-400 mb-10">
+            Then £3.99/month or £39/year. No card required to start.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-xl mx-auto">
+            {/* Monthly Plan */}
+            <div className="card p-6 text-center border-dark-700">
+              <h3 className="text-lg font-semibold text-white mb-2">Monthly</h3>
+              <div className="text-3xl font-bold text-white mb-1">
+                £3.99<span className="text-lg text-gray-400 font-normal">/month</span>
+              </div>
+              <p className="text-sm text-gray-500">Billed monthly after trial</p>
+            </div>
+
+            {/* Annual Plan - Highlighted */}
+            <div className="card p-6 text-center border-primary-500/50 bg-primary-500/5 relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary-500 text-white text-xs font-medium rounded-full">
+                Save 18%
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">Annual</h3>
+              <div className="text-3xl font-bold text-white mb-1">
+                £39<span className="text-lg text-gray-400 font-normal">/year</span>
+              </div>
+              <p className="text-sm text-gray-500">Billed annually after trial</p>
+            </div>
+          </div>
+
+          <p className="text-sm text-gray-500 mt-8">
+            14-day free trial. 14-day cooling-off period after payment. Cancel anytime.
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Your subscription powers a safer internet for kids - no ads, ever.
+          </p>
+        </div>
+      </section>
+
+      {/* FAQ Teaser Section */}
+      <section className="px-4 py-16 bg-dark-800/30">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-10">
             Common questions
@@ -267,7 +309,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Close Section */}
-      <section className="px-4 py-16 bg-dark-800/30">
+      <section className="px-4 py-16">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
             Ready to set up your family?

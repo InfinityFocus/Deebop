@@ -14,6 +14,7 @@ import {
   Check,
 } from 'lucide-react';
 import { Button } from '@/components/shared';
+import { SubscriptionAlert } from '@/components/parent/SubscriptionAlert';
 import { useAuthStore } from '@/stores/authStore';
 import type { Child } from '@/types';
 
@@ -95,6 +96,9 @@ export default function DashboardPage() {
           Here&apos;s what&apos;s happening with your children&apos;s accounts.
         </p>
       </div>
+
+      {/* Subscription Alert */}
+      <SubscriptionAlert className="mb-6" />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">

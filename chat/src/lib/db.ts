@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { SubscriptionDB, SubscriptionPlan, SubscriptionAccess } from '@/types';
 
 // ==========================================
 // Supabase Client Configuration
@@ -1036,4 +1037,362 @@ export async function getAllAuditLogs(
     page,
     totalPages: Math.ceil((count || 0) / limit),
   };
+}
+
+// ==========================================
+// Subscription Queries
+// ==========================================
+
+/**
+ * Get subscription by parent ID
+ */
+export async function getSubscriptionByParentId(parentId: string) {
+  const client = getServiceClient();
+  const { data, error } = await client
+    .schema('chat')
+    .from('subscriptions')
+    .select('*')
+    .eq('parent_id', parentId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data as SubscriptionDB | null;
+}
+
+/**
+ * Create a trial subscription for a new parent
+ * Trial lasts 14 days from now
+ */
+export async function createTrialSubscription(parentId: string) {
+  const client = getServiceClient();
+  const now = new Date();
+  const trialEnds = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000); // 14 days
+
+  const { data, error } = await client
+    .schema('chat')
+    .from('subscriptions')
+    .insert({
+      parent_id: parentId,
+      status: 'trial',
+      trial_starts_at: now.toISOString(),
+      trial_ends_at: trialEnds.toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data as SubscriptionDB;
+}
+
+/**
+ * Create or update subscription after payment
+ */
+export async function createSubscription(
+  parentId: string,
+  plan: SubscriptionPlan
+) {
+  const client = getServiceClient();
+  const now = new Date();
+  const periodEnd = plan === 'monthly'
+    ? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+    : new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+  const coolingOffExpires = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const amountPence = plan === 'monthly' ? 399 : 3900;
+
+  const { data, error } = await client
+    .schema('chat')
+    .from('subscriptions')
+    .upsert({
+      parent_id: parentId,
+      status: 'active',
+      plan,
+      amount_pence: amountPence,
+      current_period_start: now.toISOString(),
+      current_period_end: periodEnd.toISOString(),
+      cooling_off_eligible: true,
+      cooling_off_expires_at: coolingOffExpires.toISOString(),
+      updated_at: now.toISOString(),
+    }, {
+      onConflict: 'parent_id',
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data as SubscriptionDB;
+}
+
+/**
+ * Update subscription fields
+ */
+export async function updateSubscription(
+  subscriptionId: string,
+  updates: Partial<SubscriptionDB>
+) {
+  const client = getServiceClient();
+  const { data, error } = await client
+    .schema('chat')
+    .from('subscriptions')
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', subscriptionId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data as SubscriptionDB;
+}
+
+/**
+ * Cancel subscription
+ */
+export async function cancelSubscription(subscriptionId: string) {
+  return updateSubscription(subscriptionId, {
+    status: 'cancelled',
+    cancelled_at: new Date().toISOString(),
+  });
+}
+
+/**
+ * Grant free account to a parent
+ */
+export async function grantFreeAccount(
+  parentId: string,
+  grantedBy: string,
+  reason: string
+) {
+  const client = getServiceClient();
+  const now = new Date();
+
+  // Check if subscription exists
+  const existing = await getSubscriptionByParentId(parentId);
+
+  if (existing) {
+    // Update existing subscription
+    return updateSubscription(existing.id, {
+      status: 'free',
+      is_free_account: true,
+      free_account_granted_by: grantedBy,
+      free_account_granted_at: now.toISOString(),
+      free_account_reason: reason,
+    });
+  }
+
+  // Create new subscription with free status
+  const { data, error } = await client
+    .schema('chat')
+    .from('subscriptions')
+    .insert({
+      parent_id: parentId,
+      status: 'free',
+      is_free_account: true,
+      free_account_granted_by: grantedBy,
+      free_account_granted_at: now.toISOString(),
+      free_account_reason: reason,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data as SubscriptionDB;
+}
+
+/**
+ * Revoke free account access
+ */
+export async function revokeFreeAccount(subscriptionId: string) {
+  return updateSubscription(subscriptionId, {
+    status: 'inactive',
+    is_free_account: false,
+    free_account_granted_by: null,
+    free_account_granted_at: null,
+    free_account_reason: null,
+  });
+}
+
+/**
+ * Check if parent has access (active, trial, or free)
+ */
+export async function checkParentHasAccess(parentId: string): Promise<SubscriptionAccess> {
+  const subscription = await getSubscriptionByParentId(parentId);
+  const now = new Date();
+
+  // No subscription at all
+  if (!subscription) {
+    return {
+      hasAccess: false,
+      status: 'inactive',
+      isInTrial: false,
+      daysLeftInTrial: null,
+      daysUntilRenewal: null,
+      showTrialEndingWarning: false,
+      showRenewalWarning: false,
+      showUrgentWarning: false,
+    };
+  }
+
+  const status = subscription.status;
+
+  // Free account always has access
+  if (status === 'free' || subscription.is_free_account) {
+    return {
+      hasAccess: true,
+      status: 'free',
+      isInTrial: false,
+      daysLeftInTrial: null,
+      daysUntilRenewal: null,
+      showTrialEndingWarning: false,
+      showRenewalWarning: false,
+      showUrgentWarning: false,
+    };
+  }
+
+  // Trial period
+  if (status === 'trial' && subscription.trial_ends_at) {
+    const trialEnd = new Date(subscription.trial_ends_at);
+    const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysLeft <= 0) {
+      // Trial expired
+      return {
+        hasAccess: false,
+        status: 'inactive',
+        isInTrial: false,
+        daysLeftInTrial: 0,
+        daysUntilRenewal: null,
+        showTrialEndingWarning: false,
+        showRenewalWarning: false,
+        showUrgentWarning: true,
+      };
+    }
+
+    return {
+      hasAccess: true,
+      status: 'trial',
+      isInTrial: true,
+      daysLeftInTrial: daysLeft,
+      daysUntilRenewal: null,
+      showTrialEndingWarning: daysLeft <= 3,
+      showRenewalWarning: false,
+      showUrgentWarning: daysLeft <= 1,
+    };
+  }
+
+  // Active subscription
+  if (status === 'active' && subscription.current_period_end) {
+    const periodEnd = new Date(subscription.current_period_end);
+    const daysUntilRenewal = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    return {
+      hasAccess: true,
+      status: 'active',
+      isInTrial: false,
+      daysLeftInTrial: null,
+      daysUntilRenewal: Math.max(0, daysUntilRenewal),
+      showTrialEndingWarning: false,
+      showRenewalWarning: daysUntilRenewal <= 3 && daysUntilRenewal > 1,
+      showUrgentWarning: daysUntilRenewal <= 1,
+    };
+  }
+
+  // Cancelled but still in period
+  if (status === 'cancelled' && subscription.current_period_end) {
+    const periodEnd = new Date(subscription.current_period_end);
+    if (periodEnd > now) {
+      const daysLeft = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      return {
+        hasAccess: true,
+        status: 'cancelled',
+        isInTrial: false,
+        daysLeftInTrial: null,
+        daysUntilRenewal: daysLeft,
+        showTrialEndingWarning: false,
+        showRenewalWarning: daysLeft <= 3,
+        showUrgentWarning: daysLeft <= 1,
+      };
+    }
+  }
+
+  // Past due or inactive
+  return {
+    hasAccess: status === 'past_due', // Past due still has access temporarily
+    status,
+    isInTrial: false,
+    daysLeftInTrial: null,
+    daysUntilRenewal: null,
+    showTrialEndingWarning: false,
+    showRenewalWarning: false,
+    showUrgentWarning: status === 'past_due',
+  };
+}
+
+/**
+ * Get subscriptions needing renewal notification
+ */
+export async function getSubscriptionsNeedingNotification(daysUntil: number) {
+  const client = getServiceClient();
+  const now = new Date();
+  const targetDate = new Date(now.getTime() + daysUntil * 24 * 60 * 60 * 1000);
+  const targetDateStart = new Date(targetDate);
+  targetDateStart.setHours(0, 0, 0, 0);
+  const targetDateEnd = new Date(targetDate);
+  targetDateEnd.setHours(23, 59, 59, 999);
+
+  const { data, error } = await client
+    .schema('chat')
+    .from('subscriptions')
+    .select('*, parent:parent_id(id, email, display_name)')
+    .eq('status', 'active')
+    .gte('current_period_end', targetDateStart.toISOString())
+    .lte('current_period_end', targetDateEnd.toISOString());
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data || [];
+}
+
+/**
+ * Get trials ending soon
+ */
+export async function getTrialsEndingSoon(daysUntil: number) {
+  const client = getServiceClient();
+  const now = new Date();
+  const targetDate = new Date(now.getTime() + daysUntil * 24 * 60 * 60 * 1000);
+  const targetDateStart = new Date(targetDate);
+  targetDateStart.setHours(0, 0, 0, 0);
+  const targetDateEnd = new Date(targetDate);
+  targetDateEnd.setHours(23, 59, 59, 999);
+
+  const { data, error } = await client
+    .schema('chat')
+    .from('subscriptions')
+    .select('*, parent:parent_id(id, email, display_name)')
+    .eq('status', 'trial')
+    .gte('trial_ends_at', targetDateStart.toISOString())
+    .lte('trial_ends_at', targetDateEnd.toISOString());
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data || [];
 }

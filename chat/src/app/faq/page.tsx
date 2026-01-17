@@ -24,8 +24,16 @@ const faqs = [
         a: 'Deebop Chat is designed for children aged 6-12. We offer different default settings based on age bands (6-8, 9-10, 11-12) to provide age-appropriate experiences.',
       },
       {
-        q: 'Is Deebop Chat free?',
-        a: 'Yes, Deebop Chat is currently free to use for families.',
+        q: 'How much does Deebop Chat cost?',
+        a: 'Deebop Chat is free for 14 days, then £3.99/month or £39/year (save 18%). No payment card is required to start your trial. This keeps the platform ad-free and funds ongoing safety improvements.',
+      },
+      {
+        q: 'Is there a free trial?',
+        a: 'Yes! Every new account gets a full 14-day free trial with access to all features. No payment card required. At the end of your trial, you can choose to subscribe or your account will be paused.',
+      },
+      {
+        q: 'Why do you charge for the service?',
+        a: 'Unlike free apps that profit from ads or data, Deebop Chat is funded by families. No ads, no data selling - our interests align with yours: keeping kids safe.',
       },
     ],
   },
@@ -122,6 +130,10 @@ const faqs = [
       {
         q: 'Can both parents have access to the parent account?',
         a: 'Currently, each parent account has one login. We recommend sharing the login credentials with co-parents who need access, or having each parent create their own account with the same children added.',
+      },
+      {
+        q: 'How do I cancel my subscription?',
+        a: 'Cancel anytime from Settings in your parent dashboard. You keep access until the end of your billing period. Under UK law, you have 14 days after initial purchase or annual renewal to receive a pro-rata refund.',
       },
     ],
   },

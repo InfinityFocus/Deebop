@@ -161,6 +161,97 @@ export const TIMEOUT_REASONS: { value: TimeoutReason; label: string; emoji: stri
 ];
 
 // ==========================================
+// Subscription Types
+// ==========================================
+
+export type SubscriptionStatus = 'inactive' | 'trial' | 'active' | 'past_due' | 'cancelled' | 'free';
+export type SubscriptionPlan = 'monthly' | 'annual';
+
+// Database format (snake_case)
+export interface SubscriptionDB {
+  id: string;
+  parent_id: string;
+  status: SubscriptionStatus;
+  plan: SubscriptionPlan | null;
+  amount_pence: number | null;
+  trial_starts_at: string | null;
+  trial_ends_at: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancelled_at: string | null;
+  cooling_off_eligible: boolean;
+  cooling_off_expires_at: string | null;
+  is_free_account: boolean;
+  free_account_granted_by: string | null;
+  free_account_granted_at: string | null;
+  free_account_reason: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// UI format (camelCase)
+export interface Subscription {
+  id: string;
+  parentId: string;
+  status: SubscriptionStatus;
+  plan: SubscriptionPlan | null;
+  amountPence: number | null;
+  trialStartsAt: string | null;
+  trialEndsAt: string | null;
+  currentPeriodStart: string | null;
+  currentPeriodEnd: string | null;
+  cancelledAt: string | null;
+  coolingOffEligible: boolean;
+  coolingOffExpiresAt: string | null;
+  isFreeAccount: boolean;
+  freeAccountGrantedBy: string | null;
+  freeAccountGrantedAt: string | null;
+  freeAccountReason: string | null;
+  createdAt: string;
+}
+
+export interface SubscriptionAccess {
+  hasAccess: boolean;
+  status: SubscriptionStatus;
+  isInTrial: boolean;
+  daysLeftInTrial: number | null;
+  daysUntilRenewal: number | null;
+  showTrialEndingWarning: boolean;  // 3 days or less in trial
+  showRenewalWarning: boolean;      // 3 days or less until renewal
+  showUrgentWarning: boolean;       // 1 day or less
+}
+
+export const SUBSCRIPTION_PRICING = {
+  monthly: { amountPence: 399, display: '£3.99', period: 'month' },
+  annual: { amountPence: 3900, display: '£39', period: 'year', savings: '18%' },
+} as const;
+
+// Helper to convert DB format to UI format
+export function subscriptionFromDB(db: SubscriptionDB): Subscription {
+  return {
+    id: db.id,
+    parentId: db.parent_id,
+    status: db.status,
+    plan: db.plan,
+    amountPence: db.amount_pence,
+    trialStartsAt: db.trial_starts_at,
+    trialEndsAt: db.trial_ends_at,
+    currentPeriodStart: db.current_period_start,
+    currentPeriodEnd: db.current_period_end,
+    cancelledAt: db.cancelled_at,
+    coolingOffEligible: db.cooling_off_eligible,
+    coolingOffExpiresAt: db.cooling_off_expires_at,
+    isFreeAccount: db.is_free_account,
+    freeAccountGrantedBy: db.free_account_granted_by,
+    freeAccountGrantedAt: db.free_account_granted_at,
+    freeAccountReason: db.free_account_reason,
+    createdAt: db.created_at,
+  };
+}
+
+// ==========================================
 // Authentication Types
 // ==========================================
 
