@@ -10,7 +10,7 @@ import { useAuthStore } from '@/stores/authStore';
 const navItems = [
   { href: '/friends', label: 'Friends', icon: Users },
   { href: '/chats', label: 'Chats', icon: MessageCircle },
-  { href: '/settings', label: 'Me', icon: Settings },
+  { href: '/me', label: 'Me', icon: Settings },
 ];
 
 export function ChildNavbar() {
