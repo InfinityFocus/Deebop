@@ -43,7 +43,7 @@ export function ChildNavbar() {
           </Link>
 
           {/* Navigation */}
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-0.5 sm:gap-1">
             {navItems.map((item) => {
               const isActive = pathname.startsWith(item.href);
               const Icon = item.icon;
@@ -52,14 +52,14 @@ export function ChildNavbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg transition-colors ${
+                  className={`flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg transition-colors ${
                     isActive
                       ? 'bg-cyan-500/10 text-cyan-400'
                       : 'text-gray-400 hover:text-white hover:bg-dark-700'
                   }`}
                 >
-                  <Icon size={20} />
-                  <span className="font-medium text-sm sm:text-base">{item.label}</span>
+                  <Icon size={18} />
+                  <span className="font-medium text-xs sm:text-sm">{item.label}</span>
                 </Link>
               );
             })}
@@ -69,7 +69,7 @@ export function ChildNavbar() {
           <div className="flex items-center gap-2">
             {user && user.type === 'child' && (
               <div className="flex items-center gap-2">
-                <Avatar avatarId={user.avatarId || 'cat'} size="sm" />
+                <Avatar avatarId={user.avatarId || 'a1'} size="sm" />
                 <span className="text-sm text-gray-300 hidden sm:block">
                   {user.displayName || user.username}
                 </span>
