@@ -15,6 +15,7 @@ import {
   Heart,
   Sparkles,
   Users,
+  Monitor,
 } from 'lucide-react';
 import Footer from '@/components/Footer';
 
@@ -45,7 +46,9 @@ export default function LandingPage() {
           </p>
 
           <p className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto">
-            Safe messaging for ages 6–12, with approved friends, adjustable oversight, and no strangers.
+            Safe, private messaging for ages 6–12.
+            <br />
+            Approved friends, flexible oversight, and no strangers.
           </p>
 
           {/* CTA Buttons */}
@@ -66,24 +69,29 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Trust Section - 3 Pillars */}
+      {/* Trust Section - 4 Pillars */}
       <section className="px-4 py-12 bg-dark-800/30">
-        <div className="max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <TrustCard
               icon={<ShieldCheck className="text-primary-400" size={28} />}
               title="Approved friends only"
-              description="Your child can only message people you approve."
+              description="Your child can only message people you approve. No exceptions."
             />
             <TrustCard
               icon={<Sliders className="text-primary-400" size={28} />}
-              title="You choose the level of oversight"
-              description="Monitor messages, approve the first message, or approve every message."
+              title="Oversight that fits your family"
+              description="Monitor messages, approve the first message from new friends, or approve every message."
             />
             <TrustCard
               icon={<EyeOff className="text-primary-400" size={28} />}
-              title="No public profiles or discovery"
-              description="Deebop Chat is private by design."
+              title="Private by design"
+              description="No public profiles, no discovery, no unsolicited messages."
+            />
+            <TrustCard
+              icon={<Monitor className="text-primary-400" size={28} />}
+              title="Works where kids already are"
+              description="Use it on desktop, Chromebook, or tablet. Installable as an app, no phone required."
             />
           </div>
         </div>
@@ -113,7 +121,7 @@ export default function LandingPage() {
               step={3}
               icon={<CheckCircle className="text-primary-400" size={24} />}
               title="Approve friends and messages"
-              description="You stay informed and in control."
+              description="You stay informed and in control, without hovering."
             />
           </div>
         </div>
@@ -188,23 +196,31 @@ export default function LandingPage() {
 
       {/* Why Parents Choose Section */}
       <section className="px-4 py-16 bg-dark-800/30">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-12">
             Why parents choose Deebop Chat
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <WhyCard
               icon={<Sparkles className="text-yellow-400" size={24} />}
-              text="Designed specifically for children, not adapted from adult social apps"
+              title="Built specifically for children"
+              description="Not adapted from adult social apps."
+            />
+            <WhyCard
+              icon={<Monitor className="text-cyan-400" size={24} />}
+              title="Designed for shared family devices"
+              description="Works naturally on desktops and Chromebooks, not just phones."
             />
             <WhyCard
               icon={<Heart className="text-pink-400" size={24} />}
-              text="No ads, no feeds, no pressure to perform"
+              title="No ads. No feeds. No pressure."
+              description="Just messaging with real friends."
             />
             <WhyCard
-              icon={<Users className="text-cyan-400" size={24} />}
-              text="Built around real relationships, not algorithms"
+              icon={<Users className="text-primary-400" size={24} />}
+              title="Built around choice, not algorithms"
+              description="You decide what your child sees and who they talk to."
             />
           </div>
         </div>
@@ -223,16 +239,16 @@ export default function LandingPage() {
               answer="No. Deebop Chat is private messaging only."
             />
             <FAQItem
+              question="Does my child need a phone?"
+              answer="No. Deebop Chat works on desktop and Chromebook, and can be installed as an app on supported devices."
+            />
+            <FAQItem
               question="Do I have to read every message?"
               answer="Only if you want to."
             />
             <FAQItem
               question="Can I change settings later?"
               answer="Yes, anytime."
-            />
-            <FAQItem
-              question="Does my child need a phone?"
-              answer="No. Deebop Chat works on desktop and Chromebook, and can be installed as an app on supported devices."
             />
           </div>
         </div>
@@ -354,17 +370,20 @@ function OversightFeature({
 
 function WhyCard({
   icon,
-  text,
+  title,
+  description,
 }: {
   icon: React.ReactNode;
-  text: string;
+  title: string;
+  description: string;
 }) {
   return (
     <div className="card p-6 text-center">
       <div className="w-12 h-12 bg-dark-700 rounded-xl flex items-center justify-center mx-auto mb-4">
         {icon}
       </div>
-      <p className="text-gray-300 text-sm">{text}</p>
+      <h3 className="text-white font-semibold mb-2">{title}</h3>
+      <p className="text-gray-400 text-sm">{description}</p>
     </div>
   );
 }
