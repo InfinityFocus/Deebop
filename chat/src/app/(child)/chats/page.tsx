@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { MessageCircle, Clock } from 'lucide-react';
 import { Avatar } from '@/components/child/AvatarSelector';
+import { TimeoutBanner } from '@/components/child/TimeoutBanner';
+import { TimeoutOverlay } from '@/components/child/TimeoutOverlay';
+import type { Timeout, TimeoutReason } from '@/types';
 
 interface Conversation {
   id: string;
@@ -25,6 +28,28 @@ export default function ChatsPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Timeout state - only check for global timeouts (conversation_id = null)
+  const [globalTimeout, setGlobalTimeout] = useState<Timeout | null>(null);
+  const [upcomingTimeout, setUpcomingTimeout] = useState<Timeout | null>(null);
+
+  // Fetch timeout status
+  const fetchTimeoutStatus = useCallback(async () => {
+    try {
+      const response = await fetch('/api/child/timeouts');
+      const data = await response.json();
+
+      if (data.success) {
+        // Only set if it's a global timeout
+        const active = data.data.activeTimeout;
+        const upcoming = data.data.upcomingTimeout;
+        setGlobalTimeout(active?.conversationId === null ? active : null);
+        setUpcomingTimeout(upcoming?.conversationId === null ? upcoming : null);
+      }
+    } catch (err) {
+      console.error('Failed to fetch timeout status:', err);
+    }
+  }, []);
+
   useEffect(() => {
     async function fetchConversations() {
       try {
@@ -42,7 +67,12 @@ export default function ChatsPage() {
     }
 
     fetchConversations();
-  }, []);
+    fetchTimeoutStatus();
+
+    // Poll for timeout status
+    const interval = setInterval(fetchTimeoutStatus, 5000);
+    return () => clearInterval(interval);
+  }, [fetchTimeoutStatus]);
 
   if (isLoading) {
     return (
@@ -52,12 +82,33 @@ export default function ChatsPage() {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <h1 className="text-xl font-bold text-white">Chats</h1>
+  const showCountdownBanner = !!upcomingTimeout && !globalTimeout;
 
-      {/* Conversations List */}
+  return (
+    <>
+      {/* Global Timeout Overlay */}
+      {globalTimeout && (
+        <TimeoutOverlay
+          endAt={globalTimeout.endAt}
+          reason={globalTimeout.reason as TimeoutReason | null}
+        />
+      )}
+
+      <div className="space-y-6">
+        {/* Header */}
+        <h1 className="text-xl font-bold text-white">Chats</h1>
+
+        {/* Global Countdown Banner */}
+        {showCountdownBanner && (
+          <TimeoutBanner
+            endAt={upcomingTimeout.endAt}
+            startAt={upcomingTimeout.startAt}
+            reason={upcomingTimeout.reason as TimeoutReason | null}
+            isCountdown={true}
+          />
+        )}
+
+        {/* Conversations List */}
       {conversations.length === 0 ? (
         <div className="bg-dark-800 rounded-xl border border-dark-700 p-8 text-center">
           <div className="w-16 h-16 bg-dark-700 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -81,7 +132,8 @@ export default function ChatsPage() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
 

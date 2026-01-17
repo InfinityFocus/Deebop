@@ -80,10 +80,49 @@ export async function POST(
       );
     }
 
+    // Check for active timeout on sender (either for this conversation or all chats)
+    const now = new Date().toISOString();
+    const { data: senderTimeout } = await supabase
+      .from('timeouts')
+      .select('id, reason')
+      .eq('child_id', user.id)
+      .in('status', ['scheduled', 'active'])
+      .lte('start_at', now)
+      .gt('end_at', now)
+      .or(`conversation_id.is.null,conversation_id.eq.${id}`)
+      .limit(1)
+      .single();
+
+    if (senderTimeout) {
+      return NextResponse.json(
+        { success: false, error: 'Chat is paused', code: 'TIMEOUT_ACTIVE' },
+        { status: 403 }
+      );
+    }
+
     // Get recipient child details
     const recipientId = conversation.child_a_id === user.id
       ? conversation.child_b_id
       : conversation.child_a_id;
+
+    // Check for active timeout on recipient (they're taking a break)
+    const { data: recipientTimeout } = await supabase
+      .from('timeouts')
+      .select('id, reason')
+      .eq('child_id', recipientId)
+      .in('status', ['scheduled', 'active'])
+      .lte('start_at', now)
+      .gt('end_at', now)
+      .or(`conversation_id.is.null,conversation_id.eq.${id}`)
+      .limit(1)
+      .single();
+
+    if (recipientTimeout) {
+      return NextResponse.json(
+        { success: false, error: 'Your friend is taking a break', code: 'FRIEND_TIMEOUT' },
+        { status: 403 }
+      );
+    }
 
     const { data: recipientChild } = await supabase
       .from('children')

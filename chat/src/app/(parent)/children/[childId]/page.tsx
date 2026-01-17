@@ -7,6 +7,7 @@ import { ArrowLeft, Save, Trash2, AlertCircle, Pause, Play, Users, MessageSquare
 import { Button, Input } from '@/components/shared';
 import { Avatar, AvatarSelector } from '@/components/child/AvatarSelector';
 import { OversightSelector } from '@/components/parent/OversightSelector';
+import { ActiveTimeouts } from '@/components/parent/timeouts/ActiveTimeouts';
 import type { Child, AgeBand, OversightMode } from '@/types';
 
 const AGE_BANDS: { value: AgeBand; label: string }[] = [
@@ -213,6 +214,13 @@ export default function ChildSettingsPage() {
             </Link>
           </div>
         </div>
+
+        {/* Wrap-up Timer Section */}
+        <ActiveTimeouts
+          childId={childId}
+          childName={child.displayName}
+          childAvatarId={child.avatarId}
+        />
 
         {/* Profile Section */}
         <div className="bg-dark-800 rounded-xl border border-dark-700 p-6">

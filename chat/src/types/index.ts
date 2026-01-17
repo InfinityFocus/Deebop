@@ -102,6 +102,65 @@ export interface AuditLogEntry {
 }
 
 // ==========================================
+// Timeout Types (Wrap-up Timer)
+// ==========================================
+
+export type TimeoutStatus = 'scheduled' | 'active' | 'ended' | 'cancelled';
+export type TimeoutReason = 'dinner' | 'bedtime' | 'school' | 'break';
+
+// Database format (snake_case)
+export interface TimeoutDB {
+  id: string;
+  parent_id: string;
+  child_id: string;
+  conversation_id: string | null; // NULL = all chats
+  start_at: string;
+  end_at: string;
+  status: TimeoutStatus;
+  reason: TimeoutReason | null;
+  created_at: string;
+  ended_by: 'parent' | 'system' | null;
+}
+
+// UI format (camelCase)
+export interface Timeout {
+  id: string;
+  parentId: string;
+  childId: string;
+  conversationId: string | null;
+  startAt: string;
+  endAt: string;
+  status: TimeoutStatus;
+  reason: TimeoutReason | null;
+  createdAt: string;
+  endedBy: 'parent' | 'system' | null;
+}
+
+export interface CreateTimeoutInput {
+  childId: string;
+  conversationId?: string;
+  startIn: number; // minutes from now (0 = immediately)
+  duration: number; // minutes
+  reason?: TimeoutReason;
+}
+
+export interface TimeoutWithChild extends Timeout {
+  child: {
+    id: string;
+    displayName: string;
+    username: string;
+    avatarId: string;
+  };
+}
+
+export const TIMEOUT_REASONS: { value: TimeoutReason; label: string; emoji: string }[] = [
+  { value: 'dinner', label: 'Dinner', emoji: '🍽️' },
+  { value: 'bedtime', label: 'Bedtime', emoji: '🌙' },
+  { value: 'school', label: 'School', emoji: '📚' },
+  { value: 'break', label: 'Break', emoji: '☕' },
+];
+
+// ==========================================
 // Authentication Types
 // ==========================================
 
