@@ -1,5 +1,16 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { SubscriptionDB, SubscriptionPlan, SubscriptionAccess } from '@/types';
+import type {
+  SubscriptionDB,
+  SubscriptionPlan,
+  SubscriptionAccess,
+  ReferralCodeDB,
+  ReferralDB,
+  BillingCreditDB,
+  BillingCreditType,
+  ReferralStatus,
+  REFERRAL_CONFIG,
+  COMMON_EMAIL_DOMAINS,
+} from '@/types';
 
 // ==========================================
 // Supabase Client Configuration
@@ -1395,4 +1406,586 @@ export async function getTrialsEndingSoon(daysUntil: number) {
   }
 
   return data || [];
+}
+
+// ==========================================
+// Referral Queries
+// ==========================================
+
+// Config constants (duplicated to avoid circular import)
+const REFERRAL_MAX_CREDITS_PER_YEAR = 12;
+const REFERRAL_HOLD_PERIOD_DAYS = 14;
+const REFERRAL_CODE_LENGTH = 8;
+
+// Common email domains for anti-abuse check
+const commonEmailDomains = [
+  'gmail.com', 'googlemail.com', 'yahoo.com', 'yahoo.co.uk',
+  'hotmail.com', 'hotmail.co.uk', 'outlook.com', 'live.com',
+  'msn.com', 'icloud.com', 'me.com', 'aol.com',
+  'protonmail.com', 'proton.me', 'mail.com', 'zoho.com',
+];
+
+/**
+ * Generate a random referral code (8 chars alphanumeric uppercase)
+ */
+export function generateReferralCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed ambiguous chars: 0, O, I, 1
+  let code = '';
+  for (let i = 0; i < REFERRAL_CODE_LENGTH; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+/**
+ * Get or create a referral code for a parent
+ */
+export async function getOrCreateReferralCode(parentId: string): Promise<ReferralCodeDB> {
+  const client = getServiceClient();
+
+  // Check for existing code
+  const { data: existing, error: fetchError } = await client
+    .schema('chat')
+    .from('referral_codes')
+    .select('*')
+    .eq('referrer_parent_id', parentId)
+    .single();
+
+  if (existing) {
+    return existing as ReferralCodeDB;
+  }
+
+  // Generate unique code
+  let code: string;
+  let attempts = 0;
+  while (attempts < 10) {
+    code = generateReferralCode();
+    const { data: codeExists } = await client
+      .schema('chat')
+      .from('referral_codes')
+      .select('id')
+      .eq('code', code)
+      .single();
+
+    if (!codeExists) break;
+    attempts++;
+  }
+
+  // Create new code
+  const { data, error } = await client
+    .schema('chat')
+    .from('referral_codes')
+    .insert({
+      referrer_parent_id: parentId,
+      code: code!,
+      is_active: true,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    // Handle race condition where code was created between check and insert
+    if (error.code === '23505') {
+      const { data: retry } = await client
+        .schema('chat')
+        .from('referral_codes')
+        .select('*')
+        .eq('referrer_parent_id', parentId)
+        .single();
+      if (retry) return retry as ReferralCodeDB;
+    }
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data as ReferralCodeDB;
+}
+
+/**
+ * Get referral code by code string
+ */
+export async function getReferralCodeByCode(code: string): Promise<ReferralCodeDB | null> {
+  const client = getServiceClient();
+  const { data, error } = await client
+    .schema('chat')
+    .from('referral_codes')
+    .select('*')
+    .eq('code', code.toUpperCase())
+    .eq('is_active', true)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data as ReferralCodeDB | null;
+}
+
+/**
+ * Track a referral click
+ */
+export async function trackReferralClick(
+  code: string,
+  childNames: string[] | null,
+  fingerprint: string | null
+): Promise<ReferralDB> {
+  const client = getServiceClient();
+
+  // Get the referral code to find the referrer
+  const referralCode = await getReferralCodeByCode(code);
+  if (!referralCode) {
+    throw new Error('Invalid referral code');
+  }
+
+  const { data, error } = await client
+    .schema('chat')
+    .from('referrals')
+    .insert({
+      referrer_parent_id: referralCode.referrer_parent_id,
+      code_used: code.toUpperCase(),
+      status: 'clicked',
+      child_names: childNames,
+      click_fingerprint: fingerprint,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data as ReferralDB;
+}
+
+/**
+ * Get referral by ID
+ */
+export async function getReferralById(referralId: string): Promise<ReferralDB | null> {
+  const client = getServiceClient();
+  const { data, error } = await client
+    .schema('chat')
+    .from('referrals')
+    .select('*')
+    .eq('id', referralId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data as ReferralDB | null;
+}
+
+/**
+ * Update referral on signup
+ */
+export async function updateReferralOnSignup(
+  referralId: string,
+  refereeParentId: string,
+  refereeEmail: string,
+  ipHash: string | null
+): Promise<ReferralDB> {
+  const client = getServiceClient();
+
+  const { data, error } = await client
+    .schema('chat')
+    .from('referrals')
+    .update({
+      referee_parent_id: refereeParentId,
+      referee_email: refereeEmail.toLowerCase(),
+      signup_ip_hash: ipHash,
+      status: 'signed_up',
+      signed_up_at: new Date().toISOString(),
+    })
+    .eq('id', referralId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data as ReferralDB;
+}
+
+/**
+ * Update referral when referee subscribes
+ */
+export async function updateReferralOnSubscription(refereeParentId: string): Promise<void> {
+  const client = getServiceClient();
+
+  // Find the referral for this referee
+  const { data: referral, error: fetchError } = await client
+    .schema('chat')
+    .from('referrals')
+    .select('*')
+    .eq('referee_parent_id', refereeParentId)
+    .eq('status', 'signed_up')
+    .single();
+
+  if (fetchError && fetchError.code !== 'PGRST116') {
+    throw new Error(`Database error: ${fetchError.message}`);
+  }
+
+  if (!referral) return; // No referral to update
+
+  const { error: updateError } = await client
+    .schema('chat')
+    .from('referrals')
+    .update({
+      status: 'subscribed',
+      subscribed_at: new Date().toISOString(),
+    })
+    .eq('id', referral.id);
+
+  if (updateError) {
+    throw new Error(`Database error: ${updateError.message}`);
+  }
+}
+
+/**
+ * Update referral when first payment is received
+ * Sets eligible_at to now + hold period
+ */
+export async function updateReferralOnFirstPayment(refereeParentId: string): Promise<void> {
+  const client = getServiceClient();
+
+  // Find the referral for this referee
+  const { data: referral, error: fetchError } = await client
+    .schema('chat')
+    .from('referrals')
+    .select('*')
+    .eq('referee_parent_id', refereeParentId)
+    .eq('status', 'subscribed')
+    .single();
+
+  if (fetchError && fetchError.code !== 'PGRST116') {
+    throw new Error(`Database error: ${fetchError.message}`);
+  }
+
+  if (!referral) return; // No referral to update
+
+  const eligibleAt = new Date();
+  eligibleAt.setDate(eligibleAt.getDate() + REFERRAL_HOLD_PERIOD_DAYS);
+
+  const { error: updateError } = await client
+    .schema('chat')
+    .from('referrals')
+    .update({
+      status: 'eligible',
+      first_payment_at: new Date().toISOString(),
+      eligible_at: eligibleAt.toISOString(),
+    })
+    .eq('id', referral.id);
+
+  if (updateError) {
+    throw new Error(`Database error: ${updateError.message}`);
+  }
+}
+
+/**
+ * Get referrals that are ready for credit (hold period passed)
+ */
+export async function getReferralsPendingCredit(): Promise<ReferralDB[]> {
+  const client = getServiceClient();
+  const now = new Date().toISOString();
+
+  const { data, error } = await client
+    .schema('chat')
+    .from('referrals')
+    .select('*')
+    .eq('status', 'eligible')
+    .lte('eligible_at', now);
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return (data || []) as ReferralDB[];
+}
+
+/**
+ * Mark referral as credited
+ */
+export async function markReferralCredited(referralId: string): Promise<void> {
+  const client = getServiceClient();
+
+  const { error } = await client
+    .schema('chat')
+    .from('referrals')
+    .update({
+      status: 'credited',
+      credited_at: new Date().toISOString(),
+    })
+    .eq('id', referralId);
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+}
+
+/**
+ * Invalidate a referral (anti-abuse)
+ */
+export async function invalidateReferral(
+  referralId: string,
+  reason: string,
+  invalidatedBy: string
+): Promise<void> {
+  const client = getServiceClient();
+
+  const { error } = await client
+    .schema('chat')
+    .from('referrals')
+    .update({
+      status: 'invalid',
+      notes: reason,
+      invalidated_by: invalidatedBy,
+      invalidated_at: new Date().toISOString(),
+    })
+    .eq('id', referralId);
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+}
+
+/**
+ * Get all referrals for a parent (referrer)
+ */
+export async function getReferralsForParent(parentId: string): Promise<ReferralDB[]> {
+  const client = getServiceClient();
+
+  const { data, error } = await client
+    .schema('chat')
+    .from('referrals')
+    .select('*')
+    .eq('referrer_parent_id', parentId)
+    .neq('status', 'invalid') // Hide invalid referrals from UI
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return (data || []) as ReferralDB[];
+}
+
+/**
+ * Get available (unapplied) credits for a parent
+ */
+export async function getAvailableCredits(parentId: string): Promise<BillingCreditDB[]> {
+  const client = getServiceClient();
+
+  const { data, error } = await client
+    .schema('chat')
+    .from('billing_credits')
+    .select('*')
+    .eq('parent_id', parentId)
+    .is('applied_at', null)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return (data || []) as BillingCreditDB[];
+}
+
+/**
+ * Get count of referral credits earned this year
+ */
+export async function getYearlyReferralCreditsCount(parentId: string): Promise<number> {
+  const client = getServiceClient();
+  const yearStart = new Date();
+  yearStart.setMonth(0, 1);
+  yearStart.setHours(0, 0, 0, 0);
+
+  const { count, error } = await client
+    .schema('chat')
+    .from('billing_credits')
+    .select('id', { count: 'exact', head: true })
+    .eq('parent_id', parentId)
+    .eq('credit_type', 'referral')
+    .gte('created_at', yearStart.toISOString());
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return count || 0;
+}
+
+/**
+ * Create a billing credit
+ */
+export async function createBillingCredit(
+  parentId: string,
+  creditType: BillingCreditType,
+  quantity: number,
+  source: string,
+  referralId?: string
+): Promise<BillingCreditDB> {
+  const client = getServiceClient();
+
+  const { data, error } = await client
+    .schema('chat')
+    .from('billing_credits')
+    .insert({
+      parent_id: parentId,
+      credit_type: creditType,
+      quantity,
+      source,
+      referral_id: referralId || null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data as BillingCreditDB;
+}
+
+/**
+ * Mark a credit as applied
+ */
+export async function applyCredit(creditId: string): Promise<void> {
+  const client = getServiceClient();
+
+  const { error } = await client
+    .schema('chat')
+    .from('billing_credits')
+    .update({
+      applied_at: new Date().toISOString(),
+    })
+    .eq('id', creditId);
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+}
+
+/**
+ * Check if referee email was already used by this referrer
+ */
+export async function checkDuplicateRefereeEmail(
+  referrerParentId: string,
+  refereeEmail: string
+): Promise<boolean> {
+  const client = getServiceClient();
+
+  const { count, error } = await client
+    .schema('chat')
+    .from('referrals')
+    .select('id', { count: 'exact', head: true })
+    .eq('referrer_parent_id', referrerParentId)
+    .eq('referee_email', refereeEmail.toLowerCase())
+    .neq('status', 'invalid');
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return (count || 0) > 0;
+}
+
+/**
+ * Check if referrer and referee share a non-common email domain
+ */
+export async function checkSameEmailDomain(
+  referrerParentId: string,
+  refereeEmail: string
+): Promise<boolean> {
+  const client = getServiceClient();
+
+  // Get referrer's email
+  const { data: referrer, error } = await client
+    .schema('chat')
+    .from('parents')
+    .select('email')
+    .eq('id', referrerParentId)
+    .single();
+
+  if (error || !referrer) {
+    return false;
+  }
+
+  const referrerDomain = referrer.email.split('@')[1]?.toLowerCase();
+  const refereeDomain = refereeEmail.split('@')[1]?.toLowerCase();
+
+  // Skip check if either domain is common
+  if (commonEmailDomains.includes(referrerDomain) || commonEmailDomains.includes(refereeDomain)) {
+    return false;
+  }
+
+  // Flag if same non-common domain
+  return referrerDomain === refereeDomain;
+}
+
+/**
+ * Run anti-abuse checks for a referral
+ * Returns { valid: boolean, reason?: string }
+ */
+export async function runReferralAntiAbuseChecks(
+  referrerParentId: string,
+  refereeEmail: string
+): Promise<{ valid: boolean; reason?: string }> {
+  // 1. Check yearly cap
+  const yearlyCount = await getYearlyReferralCreditsCount(referrerParentId);
+  if (yearlyCount >= REFERRAL_MAX_CREDITS_PER_YEAR) {
+    return { valid: false, reason: 'yearly_cap_reached' };
+  }
+
+  // 2. Check duplicate email
+  const isDuplicate = await checkDuplicateRefereeEmail(referrerParentId, refereeEmail);
+  if (isDuplicate) {
+    return { valid: false, reason: 'duplicate_email' };
+  }
+
+  // 3. Get referrer email to compare
+  const client = getServiceClient();
+  const { data: referrer } = await client
+    .schema('chat')
+    .from('parents')
+    .select('email')
+    .eq('id', referrerParentId)
+    .single();
+
+  // 4. Check same email
+  if (referrer && referrer.email.toLowerCase() === refereeEmail.toLowerCase()) {
+    return { valid: false, reason: 'same_email' };
+  }
+
+  // 5. Check same domain (non-common)
+  const sameDomain = await checkSameEmailDomain(referrerParentId, refereeEmail);
+  if (sameDomain) {
+    return { valid: false, reason: 'same_domain' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Find the most recent clicked referral for a given code that hasn't been linked to a user yet
+ */
+export async function findUnlinkedReferralByCode(code: string): Promise<ReferralDB | null> {
+  const client = getServiceClient();
+
+  const { data, error } = await client
+    .schema('chat')
+    .from('referrals')
+    .select('*')
+    .eq('code_used', code.toUpperCase())
+    .eq('status', 'clicked')
+    .is('referee_parent_id', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data as ReferralDB | null;
 }

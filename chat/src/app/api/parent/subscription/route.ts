@@ -6,6 +6,7 @@ import {
   createSubscription,
   cancelSubscription,
   updateSubscription,
+  updateReferralOnSubscription,
 } from '@/lib/db';
 import { subscriptionFromDB, type SubscriptionPlan } from '@/types';
 
@@ -87,6 +88,17 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Failed to create subscription' },
         { status: 500 }
       );
+    }
+
+    // Update referral status if this user was referred
+    // (only for paid subscriptions, not trials)
+    if (plan && !startTrial) {
+      try {
+        await updateReferralOnSubscription(user.id);
+      } catch (referralError) {
+        // Log but don't fail subscription creation
+        console.error('Referral status update error:', referralError);
+      }
     }
 
     return NextResponse.json({

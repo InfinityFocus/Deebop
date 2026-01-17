@@ -1,11 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button, Input } from '@/components/shared';
 import { useAuthStore } from '@/stores/authStore';
+
+interface StoredReferral {
+  code: string;
+  referralId: string;
+  childNames: string[] | null;
+}
 
 export function ParentRegisterForm() {
   const router = useRouter();
@@ -17,6 +23,22 @@ export function ParentRegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+
+  // Check for referral code in localStorage
+  useEffect(() => {
+    try {
+      const storedReferral = localStorage.getItem('deebop_referral');
+      if (storedReferral) {
+        const parsed: StoredReferral = JSON.parse(storedReferral);
+        if (parsed.code) {
+          setReferralCode(parsed.code);
+        }
+      }
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+  }, []);
 
   // Password validation
   const hasMinLength = password.length >= 8;
@@ -51,6 +73,7 @@ export function ParentRegisterForm() {
           email,
           password,
           displayName: displayName || undefined,
+          referralCode: referralCode || undefined,
         }),
       });
 
@@ -59,6 +82,13 @@ export function ParentRegisterForm() {
       if (!data.success) {
         setError(data.error || 'Registration failed. Please try again.');
         return;
+      }
+
+      // Clear referral from localStorage after successful registration
+      try {
+        localStorage.removeItem('deebop_referral');
+      } catch (e) {
+        // Ignore localStorage errors
       }
 
       // Update store

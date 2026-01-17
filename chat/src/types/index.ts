@@ -480,3 +480,193 @@ export const CHILD_SAFE_EMOJIS: EmojiCategory[] = [
     emojis: ['🎈', '🎁', '🎀', '🎊', '🎉', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💕', '💖', '💗', '💝', '💘', '🏠', '🏡', '🚗', '🚕', '🚌', '🚎', '🏎️', '🚀', '✈️', '🚁', '🛸'],
   },
 ];
+
+// ==========================================
+// Referral Types
+// ==========================================
+
+export type ReferralStatus = 'clicked' | 'signed_up' | 'subscribed' | 'eligible' | 'credited' | 'invalid';
+export type BillingCreditType = 'referral' | 'promo' | 'admin' | 'refund';
+
+// Database format (snake_case)
+export interface ReferralCodeDB {
+  id: string;
+  referrer_parent_id: string;
+  code: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface ReferralDB {
+  id: string;
+  referrer_parent_id: string;
+  referee_parent_id: string | null;
+  code_used: string;
+  status: ReferralStatus;
+  child_names: string[] | null;
+  click_fingerprint: string | null;
+  signup_ip_hash: string | null;
+  referee_email: string | null;
+  created_at: string;
+  signed_up_at: string | null;
+  subscribed_at: string | null;
+  first_payment_at: string | null;
+  eligible_at: string | null;
+  credited_at: string | null;
+  notes: string | null;
+  invalidated_by: string | null;
+  invalidated_at: string | null;
+}
+
+export interface BillingCreditDB {
+  id: string;
+  parent_id: string;
+  credit_type: BillingCreditType;
+  quantity: number;
+  source: string;
+  referral_id: string | null;
+  created_at: string;
+  applied_at: string | null;
+  expires_at: string | null;
+}
+
+// UI format (camelCase)
+export interface ReferralCode {
+  id: string;
+  referrerParentId: string;
+  code: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface Referral {
+  id: string;
+  referrerParentId: string;
+  refereeParentId: string | null;
+  codeUsed: string;
+  status: ReferralStatus;
+  childNames: string[] | null;
+  clickFingerprint: string | null;
+  signupIpHash: string | null;
+  refereeEmail: string | null;
+  createdAt: string;
+  signedUpAt: string | null;
+  subscribedAt: string | null;
+  firstPaymentAt: string | null;
+  eligibleAt: string | null;
+  creditedAt: string | null;
+  notes: string | null;
+  invalidatedBy: string | null;
+  invalidatedAt: string | null;
+}
+
+export interface BillingCredit {
+  id: string;
+  parentId: string;
+  creditType: BillingCreditType;
+  quantity: number;
+  source: string;
+  referralId: string | null;
+  createdAt: string;
+  appliedAt: string | null;
+  expiresAt: string | null;
+}
+
+export interface ParentReferralSummary {
+  code: string;
+  referralUrl: string;
+  stats: {
+    clicks: number;
+    signups: number;
+    subscriptions: number;
+    credited: number;
+  };
+  referrals: Referral[];
+  creditsAvailable: number;
+  yearlyCreditsUsed: number;
+}
+
+// Referral configuration constants
+export const REFERRAL_CONFIG = {
+  MAX_CREDITS_PER_YEAR: 12,
+  HOLD_PERIOD_DAYS: 14,
+  CODE_LENGTH: 8,
+} as const;
+
+// Common email domains that should NOT trigger same-domain anti-abuse checks
+export const COMMON_EMAIL_DOMAINS = [
+  'gmail.com',
+  'googlemail.com',
+  'yahoo.com',
+  'yahoo.co.uk',
+  'hotmail.com',
+  'hotmail.co.uk',
+  'outlook.com',
+  'live.com',
+  'msn.com',
+  'icloud.com',
+  'me.com',
+  'aol.com',
+  'protonmail.com',
+  'proton.me',
+  'mail.com',
+  'zoho.com',
+] as const;
+
+// Helper conversion functions
+export function referralCodeFromDB(db: ReferralCodeDB): ReferralCode {
+  return {
+    id: db.id,
+    referrerParentId: db.referrer_parent_id,
+    code: db.code,
+    isActive: db.is_active,
+    createdAt: db.created_at,
+  };
+}
+
+export function referralFromDB(db: ReferralDB): Referral {
+  return {
+    id: db.id,
+    referrerParentId: db.referrer_parent_id,
+    refereeParentId: db.referee_parent_id,
+    codeUsed: db.code_used,
+    status: db.status,
+    childNames: db.child_names,
+    clickFingerprint: db.click_fingerprint,
+    signupIpHash: db.signup_ip_hash,
+    refereeEmail: db.referee_email,
+    createdAt: db.created_at,
+    signedUpAt: db.signed_up_at,
+    subscribedAt: db.subscribed_at,
+    firstPaymentAt: db.first_payment_at,
+    eligibleAt: db.eligible_at,
+    creditedAt: db.credited_at,
+    notes: db.notes,
+    invalidatedBy: db.invalidated_by,
+    invalidatedAt: db.invalidated_at,
+  };
+}
+
+export function billingCreditFromDB(db: BillingCreditDB): BillingCredit {
+  return {
+    id: db.id,
+    parentId: db.parent_id,
+    creditType: db.credit_type,
+    quantity: db.quantity,
+    source: db.source,
+    referralId: db.referral_id,
+    createdAt: db.created_at,
+    appliedAt: db.applied_at,
+    expiresAt: db.expires_at,
+  };
+}
+
+// Status display labels for UI
+export const REFERRAL_STATUS_LABELS: Record<ReferralStatus, string> = {
+  clicked: 'Sent',
+  signed_up: 'Signed up',
+  subscribed: 'Subscribed',
+  eligible: 'Processing',
+  credited: 'Month earned',
+  invalid: 'Invalid',
+};

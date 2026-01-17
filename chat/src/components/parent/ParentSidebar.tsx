@@ -8,6 +8,7 @@ import {
   Users,
   UserPlus,
   Bell,
+  Gift,
   Settings,
   LogOut,
 } from 'lucide-react';
@@ -18,6 +19,7 @@ const navItems = [
   { href: '/children', label: 'Children', icon: Users },
   { href: '/children/new', label: 'Add Child', icon: UserPlus },
   { href: '/approvals', label: 'Approvals', icon: Bell },
+  { href: '/referrals', label: 'Referrals', icon: Gift },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 

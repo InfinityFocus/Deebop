@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   UserPlus,
+  Gift,
   X,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
@@ -23,6 +24,7 @@ const mainNavItems = [
 
 const menuItems = [
   { href: '/children/new', label: 'Add Child', icon: UserPlus },
+  { href: '/referrals', label: 'Referrals', icon: Gift },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -61,6 +63,7 @@ export function ParentBottomNav() {
 
   const isMenuActive =
     pathname.startsWith('/settings') ||
+    pathname.startsWith('/referrals') ||
     pathname === '/children/new';
 
   return (

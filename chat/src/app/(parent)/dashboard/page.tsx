@@ -285,10 +285,28 @@ function ChildQuickCard({ child }: { child: Child }) {
 function InviteParentsCard() {
   const [copied, setCopied] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
+  const [referralUrl, setReferralUrl] = useState('');
 
-  const inviteUrl = typeof window !== 'undefined'
+  // Fetch referral URL on mount
+  useEffect(() => {
+    async function fetchReferralUrl() {
+      try {
+        const res = await fetch('/api/parent/referrals');
+        const data = await res.json();
+        if (data.success && data.data?.referralUrl) {
+          setReferralUrl(data.data.referralUrl);
+        }
+      } catch (err) {
+        // Fallback to basic URL
+        console.error('Failed to fetch referral URL:', err);
+      }
+    }
+    fetchReferralUrl();
+  }, []);
+
+  const inviteUrl = referralUrl || (typeof window !== 'undefined'
     ? `${window.location.origin}/parent/register`
-    : '';
+    : '');
 
   const inviteMessage = `Join me on Deebop Chat - a safe messaging app for kids! Sign up here: ${inviteUrl}`;
 
@@ -342,7 +360,7 @@ function InviteParentsCard() {
           <div>
             <h2 className="text-lg font-semibold text-white mb-1">Invite Other Parents</h2>
             <p className="text-sm text-gray-400">
-              Know other parents whose kids would like to chat? Invite them to join!
+              Invite friends to join and get a free month when they subscribe!
             </p>
           </div>
         </div>

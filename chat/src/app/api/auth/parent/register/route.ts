@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createHash } from 'crypto';
 import {
   hashPassword,
   createParentToken,
@@ -6,12 +7,20 @@ import {
   isValidEmail,
   isValidPassword,
 } from '@/lib/auth';
-import { createParent, getParentByEmail } from '@/lib/db';
+import {
+  createParent,
+  getParentByEmail,
+  findUnlinkedReferralByCode,
+  getReferralCodeByCode,
+  runReferralAntiAbuseChecks,
+  updateReferralOnSignup,
+  invalidateReferral,
+} from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, displayName } = body;
+    const { email, password, displayName, referralCode } = body;
 
     // Validate required fields
     if (!email || !password) {
@@ -51,6 +60,55 @@ export async function POST(request: NextRequest) {
 
     // Create parent account
     const parent = await createParent(email, passwordHash, displayName);
+
+    // Handle referral if code provided
+    if (referralCode && typeof referralCode === 'string') {
+      try {
+        // Validate referral code exists
+        const codeRecord = await getReferralCodeByCode(referralCode);
+
+        if (codeRecord) {
+          // Run anti-abuse checks
+          const abuseCheck = await runReferralAntiAbuseChecks(
+            codeRecord.referrer_parent_id,
+            email
+          );
+
+          // Get IP hash for tracking
+          const forwardedFor = request.headers.get('x-forwarded-for');
+          const realIp = request.headers.get('x-real-ip');
+          const ip = forwardedFor?.split(',')[0] || realIp || null;
+          const ipHash = ip
+            ? createHash('sha256').update(ip).digest('hex').substring(0, 16)
+            : null;
+
+          // Find unlinked referral record (created when link was clicked)
+          const unlinkedReferral = await findUnlinkedReferralByCode(referralCode);
+
+          if (unlinkedReferral) {
+            if (abuseCheck.valid) {
+              // Update referral with signup info
+              await updateReferralOnSignup(
+                unlinkedReferral.id,
+                parent.id,
+                email,
+                ipHash
+              );
+            } else {
+              // Invalidate the referral due to anti-abuse check failure
+              await invalidateReferral(
+                unlinkedReferral.id,
+                abuseCheck.reason || 'anti_abuse_check_failed',
+                'system'
+              );
+            }
+          }
+        }
+      } catch (referralError) {
+        // Log but don't fail registration due to referral issues
+        console.error('Referral processing error:', referralError);
+      }
+    }
 
     // Create JWT token
     const token = await createParentToken(parent.id, parent.email);
