@@ -230,6 +230,10 @@ export default function LandingPage() {
               question="Can I change settings later?"
               answer="Yes, anytime."
             />
+            <FAQItem
+              question="Does my child need a phone?"
+              answer="No. Deebop Chat works on desktop and Chromebook, and can be installed as an app on supported devices."
+            />
           </div>
         </div>
       </section>
