@@ -12,8 +12,9 @@ import { FollowersModal, FollowingModal } from '@/components/profile';
 
 const TIER_BADGES = {
   free: { label: 'Free', color: 'bg-gray-600' },
-  standard: { label: 'Standard', color: 'bg-blue-600' },
+  creator: { label: 'Creator', color: 'bg-blue-600' },
   pro: { label: 'Pro', color: 'bg-gradient-to-r from-emerald-500 to-cyan-500' },
+  teams: { label: 'Teams', color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
 };
 
 export default function ProfilePage() {
