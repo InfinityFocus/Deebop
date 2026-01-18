@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
+import { useTierGate } from '@/hooks/useTierGate';
 import { useUnreadNotificationCount } from '@/hooks/useNotifications';
 import type { ProfileSummary } from '@/types/database';
 
@@ -38,6 +39,7 @@ const secondaryMenuItems = [
 export function Navbar() {
   const pathname = usePathname();
   const { user, logout, profiles, canAddProfile, switchProfile } = useAuth();
+  const { isTeams } = useTierGate();
   const unreadCount = useUnreadNotificationCount();
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -85,6 +87,7 @@ export function Navbar() {
     pathname.startsWith('/albums') ||
     pathname.startsWith('/events') ||
     pathname.startsWith('/creator-page') ||
+    pathname.startsWith('/workspace') ||
     pathname.startsWith('/settings');
 
   return (
@@ -232,6 +235,22 @@ export function Navbar() {
 
           {/* Secondary Menu Items */}
           <div className="border-t border-gray-800 py-2">
+            {/* Workspace - Teams tier only */}
+            {isTeams && (
+              <Link
+                href="/workspace"
+                className={clsx(
+                  'flex items-center gap-4 px-4 py-3 transition-colors',
+                  pathname.startsWith('/workspace')
+                    ? 'text-white bg-gray-800'
+                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                )}
+              >
+                <Users size={20} />
+                <span>Workspace</span>
+                <span className="ml-auto px-2 py-0.5 text-xs bg-purple-500/20 text-purple-400 rounded">Teams</span>
+              </Link>
+            )}
             {secondaryMenuItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname.startsWith(item.href);

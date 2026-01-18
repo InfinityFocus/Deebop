@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, PlaySquare, PlusSquare, Bell, User, Settings, LogOut, Bookmark, Crown, Images, Calendar, Link2, MoreHorizontal, ChevronDown } from 'lucide-react';
+import { Home, Search, PlaySquare, PlusSquare, Bell, User, Settings, LogOut, Bookmark, Crown, Images, Calendar, Link2, MoreHorizontal, ChevronDown, Users } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/hooks/useAuth';
+import { useTierGate } from '@/hooks/useTierGate';
 import { useUnreadNotificationCount } from '@/hooks/useNotifications';
 import { ProfileSwitcher } from '@/components/profile';
 
@@ -30,6 +31,7 @@ const secondaryNavItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { isTeams } = useTierGate();
   const unreadCount = useUnreadNotificationCount();
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -86,6 +88,24 @@ export function Sidebar() {
         {/* Secondary Navigation */}
         <div className="mt-8 pt-8 border-t border-gray-800">
           <ul className="space-y-1">
+            {/* Workspace - Teams tier only */}
+            {isTeams && (
+              <li>
+                <Link
+                  href="/workspace"
+                  className={clsx(
+                    'flex items-center gap-4 px-4 py-3 rounded-lg transition-colors',
+                    pathname.startsWith('/workspace')
+                      ? 'bg-gray-800 text-white font-semibold'
+                      : 'text-gray-400 hover:bg-gray-900 hover:text-white'
+                  )}
+                >
+                  <Users size={24} strokeWidth={pathname.startsWith('/workspace') ? 2.5 : 1.5} />
+                  <span>Workspace</span>
+                  <span className="ml-auto px-2 py-0.5 text-xs bg-purple-500/20 text-purple-400 rounded">Teams</span>
+                </Link>
+              </li>
+            )}
             {secondaryNavItems.map((item) => {
               const isActive = pathname.startsWith(item.href);
               const Icon = item.icon;
