@@ -4,59 +4,19 @@
  *
  * Bunny Stream automatically transcodes videos to multiple resolutions
  * and provides HLS adaptive streaming.
+ *
+ * Security is handled via allowed domains in Bunny settings, not token auth.
+ * This simplifies HLS playback since all .ts segments work without signing.
  */
-
-import crypto from 'crypto';
 
 const BUNNY_STREAM_API_KEY = process.env.BUNNY_STREAM_API_KEY;
 const BUNNY_STREAM_LIBRARY_ID = process.env.BUNNY_STREAM_LIBRARY_ID;
 const BUNNY_STREAM_CDN_HOSTNAME = process.env.BUNNY_STREAM_CDN_HOSTNAME;
-// Token authentication key from Bunny Stream library settings
-const BUNNY_STREAM_TOKEN_KEY = process.env.BUNNY_STREAM_TOKEN_KEY;
 
 const BUNNY_API_BASE = 'https://video.bunnycdn.com/library';
 
 export function isBunnyStreamEnabled(): boolean {
   return !!(BUNNY_STREAM_API_KEY && BUNNY_STREAM_LIBRARY_ID && BUNNY_STREAM_CDN_HOSTNAME);
-}
-
-export function isTokenAuthEnabled(): boolean {
-  return !!BUNNY_STREAM_TOKEN_KEY;
-}
-
-/**
- * Generate a signed token for Bunny CDN Token Authentication
- * Format: Base64_URLSafe(SHA256_RAW(tokenKey + urlPath + expiryTimestamp + queryParams))
- *
- * All query parameters (except 'token' and 'expires') must be included in the hash
- * in alphabetical order, formatted as "param1=value1&param2=value2"
- *
- * @see https://docs.bunny.net/docs/cdn-token-authentication
- */
-function generateCdnToken(urlPath: string, expiryTimestamp: number, extraParams?: Record<string, string>): string {
-  if (!BUNNY_STREAM_TOKEN_KEY) {
-    throw new Error('BUNNY_STREAM_TOKEN_KEY is not configured');
-  }
-
-  // Start with: key + path + expiry
-  let stringToHash = BUNNY_STREAM_TOKEN_KEY + urlPath + expiryTimestamp.toString();
-
-  // Add extra query parameters in alphabetical order (excluding token and expires)
-  if (extraParams && Object.keys(extraParams).length > 0) {
-    const sortedParams = Object.keys(extraParams)
-      .sort()
-      .map(key => `${key}=${extraParams[key]}`)
-      .join('&');
-    stringToHash += sortedParams;
-  }
-
-  const hash = crypto.createHash('sha256').update(stringToHash).digest('base64');
-
-  // URL-safe Base64: replace + with -, / with _, remove = and newlines
-  return hash
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
 }
 
 export function getBunnyConfig() {
@@ -194,82 +154,36 @@ export async function deleteBunnyVideo(videoGuid: string): Promise<void> {
 /**
  * Get the HLS playlist URL for a video
  * This is the main playback URL for adaptive streaming
- * If token auth is enabled, returns a signed URL using CDN Token Authentication
- * Uses token_path to sign the entire video directory (so .ts segments also work)
- * @see https://docs.bunny.net/docs/cdn-token-authentication
- * @param expiryHours - How long the signed URL should be valid (default 24 hours)
+ * Security is handled via allowed domains in Bunny settings
  */
-export function getBunnyPlaybackUrl(videoGuid: string, expiryHours: number = 24): string {
+export function getBunnyPlaybackUrl(videoGuid: string): string {
   const { cdnHostname } = getBunnyConfig();
-  const baseUrl = `https://${cdnHostname}/${videoGuid}/playlist.m3u8`;
-
-  if (isTokenAuthEnabled()) {
-    const expiryTimestamp = Math.floor(Date.now() / 1000) + (expiryHours * 3600);
-    // Use token_path to sign the entire video directory (so .ts segments also work)
-    const tokenPath = `/${videoGuid}/`;
-    // token_path must be included in the hash (all query params except token/expires)
-    const token = generateCdnToken(tokenPath, expiryTimestamp, { token_path: tokenPath });
-    // token_path must be URL encoded in the URL
-    const encodedTokenPath = encodeURIComponent(tokenPath);
-    return `${baseUrl}?token=${token}&expires=${expiryTimestamp}&token_path=${encodedTokenPath}`;
-  }
-
-  return baseUrl;
+  return `https://${cdnHostname}/${videoGuid}/playlist.m3u8`;
 }
 
 /**
  * Get the direct MP4 URL for a specific resolution
  * Resolutions available: 240, 360, 480, 720, 1080
- * If token auth is enabled, returns a signed URL using CDN Token Authentication
  */
-export function getBunnyDirectUrl(videoGuid: string, resolution: number = 720, expiryHours: number = 24): string {
+export function getBunnyDirectUrl(videoGuid: string, resolution: number = 720): string {
   const { cdnHostname } = getBunnyConfig();
-  const urlPath = `/${videoGuid}/play_${resolution}p.mp4`;
-  const baseUrl = `https://${cdnHostname}${urlPath}`;
-
-  if (isTokenAuthEnabled()) {
-    const expiryTimestamp = Math.floor(Date.now() / 1000) + (expiryHours * 3600);
-    const token = generateCdnToken(urlPath, expiryTimestamp);
-    return `${baseUrl}?token=${token}&expires=${expiryTimestamp}`;
-  }
-
-  return baseUrl;
+  return `https://${cdnHostname}/${videoGuid}/play_${resolution}p.mp4`;
 }
 
 /**
  * Get the thumbnail URL for a video
- * If token auth is enabled, returns a signed URL using CDN Token Authentication
  */
-export function getBunnyThumbnailUrl(videoGuid: string, expiryHours: number = 24): string {
+export function getBunnyThumbnailUrl(videoGuid: string): string {
   const { cdnHostname } = getBunnyConfig();
-  const urlPath = `/${videoGuid}/thumbnail.jpg`;
-  const baseUrl = `https://${cdnHostname}${urlPath}`;
-
-  if (isTokenAuthEnabled()) {
-    const expiryTimestamp = Math.floor(Date.now() / 1000) + (expiryHours * 3600);
-    const token = generateCdnToken(urlPath, expiryTimestamp);
-    return `${baseUrl}?token=${token}&expires=${expiryTimestamp}`;
-  }
-
-  return baseUrl;
+  return `https://${cdnHostname}/${videoGuid}/thumbnail.jpg`;
 }
 
 /**
  * Get animated preview/gif URL
- * If token auth is enabled, returns a signed URL using CDN Token Authentication
  */
-export function getBunnyPreviewUrl(videoGuid: string, expiryHours: number = 24): string {
+export function getBunnyPreviewUrl(videoGuid: string): string {
   const { cdnHostname } = getBunnyConfig();
-  const urlPath = `/${videoGuid}/preview.webp`;
-  const baseUrl = `https://${cdnHostname}${urlPath}`;
-
-  if (isTokenAuthEnabled()) {
-    const expiryTimestamp = Math.floor(Date.now() / 1000) + (expiryHours * 3600);
-    const token = generateCdnToken(urlPath, expiryTimestamp);
-    return `${baseUrl}?token=${token}&expires=${expiryTimestamp}`;
-  }
-
-  return baseUrl;
+  return `https://${cdnHostname}/${videoGuid}/preview.webp`;
 }
 
 /**
