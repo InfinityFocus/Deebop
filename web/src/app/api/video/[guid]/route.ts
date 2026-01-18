@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   isBunnyStreamEnabled,
+  isTokenAuthEnabled,
   getBunnyPlaybackUrl,
   getBunnyThumbnailUrl,
   getBunnyDirectUrl,
@@ -35,6 +36,10 @@ export async function GET(
       );
     }
 
+    // Log token auth status for debugging
+    const tokenAuthEnabled = isTokenAuthEnabled();
+    console.log('[Video API] Token auth enabled:', tokenAuthEnabled);
+
     // Get video status from Bunny
     let status = 4; // Default to finished
     let statusLabel = 'finished';
@@ -51,6 +56,7 @@ export async function GET(
       duration = videoInfo.length;
       width = videoInfo.width;
       height = videoInfo.height;
+      console.log('[Video API] Video status:', { guid, status, statusLabel, isReady });
     } catch (err) {
       // If we can't get status, assume it might still be processing
       console.error('[Video API] Failed to get Bunny status:', err);
@@ -60,6 +66,11 @@ export async function GET(
     const playbackUrl = getBunnyPlaybackUrl(guid, 24);
     const thumbnailUrl = getBunnyThumbnailUrl(guid, 24);
     const directUrl = getBunnyDirectUrl(guid, 720, 24);
+
+    console.log('[Video API] Generated URLs:', {
+      playbackUrl: playbackUrl.substring(0, 80) + '...',
+      tokenAuthEnabled
+    });
 
     return NextResponse.json({
       guid,
@@ -72,6 +83,7 @@ export async function GET(
       duration,
       width,
       height,
+      tokenAuthEnabled, // Include for debugging
     });
   } catch (error) {
     console.error('[Video API] Error:', error);
