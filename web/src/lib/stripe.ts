@@ -174,5 +174,6 @@ export function getUploadLimits(tier: SubscriptionTier) {
       hasWorkspace: true,
     },
   };
-  return limits[tier];
+  // Fallback to free tier if invalid tier is passed (handles legacy 'standard' tier)
+  return limits[tier] || limits.free;
 }

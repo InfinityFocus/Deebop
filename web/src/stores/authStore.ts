@@ -128,18 +128,18 @@ export const useUserTier = (): AccountTier => useAuthStore((state) => state.iden
 export const TIER_LIMITS = {
   free: {
     maxImageSizeKB: 500,
-    maxVideoSeconds: 60,
-    maxVideoResolution: '1080p',
+    maxVideoSeconds: 30,
+    maxVideoResolution: '720p',
     canUploadPanorama: false,
     canAddProfileLink: false,
     hasAds: true,
     maxProfiles: 1,
   },
-  standard: {
-    maxImageSizeMB: 10,
+  creator: {
+    maxImageSizeMB: 50,
     maxVideoSeconds: 180,
     maxVideoResolution: '1080p',
-    canUploadPanorama: false,
+    canUploadPanorama: true,
     canAddProfileLink: true,
     hasAds: 'reduced',
     maxProfiles: 2,
@@ -147,12 +147,21 @@ export const TIER_LIMITS = {
   pro: {
     maxImageSizeMB: 50,
     maxVideoSeconds: 600,
-    maxVideoResolution: '1080p',
+    maxVideoResolution: '4K',
     canUploadPanorama: true,
     canAddProfileLink: true,
     hasAds: false,
     maxProfiles: 5,
   },
+  teams: {
+    maxImageSizeMB: 50,
+    maxVideoSeconds: 600,
+    maxVideoResolution: '4K',
+    canUploadPanorama: true,
+    canAddProfileLink: true,
+    hasAds: false,
+    maxProfiles: 30,
+  },
 } as const;
 
-export const getTierLimits = (tier: AccountTier) => TIER_LIMITS[tier];
+export const getTierLimits = (tier: AccountTier) => TIER_LIMITS[tier] || TIER_LIMITS.free;
