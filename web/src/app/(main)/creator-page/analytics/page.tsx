@@ -23,7 +23,7 @@ export default function CreatorPageAnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [analytics, setAnalytics] = useState<CreatorPageAnalytics | null>(null);
-  const [userTier, setUserTier] = useState<string>('standard');
+  const [userTier, setUserTier] = useState<string>('creator');
   const [range, setRange] = useState<'7' | '30' | '90'>('30');
   const [emailCount, setEmailCount] = useState(0);
 
@@ -39,7 +39,7 @@ export default function CreatorPageAnalyticsPage() {
             return;
           }
           if (res.status === 403) {
-            setError('Creator Page analytics requires Standard or Pro tier.');
+            setError('Creator Page analytics requires Creator or Pro tier.');
             setLoading(false);
             return;
           }
@@ -47,7 +47,7 @@ export default function CreatorPageAnalyticsPage() {
         }
         const data = await res.json();
         setAnalytics(data.analytics);
-        setUserTier(data.tier || 'standard');
+        setUserTier(data.tier || 'creator');
         setEmailCount(data.emailCount || 0);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load analytics');

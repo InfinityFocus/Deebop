@@ -29,9 +29,9 @@ export async function POST(request: NextRequest) {
 
     const { tier } = await request.json();
 
-    if (!tier || !['standard', 'pro'].includes(tier)) {
+    if (!tier || !['creator', 'pro', 'teams'].includes(tier)) {
       return NextResponse.json(
-        { error: 'Invalid tier. Must be "standard" or "pro"' },
+        { error: 'Invalid tier. Must be "creator", "pro", or "teams"' },
         { status: 400 }
       );
     }

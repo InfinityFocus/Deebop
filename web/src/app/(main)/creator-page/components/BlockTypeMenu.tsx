@@ -168,7 +168,7 @@ export function BlockTypeMenu({
             <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
               <p className="text-sm text-amber-400">
                 You&apos;ve reached the maximum number of blocks ({maxBlocks}).
-                {userTier === 'standard' && ' Upgrade to Pro for more blocks.'}
+                {userTier === 'creator' && ' Upgrade to Pro for more blocks.'}
               </p>
             </div>
           )}

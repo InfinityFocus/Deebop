@@ -5,7 +5,7 @@ import { prisma } from '@/lib/db';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
-// Get an ad to display (for free/standard tier users)
+// Get an ad to display (for free/creator tier users)
 export async function GET(request: NextRequest) {
   try {
     // Get feedMode from query params
@@ -74,8 +74,8 @@ export async function GET(request: NextRequest) {
         data: { impressions: { increment: 1 } },
       });
 
-      // Default frequency for boosts: 5 for free, 10 for standard
-      const boostFrequency = userTier === 'standard' ? 10 : 5;
+      // Default frequency for boosts: 5 for free, 10 for creator
+      const boostFrequency = userTier === 'creator' ? 10 : 5;
 
       return NextResponse.json({
         type: 'boost',
@@ -135,8 +135,8 @@ export async function GET(request: NextRequest) {
       data: { impressions: { increment: 1 } },
     });
 
-    // Get frequency based on user tier
-    const frequency = userTier === 'standard' ? ad.frequencyStandard : ad.frequencyFree;
+    // Get frequency based on user tier (creator tier gets the frequencyStandard value)
+    const frequency = userTier === 'creator' ? ad.frequencyStandard : ad.frequencyFree;
 
     return NextResponse.json({
       type: 'ad',

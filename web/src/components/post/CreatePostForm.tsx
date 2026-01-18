@@ -553,14 +553,81 @@ export function CreatePostForm() {
     }
   };
 
-  // Upload video using presigned URL (bypasses serverless function body limit)
+  // Upload video - tries Bunny Stream first, falls back to TUS/Supabase
   const uploadVideoFile = async (file: File): Promise<string> => {
     setIsUploadingVideo(true);
     setVideoJobError(null);
     setUploadProgress(0);
 
     try {
-      // Step 1: Get TUS upload configuration
+      // Step 1: Try Bunny Stream first
+      const bunnyRes = await fetch('/api/upload/bunny-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          fileSize: file.size,
+          contentType: file.type,
+        }),
+      });
+
+      // If Bunny Stream is available, upload directly to Bunny
+      if (bunnyRes.ok) {
+        const bunnyData = await bunnyRes.json();
+        console.log('Using Bunny Stream for video upload');
+
+        setUploadProgress(10);
+
+        // Upload directly to Bunny Stream using their PUT endpoint
+        const uploadRes = await fetch(bunnyData.directUploadUrl, {
+          method: 'PUT',
+          headers: {
+            ...bunnyData.directUploadHeaders,
+            'Content-Type': 'application/octet-stream',
+          },
+          body: file,
+        });
+
+        if (!uploadRes.ok) {
+          const errorText = await uploadRes.text();
+          console.error('Bunny upload failed:', errorText);
+          throw new Error('Failed to upload video to Bunny Stream');
+        }
+
+        setUploadProgress(90);
+
+        // Update the job status to processing
+        await fetch('/api/upload/bunny-video', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jobId: bunnyData.jobId,
+            status: 'processing',
+          }),
+        });
+
+        setUploadProgress(100);
+
+        // Set up job tracking
+        setVideoJobId(bunnyData.jobId);
+        setVideoJobStatus('processing');
+        setVideoJobProgress(50);
+
+        // Start polling for status
+        pollVideoJobStatus(bunnyData.jobId);
+
+        return bunnyData.jobId;
+      }
+
+      // Check if Bunny returned an error we should show to user
+      if (bunnyRes.status === 400) {
+        const errorData = await bunnyRes.json();
+        throw new Error(errorData.error || 'Video file too large for your tier');
+      }
+
+      // Step 2: Fall back to TUS/Supabase upload if Bunny unavailable
+      console.log('Bunny Stream unavailable, falling back to TUS upload');
+
       const configRes = await fetch('/api/upload/resumable', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -579,7 +646,7 @@ export function CreatePostForm() {
 
       const { tusEndpoint, authToken, bucket, key } = await configRes.json();
 
-      // Step 2: Upload using TUS resumable protocol
+      // Upload using TUS resumable protocol
       await new Promise<void>((resolve, reject) => {
         const upload = new tus.Upload(file, {
           endpoint: tusEndpoint,
@@ -620,7 +687,7 @@ export function CreatePostForm() {
         });
       });
 
-      // Step 3: Finalize upload to create processing job
+      // Finalize upload to create processing job
       const finalizeRes = await fetch('/api/upload/finalize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

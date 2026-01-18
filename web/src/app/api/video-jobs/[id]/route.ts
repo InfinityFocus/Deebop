@@ -56,7 +56,7 @@ export async function GET(
     // Check if this is a Bunny Stream video
     const isBunnyVideo = job.rawFileUrl?.startsWith('bunny:');
 
-    if (isBunnyVideo && isBunnyStreamEnabled() && job.status === 'processing') {
+    if (isBunnyVideo && isBunnyStreamEnabled() && ['pending', 'processing'].includes(job.status)) {
       // Poll Bunny Stream for actual status
       const bunnyGuid = job.rawFileUrl!.replace('bunny:', '');
 

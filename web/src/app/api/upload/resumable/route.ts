@@ -5,14 +5,18 @@ import { generateFileKey } from '@/lib/minio';
 // Tier-based file size limits
 const FILE_LIMITS = {
   free: {
-    video: 10 * 1024 * 1024, // 10MB
+    video: 50 * 1024 * 1024, // 50MB
     audio: 10 * 1024 * 1024, // 10MB
   },
-  standard: {
-    video: 50 * 1024 * 1024, // 50MB
+  creator: {
+    video: 200 * 1024 * 1024, // 200MB
     audio: 50 * 1024 * 1024, // 50MB
   },
   pro: {
+    video: 500 * 1024 * 1024, // 500MB
+    audio: 200 * 1024 * 1024, // 200MB
+  },
+  teams: {
     video: 500 * 1024 * 1024, // 500MB
     audio: 200 * 1024 * 1024, // 200MB
   },
