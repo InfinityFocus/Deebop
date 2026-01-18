@@ -24,9 +24,9 @@ export interface TierLimits {
 // Tier-based video limits
 export const TIER_VIDEO_LIMITS: Record<string, TierLimits> = {
   free: {
-    maxDuration: 30,
-    maxWidth: 1280,
-    maxHeight: 720,
+    maxDuration: 60, // 1 minute
+    maxWidth: 1920,
+    maxHeight: 1080,
     audioBitrate: '128k',
   },
   creator: {

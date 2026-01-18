@@ -119,14 +119,15 @@ export function canAccessFeature(
 }
 
 // Get upload limits for a tier
+// Video size limits are generous since Bunny Stream handles transcoding
 export function getUploadLimits(tier: SubscriptionTier) {
   const limits = {
     free: {
       maxImageSize: 50 * 1024 * 1024, // 50MB (images are resized/compressed server-side)
-      maxVideoSize: 50 * 1024 * 1024, // 50MB
-      maxVideoDuration: 30, // seconds
+      maxVideoSize: 500 * 1024 * 1024, // 500MB - enough for 1 min of 4K
+      maxVideoDuration: 60, // 1 minute
       maxAudioDuration: 60, // 1 minute
-      maxVideoResolution: 720,
+      maxVideoResolution: 1080,
       canUploadPanorama: false,
       maxPanoramaSize: 0,
       maxAlbumStorage: 2 * 1024 * 1024 * 1024, // 2GB
@@ -136,7 +137,7 @@ export function getUploadLimits(tier: SubscriptionTier) {
     },
     creator: {
       maxImageSize: 50 * 1024 * 1024, // 50MB (images are resized/compressed server-side)
-      maxVideoSize: 200 * 1024 * 1024, // 200MB
+      maxVideoSize: 2 * 1024 * 1024 * 1024, // 2GB - enough for 3 min of 4K
       maxVideoDuration: 180, // 3 minutes
       maxAudioDuration: 300, // 5 minutes
       maxVideoResolution: 1080,
@@ -149,7 +150,7 @@ export function getUploadLimits(tier: SubscriptionTier) {
     },
     pro: {
       maxImageSize: 50 * 1024 * 1024, // 50MB (images are resized/compressed server-side)
-      maxVideoSize: 500 * 1024 * 1024, // 500MB
+      maxVideoSize: 5 * 1024 * 1024 * 1024, // 5GB - enough for 10 min of 4K
       maxVideoDuration: 600, // 10 minutes
       maxAudioDuration: 1800, // 30 minutes
       maxVideoResolution: 2160, // 4K
@@ -162,7 +163,7 @@ export function getUploadLimits(tier: SubscriptionTier) {
     },
     teams: {
       maxImageSize: 50 * 1024 * 1024, // 50MB (images are resized/compressed server-side)
-      maxVideoSize: 500 * 1024 * 1024, // 500MB
+      maxVideoSize: 5 * 1024 * 1024 * 1024, // 5GB - enough for 10 min of 4K
       maxVideoDuration: 600, // 10 minutes
       maxAudioDuration: 3600, // 1 hour
       maxVideoResolution: 2160, // 4K

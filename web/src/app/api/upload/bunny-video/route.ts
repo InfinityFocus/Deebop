@@ -9,16 +9,18 @@ import {
 } from '@/lib/bunny-stream';
 
 // Tier-based video file size limits
+// Since Bunny Stream handles transcoding and we have duration limits,
+// file sizes can be generous to accommodate 4K source files
 const VIDEO_SIZE_LIMITS = {
-  free: 50 * 1024 * 1024, // 50MB
-  creator: 200 * 1024 * 1024, // 200MB
-  pro: 500 * 1024 * 1024, // 500MB
-  teams: 500 * 1024 * 1024, // 500MB
+  free: 500 * 1024 * 1024, // 500MB - enough for 1 min of 4K
+  creator: 2 * 1024 * 1024 * 1024, // 2GB - enough for 3 min of 4K
+  pro: 5 * 1024 * 1024 * 1024, // 5GB - enough for 10 min of 4K
+  teams: 5 * 1024 * 1024 * 1024, // 5GB - enough for 10 min of 4K
 };
 
 // Tier-based video duration limits (in seconds)
 const VIDEO_DURATION_LIMITS = {
-  free: 30, // 30 seconds
+  free: 60, // 1 minute
   creator: 180, // 3 minutes
   pro: 600, // 10 minutes
   teams: 600, // 10 minutes

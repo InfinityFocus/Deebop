@@ -3,22 +3,24 @@ import { getCurrentUser } from '@/lib/auth';
 import { generateFileKey } from '@/lib/minio';
 
 // Tier-based file size limits
+// Video limits are generous since Bunny Stream handles transcoding
+// and duration limits are enforced separately
 const FILE_LIMITS = {
   free: {
-    video: 50 * 1024 * 1024, // 50MB
-    audio: 10 * 1024 * 1024, // 10MB
-  },
-  creator: {
-    video: 200 * 1024 * 1024, // 200MB
+    video: 500 * 1024 * 1024, // 500MB - enough for 1 min of 4K
     audio: 50 * 1024 * 1024, // 50MB
   },
+  creator: {
+    video: 2 * 1024 * 1024 * 1024, // 2GB - enough for 3 min of 4K
+    audio: 100 * 1024 * 1024, // 100MB
+  },
   pro: {
-    video: 500 * 1024 * 1024, // 500MB
-    audio: 200 * 1024 * 1024, // 200MB
+    video: 5 * 1024 * 1024 * 1024, // 5GB - enough for 10 min of 4K
+    audio: 500 * 1024 * 1024, // 500MB
   },
   teams: {
-    video: 500 * 1024 * 1024, // 500MB
-    audio: 200 * 1024 * 1024, // 200MB
+    video: 5 * 1024 * 1024 * 1024, // 5GB - enough for 10 min of 4K
+    audio: 500 * 1024 * 1024, // 500MB
   },
 };
 

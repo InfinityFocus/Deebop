@@ -24,15 +24,17 @@ const FFPROBE_PATH = process.env.FFPROBE_PATH ||
 // All tiers cap at 1080p for consistent quality and storage efficiency
 const TRANSCODE_SETTINGS = {
   free: { maxDuration: 60, scale: "1080", bitrate: "3000k" },       // 1 minute
-  standard: { maxDuration: 180, scale: "1080", bitrate: "4000k" },  // 3 minutes
+  creator: { maxDuration: 180, scale: "1080", bitrate: "4000k" },   // 3 minutes
   pro: { maxDuration: 600, scale: "1080", bitrate: "5000k" },       // 10 minutes
+  teams: { maxDuration: 600, scale: "1080", bitrate: "5000k" },     // 10 minutes
 };
 
 // Audio duration limits per tier (in seconds)
 const AUDIO_DURATION_LIMITS = {
-  free: 60,      // 1 minute
-  standard: 180, // 3 minutes
-  pro: 600,      // 10 minutes
+  free: 60,       // 1 minute
+  creator: 300,   // 5 minutes
+  pro: 1800,      // 30 minutes
+  teams: 3600,    // 1 hour
 };
 
 export async function checkFfmpegCli(): Promise<boolean> {
