@@ -48,11 +48,25 @@ export default function ChatPage() {
   const [friendTimeout, setFriendTimeout] = useState<Timeout | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const timeoutPollRef = useRef<NodeJS.Timeout | null>(null);
+  const isNearBottomRef = useRef(true);
+  const isInitialLoadRef = useRef(true);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (force = false) => {
+    if (force || isNearBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Check if user is near the bottom of the scroll container
+  const handleScroll = () => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      // Consider "near bottom" if within 100px of the bottom
+      isNearBottomRef.current = scrollHeight - scrollTop - clientHeight < 100;
+    }
   };
 
   // Fetch timeout status
@@ -145,7 +159,15 @@ export default function ChatPage() {
   }, [conversationId, fetchTimeoutStatus]);
 
   useEffect(() => {
-    scrollToBottom();
+    // Always scroll to bottom on initial load
+    if (isInitialLoadRef.current && messages.length > 0) {
+      isInitialLoadRef.current = false;
+      // Use setTimeout to ensure DOM is ready
+      setTimeout(() => scrollToBottom(true), 100);
+    } else {
+      // Only scroll if user is near the bottom
+      scrollToBottom();
+    }
   }, [messages]);
 
   const handleSendMessage = async (
@@ -210,6 +232,8 @@ export default function ChatPage() {
             isFromMe: true,
           },
         ]);
+        // Always scroll to bottom when sending a message
+        setTimeout(() => scrollToBottom(true), 100);
       } else if (data.code === 'TIMEOUT_ACTIVE') {
         // Refresh timeout status
         fetchTimeoutStatus();
@@ -310,7 +334,11 @@ export default function ChatPage() {
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto py-4 space-y-3">
+        <div
+          ref={messagesContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto py-4 space-y-3"
+        >
           {messages.length === 0 ? (
             <div className="text-center text-gray-500 py-8">
               <p>No messages yet!</p>
