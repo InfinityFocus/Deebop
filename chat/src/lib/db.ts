@@ -131,7 +131,9 @@ export async function getParentById(id: string) {
 export async function createParent(
   email: string,
   passwordHash: string,
-  displayName?: string
+  displayName?: string,
+  verificationToken?: string,
+  verificationExpires?: Date
 ) {
   const client = getServiceClient();
   const { data, error } = await client
@@ -141,6 +143,9 @@ export async function createParent(
       email: email.toLowerCase(),
       password_hash: passwordHash,
       display_name: displayName || null,
+      email_verified: false,
+      email_verify_token: verificationToken || null,
+      email_verify_expires: verificationExpires?.toISOString() || null,
     })
     .select()
     .single();
@@ -149,6 +154,67 @@ export async function createParent(
     if (error.code === '23505') {
       throw new Error('Email already registered');
     }
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data;
+}
+
+export async function getParentByVerificationToken(token: string) {
+  const client = getServiceClient();
+  const { data, error } = await client
+    .schema('chat')
+    .from('parents')
+    .select('*')
+    .eq('email_verify_token', token)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data;
+}
+
+export async function verifyParentEmail(parentId: string) {
+  const client = getServiceClient();
+  const { data, error } = await client
+    .schema('chat')
+    .from('parents')
+    .update({
+      email_verified: true,
+      email_verify_token: null,
+      email_verify_expires: null,
+    })
+    .eq('id', parentId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  return data;
+}
+
+export async function updateParentVerificationToken(
+  parentId: string,
+  token: string,
+  expires: Date
+) {
+  const client = getServiceClient();
+  const { data, error } = await client
+    .schema('chat')
+    .from('parents')
+    .update({
+      email_verify_token: token,
+      email_verify_expires: expires.toISOString(),
+    })
+    .eq('id', parentId)
+    .select()
+    .single();
+
+  if (error) {
     throw new Error(`Database error: ${error.message}`);
   }
 

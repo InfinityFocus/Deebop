@@ -37,6 +37,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if email is verified
+    if (!parent.email_verified) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Please verify your email before logging in',
+          requiresVerification: true,
+          email: parent.email,
+        },
+        { status: 403 }
+      );
+    }
+
     // Create JWT token
     const token = await createParentToken(parent.id, parent.email);
 

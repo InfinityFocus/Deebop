@@ -34,6 +34,11 @@ export function ParentLoginForm() {
       const data = await response.json();
 
       if (!data.success) {
+        // Check if email verification is required
+        if (data.requiresVerification && data.email) {
+          router.push(`/verification-pending?email=${encodeURIComponent(data.email)}`);
+          return;
+        }
         setError(data.error || 'Login failed. Please try again.');
         return;
       }

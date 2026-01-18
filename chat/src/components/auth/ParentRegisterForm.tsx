@@ -91,11 +91,19 @@ export function ParentRegisterForm() {
         // Ignore localStorage errors
       }
 
-      // Update store
-      setUser(data.data.user);
+      // Check if email verification is required
+      if (data.data.requiresVerification) {
+        // Redirect to verification pending page with email
+        router.push(`/verification-pending?email=${encodeURIComponent(data.data.email)}`);
+        return;
+      }
 
-      // Redirect to onboarding
-      router.push('/onboarding/welcome');
+      // Update store (only if we have a user - shouldn't happen with verification)
+      if (data.data.user) {
+        setUser(data.data.user);
+        // Redirect to onboarding
+        router.push('/onboarding/welcome');
+      }
     } catch (err) {
       console.error('Registration error:', err);
       setError('Something went wrong. Please try again.');

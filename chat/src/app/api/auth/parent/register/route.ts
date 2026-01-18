@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import {
   hashPassword,
-  createParentToken,
-  setAuthCookie,
   isValidEmail,
   isValidPassword,
 } from '@/lib/auth';
@@ -16,6 +14,11 @@ import {
   updateReferralOnSignup,
   invalidateReferral,
 } from '@/lib/db';
+import {
+  generateVerificationToken,
+  getVerificationExpiry,
+  sendVerificationEmail,
+} from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,8 +61,18 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await hashPassword(password);
 
-    // Create parent account
-    const parent = await createParent(email, passwordHash, displayName);
+    // Generate verification token
+    const verificationToken = generateVerificationToken();
+    const verificationExpires = getVerificationExpiry();
+
+    // Create parent account with verification token
+    const parent = await createParent(
+      email,
+      passwordHash,
+      displayName,
+      verificationToken,
+      verificationExpires
+    );
 
     // Handle referral if code provided
     if (referralCode && typeof referralCode === 'string') {
@@ -110,21 +123,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create JWT token
-    const token = await createParentToken(parent.id, parent.email);
+    // Send verification email
+    const emailResult = await sendVerificationEmail(
+      email,
+      verificationToken,
+      displayName || 'there'
+    );
 
-    // Set auth cookie
-    await setAuthCookie(token);
+    if (!emailResult.success) {
+      console.error('Failed to send verification email:', emailResult.error);
+      // Don't fail registration, just log the error
+    }
 
+    // Don't log the user in - require email verification first
     return NextResponse.json({
       success: true,
       data: {
-        user: {
-          type: 'parent',
-          id: parent.id,
-          email: parent.email,
-          displayName: parent.display_name,
-        },
+        requiresVerification: true,
+        email: parent.email,
       },
     });
   } catch (error) {
