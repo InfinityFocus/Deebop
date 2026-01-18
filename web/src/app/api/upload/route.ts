@@ -5,6 +5,13 @@ import prisma from '@/lib/db';
 import sharp from 'sharp';
 
 import { triggerVideoProcessing } from '@/lib/video-job-processor';
+import {
+  isBunnyStreamEnabled,
+  createBunnyVideo,
+  uploadToBunnyStream,
+  getBunnyPlaybackUrl,
+  getBunnyThumbnailUrl,
+} from '@/lib/bunny-stream';
 
 // Max upload size before processing (50MB for all image uploads)
 const MAX_IMAGE_UPLOAD_SIZE = 50 * 1024 * 1024;
@@ -14,16 +21,21 @@ const IMAGE_QUALITY = 85;
 // Tier-based file size limits for non-image media
 const FILE_LIMITS = {
   free: {
-    video: 10 * 1024 * 1024, // 10MB
+    video: 50 * 1024 * 1024, // 50MB
     audio: 10 * 1024 * 1024, // 10MB
     panorama360: 0, // Not allowed
   },
-  standard: {
-    video: 50 * 1024 * 1024, // 50MB
+  creator: {
+    video: 200 * 1024 * 1024, // 200MB
     audio: 50 * 1024 * 1024, // 50MB
-    panorama360: 0, // Not allowed
+    panorama360: 100 * 1024 * 1024, // 100MB
   },
   pro: {
+    video: 500 * 1024 * 1024, // 500MB
+    audio: 200 * 1024 * 1024, // 200MB
+    panorama360: 100 * 1024 * 1024, // 100MB
+  },
+  teams: {
     video: 500 * 1024 * 1024, // 500MB
     audio: 200 * 1024 * 1024, // 200MB
     panorama360: 100 * 1024 * 1024, // 100MB
@@ -54,10 +66,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid media type' }, { status: 400 });
     }
 
-    // Check panorama permission
-    if (mediaType === 'panorama360' && user.tier !== 'pro') {
+    // Check panorama permission (creator, pro, and teams can upload panoramas)
+    if (mediaType === 'panorama360' && !['creator', 'pro', 'teams'].includes(user.tier)) {
       return NextResponse.json(
-        { error: '360 panoramas require Pro tier' },
+        { error: '360 panoramas require Creator tier or above' },
         { status: 403 }
       );
     }
@@ -95,9 +107,57 @@ export async function POST(request: NextRequest) {
     // Generate file key and upload to MinIO
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // For videos, create a processing job instead of returning URL directly
+    // For videos, use Bunny Stream if configured, otherwise fall back to local processing
     if (mediaType === 'video') {
-      // Upload raw video to temp storage
+      if (isBunnyStreamEnabled()) {
+        // Use Bunny Stream for video hosting
+        console.log(`[Upload] Using Bunny Stream for video upload`);
+
+        try {
+          // Create video in Bunny Stream
+          const videoTitle = `${user.username}_${Date.now()}_${file.name}`;
+          const { guid } = await createBunnyVideo(videoTitle);
+
+          console.log(`[Upload] Created Bunny video with GUID: ${guid}`);
+
+          // Upload the video file to Bunny Stream
+          await uploadToBunnyStream(guid, buffer);
+
+          console.log(`[Upload] Uploaded video to Bunny Stream: ${guid}`);
+
+          // Create a VideoJob record to track the video (Bunny handles transcoding)
+          const videoJob = await prisma.videoJob.create({
+            data: {
+              userId: user.id,
+              userTier: user.tier,
+              rawFileUrl: `bunny:${guid}`, // Store Bunny GUID as reference
+              rawFileSize: file.size,
+              mediaType: 'video',
+              status: 'processing', // Bunny is processing
+              progress: 0,
+              // Store Bunny URLs for when processing completes
+              outputUrl: getBunnyPlaybackUrl(guid),
+              thumbnailUrl: getBunnyThumbnailUrl(guid),
+            },
+          });
+
+          return NextResponse.json({
+            jobId: videoJob.id,
+            bunnyGuid: guid,
+            status: 'processing',
+            message: 'Video uploaded to Bunny Stream. Transcoding in progress.',
+            // Return URLs immediately (they'll work once transcoding completes)
+            playbackUrl: getBunnyPlaybackUrl(guid),
+            thumbnailUrl: getBunnyThumbnailUrl(guid),
+          });
+        } catch (bunnyError) {
+          console.error('[Upload] Bunny Stream error:', bunnyError);
+          // Fall through to local processing if Bunny fails
+          console.log('[Upload] Falling back to local video processing');
+        }
+      }
+
+      // Local FFmpeg processing (fallback or when Bunny not configured)
       const rawKey = generateFileKey(user.id, 'raw', file.name);
       const rawUrl = await uploadToMinio(rawKey, buffer, file.type);
 
@@ -114,7 +174,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      console.log(`[Upload] Created VideoJob ${videoJob.id} for user ${user.id}`);
+      console.log(`[Upload] Created VideoJob ${videoJob.id} for user ${user.id} (local processing)`);
 
       // Trigger video processing in background (fire and forget)
       triggerVideoProcessing(videoJob.id);

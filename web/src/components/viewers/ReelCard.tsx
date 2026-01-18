@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Heart, Bookmark, Share2, MessageCircle, Volume2, VolumeX, Play, Pause } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useViewTracking } from '@/hooks/useVideoVisibility';
+import { HLSVideoPlayer, type HLSVideoPlayerHandle } from './HLSVideoPlayer';
 
 interface ReelAuthor {
   id: string;
@@ -41,7 +42,7 @@ const preventContextMenu = (e: React.MouseEvent) => {
 };
 
 export function ReelCard({ reel, isActive, isMuted, onToggleMute }: ReelCardProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HLSVideoPlayerHandle>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isLiked, setIsLiked] = useState(reel.is_liked);
@@ -57,64 +58,44 @@ export function ReelCard({ reel, isActive, isMuted, onToggleMute }: ReelCardProp
 
   // Handle play/pause based on active state
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
+    if (!videoRef.current) return;
 
     if (isActive) {
-      video.play().catch(() => {});
+      videoRef.current.play().catch(() => {});
       startTracking();
     } else {
-      video.pause();
-      video.currentTime = 0;
+      videoRef.current.pause();
+      videoRef.current.seek(0);
       stopTracking();
     }
   }, [isActive, startTracking, stopTracking]);
 
   // Update muted state
   useEffect(() => {
-    const video = videoRef.current;
-    if (video) {
-      video.muted = isMuted;
+    if (videoRef.current) {
+      videoRef.current.setMuted(isMuted);
     }
   }, [isMuted]);
 
-  // Track progress
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleTimeUpdate = () => {
-      const progress = (video.currentTime / video.duration) * 100;
-      setProgress(progress);
-    };
-
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
-
-    video.addEventListener('timeupdate', handleTimeUpdate);
-    video.addEventListener('play', handlePlay);
-    video.addEventListener('pause', handlePause);
-
-    return () => {
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-      video.removeEventListener('play', handlePlay);
-      video.removeEventListener('pause', handlePause);
-    };
+  const handleTimeUpdate = useCallback((currentTime: number, duration: number) => {
+    if (duration > 0) {
+      setProgress((currentTime / duration) * 100);
+    }
   }, []);
 
   const togglePlayPause = useCallback(() => {
-    const video = videoRef.current;
-    if (!video) return;
+    if (!videoRef.current) return;
 
-    if (video.paused) {
-      video.play();
+    // Check if currently playing by getting current state
+    if (isPlaying) {
+      videoRef.current.pause();
     } else {
-      video.pause();
+      videoRef.current.play();
     }
 
     setShowPlayPause(true);
     setTimeout(() => setShowPlayPause(false), 500);
-  }, []);
+  }, [isPlaying]);
 
   const handleLike = async () => {
     const wasLiked = isLiked;
@@ -162,7 +143,7 @@ export function ReelCard({ reel, isActive, isMuted, onToggleMute }: ReelCardProp
   return (
     <div className="relative w-full h-full bg-black snap-start snap-always" onContextMenu={preventContextMenu}>
       {/* Video */}
-      <video
+      <HLSVideoPlayer
         ref={videoRef}
         src={reel.media_url}
         poster={reel.media_thumbnail_url || undefined}
@@ -172,6 +153,9 @@ export function ReelCard({ reel, isActive, isMuted, onToggleMute }: ReelCardProp
         onClick={togglePlayPause}
         onDoubleClick={handleDoubleTap}
         onContextMenu={preventContextMenu}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onTimeUpdate={handleTimeUpdate}
         className="absolute inset-0 w-full h-full object-contain"
       />
 
