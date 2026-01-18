@@ -103,7 +103,7 @@ export async function GET(
       username: post.user.username,
       display_name: post.user.displayName,
       avatar_url: post.user.avatarUrl,
-      tier: post.user.tier as 'free' | 'standard' | 'pro',
+      tier: post.user.tier as 'free' | 'creator' | 'pro' | 'teams',
       is_private: false,
     };
 

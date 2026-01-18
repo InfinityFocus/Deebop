@@ -112,7 +112,7 @@ export async function GET(
       username: user.username,
       display_name: user.displayName,
       avatar_url: user.avatarUrl,
-      tier: user.tier as 'free' | 'standard' | 'pro',
+      tier: user.tier as 'free' | 'creator' | 'pro' | 'teams',
       is_private: false,
     };
 
