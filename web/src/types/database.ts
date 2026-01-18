@@ -11,7 +11,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export type AccountTier = 'free' | 'standard' | 'pro';
+export type AccountTier = 'free' | 'creator' | 'pro' | 'teams';
 export type ContentType = 'shout' | 'image' | 'video' | 'audio' | 'panorama360';
 export type ProvenanceLabel = 'original' | 'ai_generated' | 'ai_assisted' | 'composite';
 export type Visibility = 'public' | 'followers' | 'private' | 'unlisted';
