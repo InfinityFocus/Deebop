@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Heart, Bookmark, Share2, MoreHorizontal, Sparkles, Crown, Rocket, Flag, Pencil, Loader2, Podcast, Trash2, Repeat, Code } from 'lucide-react';
 import { PanoramaViewer } from '@/components/viewers/PanoramaViewer';
+import { HLSVideoPlayer } from '@/components/viewers/HLSVideoPlayer';
 import { AudioPlayer } from '@/components/audio';
 import { ImageCarousel } from '@/components/post/ImageCarousel';
 import { BoostPostModal } from '@/components/ads';
@@ -26,45 +27,50 @@ const preventContextMenu = (e: React.MouseEvent) => {
   return false;
 };
 
-// Video player component that autoplays when in view
+// Video player component that autoplays when in view (supports HLS streams)
 function VideoPlayer({ src, poster }: { src: string; poster?: string }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isInView, setIsInView] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<{ play: () => Promise<void>; pause: () => void; setMuted: (m: boolean) => void } | null>(null);
   const [isMuted, setIsMuted] = useState(true);
+  const [isInView, setIsInView] = useState(false);
 
+  // Observe when video enters/exits viewport
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
+    const container = containerRef.current;
+    if (!container) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           setIsInView(entry.isIntersecting);
-          if (entry.isIntersecting) {
-            video.play().catch(() => {});
-          } else {
-            video.pause();
-          }
         });
       },
       { threshold: 0.5 }
     );
 
-    observer.observe(video);
+    observer.observe(container);
     return () => observer.disconnect();
   }, []);
 
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
+  // Play/pause based on visibility
+  useEffect(() => {
+    if (isInView) {
+      playerRef.current?.play().catch(() => {});
+    } else {
+      playerRef.current?.pause();
     }
+  }, [isInView]);
+
+  const toggleMute = () => {
+    const newMuted = !isMuted;
+    setIsMuted(newMuted);
+    playerRef.current?.setMuted(newMuted);
   };
 
   return (
-    <div className="relative" onContextMenu={preventContextMenu}>
-      <video
-        ref={videoRef}
+    <div ref={containerRef} className="relative" onContextMenu={preventContextMenu}>
+      <HLSVideoPlayer
+        ref={playerRef}
         src={src}
         poster={poster}
         muted={isMuted}
@@ -77,7 +83,7 @@ function VideoPlayer({ src, poster }: { src: string; poster?: string }) {
       {/* Mute/unmute indicator */}
       <button
         onClick={toggleMute}
-        className="absolute bottom-4 right-4 p-2 bg-black/60 rounded-full hover:bg-black/80 transition"
+        className="absolute bottom-4 right-4 p-2 bg-black/60 rounded-full hover:bg-black/80 transition z-10"
         aria-label={isMuted ? 'Unmute' : 'Mute'}
       >
         {isMuted ? (
