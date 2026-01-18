@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, RefreshCw, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/shared';
 
-export default function VerificationPendingPage() {
+function VerificationPendingContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || '';
 
@@ -133,5 +133,28 @@ export default function VerificationPendingPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="space-y-6 text-center">
+      <div className="flex justify-center">
+        <div className="w-20 h-20 bg-cyan-500/10 rounded-full flex items-center justify-center">
+          <Loader2 className="text-cyan-400 animate-spin" size={40} />
+        </div>
+      </div>
+      <div>
+        <h1 className="text-2xl font-bold text-white mb-2">Loading...</h1>
+      </div>
+    </div>
+  );
+}
+
+export default function VerificationPendingPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <VerificationPendingContent />
+    </Suspense>
   );
 }
