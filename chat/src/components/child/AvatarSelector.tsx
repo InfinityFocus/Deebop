@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, User, PawPrint } from 'lucide-react';
-import { AVATARS, DEFAULT_AVATAR_ID, getAvatarsByCategory, type AvatarCategory } from '@/types';
+import { AVATARS, DEFAULT_AVATAR_ID, getAvatarsByCategory, type AvatarCategory, type PresenceStatus } from '@/types';
+import { PresenceIndicator } from './PresenceIndicator';
 
 const AVATARS_PER_PAGE = 12;
 
@@ -157,10 +158,12 @@ export function Avatar({
   avatarId,
   size = 'md',
   className = '',
+  status,
 }: {
   avatarId: string;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
+  status?: PresenceStatus;
 }) {
   const avatar = AVATARS.find((a) => a.id === avatarId) || AVATARS.find((a) => a.id === DEFAULT_AVATAR_ID) || AVATARS[0];
 
@@ -180,18 +183,36 @@ export function Avatar({
     xl: 80,
   };
 
+  // Presence indicator size based on avatar size
+  const indicatorSize: Record<string, 'sm' | 'md' | 'lg'> = {
+    xs: 'sm',
+    sm: 'sm',
+    md: 'sm',
+    lg: 'md',
+    xl: 'lg',
+  };
+
   return (
-    <div
-      className={`${sizeClasses[size]} rounded-full overflow-hidden flex-shrink-0 ${className}`}
-      title={avatar.name}
-    >
-      <Image
-        src={avatar.image}
-        alt={avatar.name}
-        width={imageSizes[size]}
-        height={imageSizes[size]}
-        className="w-full h-full object-cover"
-      />
+    <div className="relative flex-shrink-0">
+      <div
+        className={`${sizeClasses[size]} rounded-full overflow-hidden ${className}`}
+        title={avatar.name}
+      >
+        <Image
+          src={avatar.image}
+          alt={avatar.name}
+          width={imageSizes[size]}
+          height={imageSizes[size]}
+          className="w-full h-full object-cover"
+        />
+      </div>
+      {status && (
+        <PresenceIndicator
+          status={status}
+          size={indicatorSize[size]}
+          className="absolute -bottom-0.5 -right-0.5"
+        />
+      )}
     </div>
   );
 }

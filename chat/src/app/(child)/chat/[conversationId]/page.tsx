@@ -9,7 +9,8 @@ import { MessageInput } from '@/components/child/MessageInput';
 import { TimeoutBanner } from '@/components/child/TimeoutBanner';
 import { TimeoutOverlay } from '@/components/child/TimeoutOverlay';
 import { useAuthStore, isChildUser } from '@/stores/authStore';
-import type { Timeout, TimeoutReason } from '@/types';
+import { getPresenceStatusText } from '@/lib/presence';
+import type { Timeout, TimeoutReason, PresenceStatus } from '@/types';
 
 interface Message {
   id: string;
@@ -28,6 +29,7 @@ interface ConversationDetails {
   friendName: string;
   friendUsername: string;
   friendAvatar: string;
+  friendStatus: PresenceStatus;
 }
 
 export default function ChatPage() {
@@ -282,10 +284,16 @@ export default function ChatPage() {
           <Link href="/chats" className="text-gray-400 hover:text-white">
             <ArrowLeft size={24} />
           </Link>
-          <Avatar avatarId={conversation.friendAvatar} size="md" />
+          <Avatar avatarId={conversation.friendAvatar} size="md" status={conversation.friendStatus} />
           <div>
             <p className="text-white font-semibold">{conversation.friendName}</p>
-            <p className="text-sm text-gray-500">@{conversation.friendUsername}</p>
+            <p className={`text-sm ${
+              conversation.friendStatus === 'online' ? 'text-green-400' :
+              conversation.friendStatus === 'away' ? 'text-yellow-400' :
+              'text-gray-500'
+            }`}>
+              {getPresenceStatusText(conversation.friendStatus)}
+            </p>
           </div>
         </div>
 

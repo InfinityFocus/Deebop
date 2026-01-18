@@ -6,7 +6,7 @@ import { MessageCircle, Clock } from 'lucide-react';
 import { Avatar } from '@/components/child/AvatarSelector';
 import { TimeoutBanner } from '@/components/child/TimeoutBanner';
 import { TimeoutOverlay } from '@/components/child/TimeoutOverlay';
-import type { Timeout, TimeoutReason } from '@/types';
+import type { Timeout, TimeoutReason, PresenceStatus } from '@/types';
 
 interface Conversation {
   id: string;
@@ -14,6 +14,7 @@ interface Conversation {
   friendName: string;
   friendUsername: string;
   friendAvatar: string;
+  friendStatus: PresenceStatus;
   lastMessage: {
     content: string | null;
     type: 'text' | 'emoji' | 'voice';
@@ -180,7 +181,7 @@ function ConversationCard({ conversation }: { conversation: Conversation }) {
       <div className="bg-dark-800 rounded-xl border border-dark-700 p-4 hover:border-cyan-500/30 transition-colors">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Avatar avatarId={conversation.friendAvatar} size="md" />
+            <Avatar avatarId={conversation.friendAvatar} size="md" status={conversation.friendStatus} />
             {conversation.unreadCount > 0 && (
               <div className="absolute -top-1 -right-1 w-5 h-5 bg-cyan-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
                 {conversation.unreadCount}

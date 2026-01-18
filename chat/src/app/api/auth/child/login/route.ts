@@ -4,7 +4,7 @@ import {
   createChildToken,
   setAuthCookie,
 } from '@/lib/auth';
-import { getChildByUsername, createAuditLog } from '@/lib/db';
+import { getChildByUsername, createAuditLog, supabase } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,6 +50,15 @@ export async function POST(request: NextRequest) {
 
     // Set auth cookie
     await setAuthCookie(token);
+
+    // Set online presence
+    await supabase
+      .from('children')
+      .update({
+        is_online: true,
+        last_seen_at: new Date().toISOString(),
+      })
+      .eq('id', child.id);
 
     // Log the login (using parent's ID for audit)
     await createAuditLog(child.parent_id, 'child_login', child.id, {

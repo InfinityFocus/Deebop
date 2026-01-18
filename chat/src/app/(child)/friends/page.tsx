@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { UserPlus, Users, MessageCircle, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/shared';
 import { Avatar } from '@/components/child/AvatarSelector';
+import type { PresenceStatus } from '@/types';
 
 interface Friend {
   id: string;
@@ -14,6 +15,7 @@ interface Friend {
   avatarId: string;
   conversationId: string | null;
   status: 'approved' | 'pending';
+  presenceStatus: PresenceStatus;
 }
 
 export default function FriendsPage() {
@@ -126,7 +128,7 @@ function FriendCard({ friend }: { friend: Friend }) {
   return (
     <div className="bg-dark-800 rounded-xl border border-dark-700 p-4">
       <div className="flex items-center gap-3">
-        <Avatar avatarId={friend.avatarId} size="md" />
+        <Avatar avatarId={friend.avatarId} size="md" status={friend.presenceStatus} />
         <div className="flex-1 min-w-0">
           <p className="text-white font-medium">{friend.displayName}</p>
           <p className="text-sm text-gray-500">@{friend.username}</p>

@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server';
 import { clearAuthCookie, getCurrentUser } from '@/lib/auth';
-import { createAuditLog } from '@/lib/db';
+import { createAuditLog, supabase } from '@/lib/db';
 
 export async function POST() {
   try {
     const user = await getCurrentUser();
 
-    // Log the logout if we have a child user
+    // Set offline presence and log the logout if we have a child user
     if (user?.type === 'child' && user.parentId) {
+      // Set offline presence
+      await supabase
+        .from('children')
+        .update({ is_online: false })
+        .eq('id', user.id);
+
       await createAuditLog(user.parentId, 'child_logout', user.id);
     }
 

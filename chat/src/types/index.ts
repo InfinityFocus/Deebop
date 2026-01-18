@@ -24,6 +24,8 @@ export interface ChildDB {
   quiet_hours_end: string | null;
   voice_messaging_enabled: boolean;
   created_at: string;
+  last_seen_at: string | null;
+  is_online: boolean;
 }
 
 // UI format (camelCase)
@@ -40,11 +42,15 @@ export interface Child {
   quietHoursEnd: string | null;
   voiceMessagingEnabled: boolean;
   createdAt: string;
+  lastSeenAt: string | null;
+  isOnline: boolean;
 }
 
 export type AgeBand = '6-8' | '9-10' | '11-12';
 
 export type OversightMode = 'monitor' | 'approve_first' | 'approve_all';
+
+export type PresenceStatus = 'online' | 'away' | 'offline';
 
 export interface Friendship {
   id: string;

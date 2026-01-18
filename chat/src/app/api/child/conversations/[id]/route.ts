@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { supabase } from '@/lib/db';
+import { calculatePresenceStatus } from '@/lib/presence';
 
 // GET /api/child/conversations/[id] - Get conversation with messages
 export async function GET(
@@ -49,7 +50,7 @@ export async function GET(
 
     const { data: friend } = await supabase
       .from('children')
-      .select('id, username, display_name, avatar_id')
+      .select('id, username, display_name, avatar_id, is_online, last_seen_at')
       .eq('id', friendId)
       .single();
 
@@ -95,6 +96,10 @@ export async function GET(
           friendName: friend?.display_name || 'Unknown',
           friendUsername: friend?.username || 'unknown',
           friendAvatar: friend?.avatar_id || 'cat',
+          friendStatus: calculatePresenceStatus(
+            friend?.is_online ?? false,
+            friend?.last_seen_at ?? null
+          ),
         },
         messages: transformedMessages,
       },
