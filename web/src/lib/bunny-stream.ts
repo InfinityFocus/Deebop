@@ -26,21 +26,30 @@ export function isTokenAuthEnabled(): boolean {
 
 /**
  * Generate a signed token for Bunny CDN Token Authentication
- * Format: Base64_URLSafe(SHA256_RAW(tokenKey + urlPath + expiryTimestamp))
+ * Format: Base64_URLSafe(SHA256_RAW(tokenKey + urlPath + expiryTimestamp + queryParams))
  *
- * This is different from Embed Token Auth which uses:
- * SHA256_HEX(tokenKey + videoId + expiry)
+ * All query parameters (except 'token' and 'expires') must be included in the hash
+ * in alphabetical order, formatted as "param1=value1&param2=value2"
  *
- * CDN Token Auth is required for direct HLS/video URL access.
  * @see https://docs.bunny.net/docs/cdn-token-authentication
  */
-function generateCdnToken(urlPath: string, expiryTimestamp: number): string {
+function generateCdnToken(urlPath: string, expiryTimestamp: number, extraParams?: Record<string, string>): string {
   if (!BUNNY_STREAM_TOKEN_KEY) {
     throw new Error('BUNNY_STREAM_TOKEN_KEY is not configured');
   }
 
-  // CDN Token format: Base64(SHA256_RAW(key + path + expiry))
-  const stringToHash = BUNNY_STREAM_TOKEN_KEY + urlPath + expiryTimestamp.toString();
+  // Start with: key + path + expiry
+  let stringToHash = BUNNY_STREAM_TOKEN_KEY + urlPath + expiryTimestamp.toString();
+
+  // Add extra query parameters in alphabetical order (excluding token and expires)
+  if (extraParams && Object.keys(extraParams).length > 0) {
+    const sortedParams = Object.keys(extraParams)
+      .sort()
+      .map(key => `${key}=${extraParams[key]}`)
+      .join('&');
+    stringToHash += sortedParams;
+  }
+
   const hash = crypto.createHash('sha256').update(stringToHash).digest('base64');
 
   // URL-safe Base64: replace + with -, / with _, remove = and newlines
@@ -198,8 +207,9 @@ export function getBunnyPlaybackUrl(videoGuid: string, expiryHours: number = 24)
     const expiryTimestamp = Math.floor(Date.now() / 1000) + (expiryHours * 3600);
     // Use token_path to sign the entire video directory (so .ts segments also work)
     const tokenPath = `/${videoGuid}/`;
-    const token = generateCdnToken(tokenPath, expiryTimestamp);
-    // token_path must be URL encoded
+    // token_path must be included in the hash (all query params except token/expires)
+    const token = generateCdnToken(tokenPath, expiryTimestamp, { token_path: tokenPath });
+    // token_path must be URL encoded in the URL
     const encodedTokenPath = encodeURIComponent(tokenPath);
     return `${baseUrl}?token=${token}&expires=${expiryTimestamp}&token_path=${encodedTokenPath}`;
   }
