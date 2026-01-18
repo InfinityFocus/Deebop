@@ -7,8 +7,9 @@ import { useUserTier } from '@/stores/authStore';
 // Tier-based recording limits in seconds
 const TIER_RECORDING_LIMITS = {
   free: 60, // 1 minute
-  standard: 300, // 5 minutes
+  creator: 300, // 5 minutes
   pro: 1800, // 30 minutes
+  teams: 3600, // 1 hour
 };
 
 interface AudioRecorderProps {
@@ -342,9 +343,11 @@ export function AudioRecorder({
         <p className="mt-3 text-center text-xs text-gray-500">
           {tier === 'free'
             ? 'Free tier: up to 1 minute'
-            : tier === 'standard'
-              ? 'Standard tier: up to 5 minutes'
-              : 'Pro tier: up to 30 minutes'}
+            : tier === 'creator'
+              ? 'Creator tier: up to 5 minutes'
+              : tier === 'teams'
+                ? 'Teams tier: up to 1 hour'
+                : 'Pro tier: up to 30 minutes'}
         </p>
       )}
     </div>
