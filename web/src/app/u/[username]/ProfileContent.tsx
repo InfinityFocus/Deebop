@@ -31,8 +31,9 @@ interface UserProfile {
 
 const TIER_BADGES: Record<string, { label: string; color: string }> = {
   free: { label: 'Free', color: 'bg-gray-600' },
-  standard: { label: 'Standard', color: 'bg-blue-600' },
+  creator: { label: 'Creator', color: 'bg-blue-600' },
   pro: { label: 'Pro', color: 'bg-gradient-to-r from-emerald-500 to-cyan-500' },
+  teams: { label: 'Teams', color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
 };
 
 async function fetchUser(username: string): Promise<{ user: UserProfile }> {
@@ -214,8 +215,8 @@ export function ProfileContent({ params }: { params: Promise<{ username: string 
             </a>
           )}
 
-          {/* Creator Page Link - for Standard/Pro users */}
-          {(user.tier === 'standard' || user.tier === 'pro') && (
+          {/* Creator Page Link - for Creator/Pro/Teams users */}
+          {(user.tier === 'creator' || user.tier === 'pro' || user.tier === 'teams') && (
             <Link
               href={`/u/${user.username}/hub`}
               className="flex items-center gap-2 mt-3 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-full text-sm text-white transition"

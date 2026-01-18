@@ -167,9 +167,11 @@ export default function SettingsPage() {
               <div
                 className={clsx(
                   'w-10 h-10 rounded-full flex items-center justify-center',
-                  user.tier === 'pro'
+                  user.tier === 'teams'
                     ? 'bg-gradient-to-r from-purple-500 to-pink-500'
-                    : user.tier === 'standard'
+                    : user.tier === 'pro'
+                    ? 'bg-gradient-to-r from-emerald-500 to-cyan-500'
+                    : user.tier === 'creator'
                     ? 'bg-blue-500'
                     : 'bg-gray-600'
                 )}
@@ -178,10 +180,12 @@ export default function SettingsPage() {
               </div>
               <div>
                 <p className="text-white font-medium">
-                  {user.tier === 'pro'
+                  {user.tier === 'teams'
+                    ? 'Teams'
+                    : user.tier === 'pro'
                     ? 'Pro'
-                    : user.tier === 'standard'
-                    ? 'Standard'
+                    : user.tier === 'creator'
+                    ? 'Creator'
                     : 'Free'}{' '}
                   Plan
                 </p>

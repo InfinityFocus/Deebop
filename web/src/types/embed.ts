@@ -71,7 +71,7 @@ export interface EmbedUser {
   username: string;
   display_name: string | null;
   avatar_url: string | null;
-  tier: 'free' | 'standard' | 'pro';
+  tier: 'free' | 'creator' | 'pro' | 'teams';
   is_private: boolean;
 }
 
