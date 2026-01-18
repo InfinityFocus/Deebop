@@ -6,14 +6,34 @@
  * and provides HLS adaptive streaming.
  */
 
+import crypto from 'crypto';
+
 const BUNNY_STREAM_API_KEY = process.env.BUNNY_STREAM_API_KEY;
 const BUNNY_STREAM_LIBRARY_ID = process.env.BUNNY_STREAM_LIBRARY_ID;
 const BUNNY_STREAM_CDN_HOSTNAME = process.env.BUNNY_STREAM_CDN_HOSTNAME;
+// Token authentication key from Bunny Stream library settings
+const BUNNY_STREAM_TOKEN_KEY = process.env.BUNNY_STREAM_TOKEN_KEY;
 
 const BUNNY_API_BASE = 'https://video.bunnycdn.com/library';
 
 export function isBunnyStreamEnabled(): boolean {
   return !!(BUNNY_STREAM_API_KEY && BUNNY_STREAM_LIBRARY_ID && BUNNY_STREAM_CDN_HOSTNAME);
+}
+
+export function isTokenAuthEnabled(): boolean {
+  return !!BUNNY_STREAM_TOKEN_KEY;
+}
+
+/**
+ * Generate a signed token for Bunny Stream URL authentication
+ * Format: SHA256(tokenKey + videoId + expiryTimestamp)
+ */
+function generateSignedToken(videoId: string, expiryTimestamp: number): string {
+  if (!BUNNY_STREAM_TOKEN_KEY) {
+    throw new Error('BUNNY_STREAM_TOKEN_KEY is not configured');
+  }
+  const stringToHash = BUNNY_STREAM_TOKEN_KEY + videoId + expiryTimestamp.toString();
+  return crypto.createHash('sha256').update(stringToHash).digest('hex');
 }
 
 export function getBunnyConfig() {
@@ -151,34 +171,67 @@ export async function deleteBunnyVideo(videoGuid: string): Promise<void> {
 /**
  * Get the HLS playlist URL for a video
  * This is the main playback URL for adaptive streaming
+ * If token auth is enabled, returns a signed URL
+ * @param expiryHours - How long the signed URL should be valid (default 24 hours)
  */
-export function getBunnyPlaybackUrl(videoGuid: string): string {
+export function getBunnyPlaybackUrl(videoGuid: string, expiryHours: number = 24): string {
   const { cdnHostname } = getBunnyConfig();
+
+  if (isTokenAuthEnabled()) {
+    const expiryTimestamp = Math.floor(Date.now() / 1000) + (expiryHours * 3600);
+    const token = generateSignedToken(videoGuid, expiryTimestamp);
+    return `https://${cdnHostname}/${token}/${expiryTimestamp}/${videoGuid}/playlist.m3u8`;
+  }
+
   return `https://${cdnHostname}/${videoGuid}/playlist.m3u8`;
 }
 
 /**
  * Get the direct MP4 URL for a specific resolution
  * Resolutions available: 240, 360, 480, 720, 1080
+ * If token auth is enabled, returns a signed URL
  */
-export function getBunnyDirectUrl(videoGuid: string, resolution: number = 720): string {
+export function getBunnyDirectUrl(videoGuid: string, resolution: number = 720, expiryHours: number = 24): string {
   const { cdnHostname } = getBunnyConfig();
+
+  if (isTokenAuthEnabled()) {
+    const expiryTimestamp = Math.floor(Date.now() / 1000) + (expiryHours * 3600);
+    const token = generateSignedToken(videoGuid, expiryTimestamp);
+    return `https://${cdnHostname}/${token}/${expiryTimestamp}/${videoGuid}/play_${resolution}p.mp4`;
+  }
+
   return `https://${cdnHostname}/${videoGuid}/play_${resolution}p.mp4`;
 }
 
 /**
  * Get the thumbnail URL for a video
+ * If token auth is enabled, returns a signed URL
  */
-export function getBunnyThumbnailUrl(videoGuid: string): string {
+export function getBunnyThumbnailUrl(videoGuid: string, expiryHours: number = 24): string {
   const { cdnHostname } = getBunnyConfig();
+
+  if (isTokenAuthEnabled()) {
+    const expiryTimestamp = Math.floor(Date.now() / 1000) + (expiryHours * 3600);
+    const token = generateSignedToken(videoGuid, expiryTimestamp);
+    return `https://${cdnHostname}/${token}/${expiryTimestamp}/${videoGuid}/thumbnail.jpg`;
+  }
+
   return `https://${cdnHostname}/${videoGuid}/thumbnail.jpg`;
 }
 
 /**
  * Get animated preview/gif URL
+ * If token auth is enabled, returns a signed URL
  */
-export function getBunnyPreviewUrl(videoGuid: string): string {
+export function getBunnyPreviewUrl(videoGuid: string, expiryHours: number = 24): string {
   const { cdnHostname } = getBunnyConfig();
+
+  if (isTokenAuthEnabled()) {
+    const expiryTimestamp = Math.floor(Date.now() / 1000) + (expiryHours * 3600);
+    const token = generateSignedToken(videoGuid, expiryTimestamp);
+    return `https://${cdnHostname}/${token}/${expiryTimestamp}/${videoGuid}/preview.webp`;
+  }
+
   return `https://${cdnHostname}/${videoGuid}/preview.webp`;
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import Hls from 'hls.js';
 
 interface HLSVideoPlayerProps {
@@ -20,6 +20,36 @@ interface HLSVideoPlayerProps {
   onClick?: () => void;
   onDoubleClick?: () => void;
   onContextMenu?: (e: React.MouseEvent) => void;
+  /** Called when video is still processing (not ready for playback) */
+  onProcessing?: () => void;
+}
+
+// Extract Bunny video GUID from URL
+// URLs can be: https://hostname/guid/playlist.m3u8 or https://hostname/token/expiry/guid/playlist.m3u8
+function extractBunnyGuid(url: string): string | null {
+  if (!url) return null;
+
+  // Check if it's a Bunny CDN URL
+  if (!url.includes('b-cdn.net') && !url.includes('bunnycdn.com')) {
+    return null;
+  }
+
+  try {
+    const urlObj = new URL(url);
+    const parts = urlObj.pathname.split('/').filter(Boolean);
+
+    // Find the GUID - it's a UUID format (8-4-4-4-12)
+    const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    for (const part of parts) {
+      if (guidPattern.test(part)) {
+        return part;
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 }
 
 export interface HLSVideoPlayerHandle {
@@ -56,11 +86,18 @@ export const HLSVideoPlayer = forwardRef<HLSVideoPlayerHandle, HLSVideoPlayerPro
       onClick,
       onDoubleClick,
       onContextMenu,
+      onProcessing,
     },
     ref
   ) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
+
+    // State for signed URL fetching
+    const [signedSrc, setSignedSrc] = useState<string | null>(null);
+    const [signedPoster, setSignedPoster] = useState<string | undefined>(poster);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     // Expose video methods via ref
     useImperativeHandle(ref, () => ({
@@ -89,12 +126,58 @@ export const HLSVideoPlayer = forwardRef<HLSVideoPlayerHandle, HLSVideoPlayerPro
       },
     }));
 
+    // Fetch signed URL for Bunny videos
+    useEffect(() => {
+      const bunnyGuid = extractBunnyGuid(src);
+
+      if (bunnyGuid) {
+        setIsLoading(true);
+        setIsProcessing(false);
+
+        fetch(`/api/video/${bunnyGuid}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.error) {
+              console.error('[HLSVideoPlayer] API error:', data.error);
+              onError?.(new Error(data.error));
+              setSignedSrc(src); // Fall back to original URL
+            } else if (!data.isReady) {
+              // Video is still processing
+              console.log('[HLSVideoPlayer] Video still processing:', data.statusLabel);
+              setIsProcessing(true);
+              onProcessing?.();
+              setSignedSrc(null);
+            } else {
+              setSignedSrc(data.playbackUrl);
+              if (data.thumbnailUrl) {
+                setSignedPoster(data.thumbnailUrl);
+              }
+            }
+          })
+          .catch((err) => {
+            console.error('[HLSVideoPlayer] Failed to fetch signed URL:', err);
+            setSignedSrc(src); // Fall back to original URL
+          })
+          .finally(() => {
+            setIsLoading(false);
+          });
+      } else {
+        // Not a Bunny video, use original URL
+        setSignedSrc(src);
+        setSignedPoster(poster);
+      }
+    }, [src, poster, onError, onProcessing]);
+
+    // The actual source to use for playback
+    const actualSrc = signedSrc || '';
+    const actualPoster = signedPoster;
+
     // Check if source is HLS
-    const isHLS = src?.includes('.m3u8') || src?.includes('playlist.m3u8');
+    const isHLS = actualSrc?.includes('.m3u8') || actualSrc?.includes('playlist.m3u8');
 
     useEffect(() => {
       const video = videoRef.current;
-      if (!video || !src) return;
+      if (!video || !actualSrc || isLoading || isProcessing) return;
 
       // Cleanup previous HLS instance
       if (hlsRef.current) {
@@ -106,7 +189,7 @@ export const HLSVideoPlayer = forwardRef<HLSVideoPlayerHandle, HLSVideoPlayerPro
         // Check if browser supports HLS natively (Safari)
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
           // Safari has native HLS support
-          video.src = src;
+          video.src = actualSrc;
         } else if (Hls.isSupported()) {
           // Use hls.js for other browsers
           const hls = new Hls({
@@ -117,7 +200,7 @@ export const HLSVideoPlayer = forwardRef<HLSVideoPlayerHandle, HLSVideoPlayerPro
 
           hlsRef.current = hls;
 
-          hls.loadSource(src);
+          hls.loadSource(actualSrc);
           hls.attachMedia(video);
 
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -151,11 +234,11 @@ export const HLSVideoPlayer = forwardRef<HLSVideoPlayerHandle, HLSVideoPlayerPro
         } else {
           // HLS not supported at all - try direct playback as fallback
           console.warn('[HLSVideoPlayer] HLS not supported, trying direct playback');
-          video.src = src;
+          video.src = actualSrc;
         }
       } else {
         // Direct MP4 playback
-        video.src = src;
+        video.src = actualSrc;
       }
 
       // Event handlers
@@ -193,7 +276,7 @@ export const HLSVideoPlayer = forwardRef<HLSVideoPlayerHandle, HLSVideoPlayerPro
           hlsRef.current = null;
         }
       };
-    }, [src, isHLS, autoPlay, onPlay, onPause, onTimeUpdate, onEnded, onError, onLoadedMetadata]);
+    }, [actualSrc, isHLS, isLoading, isProcessing, autoPlay, onPlay, onPause, onTimeUpdate, onEnded, onError, onLoadedMetadata]);
 
     // Update muted state
     useEffect(() => {
@@ -202,10 +285,29 @@ export const HLSVideoPlayer = forwardRef<HLSVideoPlayerHandle, HLSVideoPlayerPro
       }
     }, [muted]);
 
+    // Show loading or processing state
+    if (isLoading) {
+      return (
+        <div className={`flex items-center justify-center bg-gray-900 ${className}`}>
+          <div className="animate-pulse text-gray-400 text-sm">Loading video...</div>
+        </div>
+      );
+    }
+
+    if (isProcessing) {
+      return (
+        <div className={`flex flex-col items-center justify-center bg-gray-900 gap-2 ${className}`}>
+          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <div className="text-gray-400 text-sm">Video processing...</div>
+          <div className="text-gray-500 text-xs">This may take a few minutes</div>
+        </div>
+      );
+    }
+
     return (
       <video
         ref={videoRef}
-        poster={poster}
+        poster={actualPoster}
         muted={muted}
         loop={loop}
         playsInline={playsInline}
