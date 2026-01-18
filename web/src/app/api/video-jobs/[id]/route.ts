@@ -66,7 +66,7 @@ export async function GET(
         const ready = isVideoReady(bunnyStatus.status);
 
         // Update job if processing is complete
-        if (ready && job.status !== 'completed') {
+        if (ready) {
           await prisma.videoJob.update({
             where: { id },
             data: {
