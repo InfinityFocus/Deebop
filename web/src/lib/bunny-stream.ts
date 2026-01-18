@@ -90,13 +90,16 @@ export async function createBunnyVideo(title: string): Promise<{ guid: string }>
 export async function uploadToBunnyStream(videoGuid: string, buffer: Buffer): Promise<void> {
   const { apiKey, libraryId } = getBunnyConfig();
 
+  // Convert Buffer to Uint8Array for fetch compatibility
+  const uint8Array = new Uint8Array(buffer);
+
   const response = await fetch(`${BUNNY_API_BASE}/${libraryId}/videos/${videoGuid}`, {
     method: 'PUT',
     headers: {
       'AccessKey': apiKey,
       'Content-Type': 'application/octet-stream',
     },
-    body: buffer,
+    body: uint8Array,
   });
 
   if (!response.ok) {
