@@ -169,6 +169,19 @@ export async function PATCH(
           );
         }
         updateData = { tier };
+
+        // Also update the Identity's tier (Identity holds the subscription/billing tier)
+        const userWithIdentity = await prisma.user.findUnique({
+          where: { id },
+          select: { identityId: true },
+        });
+
+        if (userWithIdentity?.identityId) {
+          await prisma.identity.update({
+            where: { id: userWithIdentity.identityId },
+            data: { tier },
+          });
+        }
         break;
 
       default:
@@ -186,6 +199,7 @@ export async function PATCH(
         username: true,
         tier: true,
         isSuspended: true,
+        identityId: true,
       },
     });
 
