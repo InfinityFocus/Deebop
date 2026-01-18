@@ -16,18 +16,18 @@ const tiers = [
     price: '£0',
     period: '/month',
     description: 'Get started with the basics',
+    tagline: null,
     features: [
       { text: '1 Profile', included: true },
       { text: 'Unlimited images', included: true },
-      { text: 'Videos up to 1min', included: true },
-      { text: 'Audio up to 1min', included: true },
+      { text: 'Videos up to 30s', included: true },
+      { text: 'Audio up to 1 min', included: true },
       { text: 'Unlimited shouts', included: true },
       { text: 'Collaborative Albums (2GB)', included: true },
-      { text: 'Scheduled Drops', included: true },
+      { text: '3 Scheduled Drops max', included: true },
       { text: 'Audience Groups', included: true },
       { text: 'Events', included: true },
       { text: 'Provenance Labels', included: true },
-      { text: 'Post Boosts', included: true },
       { text: '360 Panoramas', included: false },
       { text: 'Profile link', included: false },
       { text: 'Creator Page', included: false },
@@ -38,29 +38,26 @@ const tiers = [
     highlighted: false,
   },
   {
-    name: 'Standard',
+    name: 'Creator',
     price: '£3.99',
     period: '/month',
-    description: 'For serious creators',
+    description: 'For content creators',
+    tagline: 'Two profiles, post to one at a time. Repost across profiles when it makes sense.',
     features: [
       { text: '2 Profiles', included: true },
       { text: 'Unlimited images', included: true },
-      { text: 'Videos up to 3min', included: true },
-      { text: 'Audio up to 3min', included: true },
+      { text: 'Videos up to 3 min', included: true },
+      { text: 'Audio up to 5 min', included: true },
       { text: 'Unlimited shouts', included: true },
       { text: 'Collaborative Albums (10GB)', included: true },
-      { text: 'Scheduled Drops', included: true },
-      { text: 'Audience Groups', included: true },
-      { text: 'Events', included: true },
-      { text: 'Provenance Labels', included: true },
-      { text: 'Post Boosts', included: true },
-      { text: '360 Panoramas', included: false },
+      { text: 'Unlimited Scheduled Drops', included: true },
+      { text: '360 Panoramas (100MB)', included: true },
       { text: 'Profile link', included: true },
       { text: 'Creator Page (basic)', included: true },
-      { text: 'Priority support', included: false },
+      { text: 'Repost to own profiles', included: true },
       { text: 'Reduced ads', included: true },
     ],
-    cta: 'Upgrade to Standard',
+    cta: 'Upgrade to Creator',
     href: '/register',
     highlighted: false,
   },
@@ -68,28 +65,50 @@ const tiers = [
     name: 'Pro',
     price: '£9.99',
     period: '/month',
-    description: 'Everything, unlocked',
+    description: 'For professionals',
+    tagline: 'Publish once, share across your profiles when it makes sense.',
     features: [
       { text: '5 Profiles', included: true },
       { text: 'Unlimited images', included: true },
-      { text: 'Videos up to 10min', included: true },
-      { text: 'Audio up to 10min', included: true },
+      { text: 'Videos up to 10 min', included: true },
+      { text: 'Audio up to 30 min', included: true },
       { text: 'Unlimited shouts', included: true },
       { text: 'Collaborative Albums (50GB)', included: true },
-      { text: 'Scheduled Drops', included: true },
-      { text: 'Audience Groups', included: true },
-      { text: 'Events', included: true },
-      { text: 'Provenance Labels', included: true },
-      { text: 'Priority Post Boosts', included: true },
+      { text: 'Unlimited Scheduled Drops', included: true },
       { text: '360 Panoramas (100MB)', included: true },
       { text: 'Profile link', included: true },
       { text: 'Creator Page (full)', included: true },
-      { text: 'Priority support', included: true },
+      { text: 'Multi-profile publishing', included: true },
       { text: 'No ads', included: true },
     ],
     cta: 'Go Pro',
     href: '/register',
     highlighted: true,
+  },
+  {
+    name: 'Teams',
+    price: '£24.99',
+    period: '/month',
+    description: 'For organizations',
+    tagline: 'One workspace, many profiles, with role-based publishing controls.',
+    features: [
+      { text: '30 Profiles', included: true },
+      { text: 'Unlimited images', included: true },
+      { text: 'Videos up to 10 min', included: true },
+      { text: 'Audio up to 1 hour', included: true },
+      { text: 'Unlimited shouts', included: true },
+      { text: 'Collaborative Albums (100GB)', included: true },
+      { text: 'Unlimited Scheduled Drops', included: true },
+      { text: '360 Panoramas (100MB)', included: true },
+      { text: 'Creator Page (full)', included: true },
+      { text: 'Multi-profile publishing', included: true },
+      { text: 'Role-gated publishing', included: true },
+      { text: 'Workspace with drafts', included: true },
+      { text: 'No ads', included: true },
+    ],
+    cta: 'Get Teams',
+    href: '/register',
+    highlighted: false,
   },
 ];
 
@@ -115,12 +134,12 @@ export default function PricingPage() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {tiers.map((tier) => (
             <div
               key={tier.name}
               className={clsx(
-                'rounded-2xl border p-8 relative',
+                'rounded-2xl border p-6 relative flex flex-col',
                 tier.highlighted
                   ? 'border-emerald-500 bg-emerald-500/5'
                   : 'border-gray-800 bg-gray-900/50'
@@ -133,26 +152,33 @@ export default function PricingPage() {
               )}
 
               <h2 className="text-xl font-bold mb-2">{tier.name}</h2>
-              <p className="text-gray-400 text-sm mb-4">{tier.description}</p>
+              <p className="text-gray-400 text-sm mb-2">{tier.description}</p>
+              {tier.tagline && (
+                <p className="text-gray-500 text-xs italic mb-4">{tier.tagline}</p>
+              )}
 
               <div className="mb-6">
-                <span className="text-4xl font-bold">{tier.price}</span>
+                <span className="text-3xl font-bold">{tier.price}</span>
                 <span className="text-gray-400">{tier.period}</span>
               </div>
 
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-2 mb-8 flex-grow">
                 {tier.features.map((feature, i) => (
-                  <li key={i} className="flex items-center gap-3">
+                  <li key={i} className="flex items-start gap-2">
                     {feature.included ? (
                       <Check
-                        size={18}
-                        className={feature.negative ? 'text-orange-400' : 'text-green-400'}
+                        size={16}
+                        className={clsx(
+                          'flex-shrink-0 mt-0.5',
+                          feature.negative ? 'text-orange-400' : 'text-green-400'
+                        )}
                       />
                     ) : (
-                      <X size={18} className="text-gray-500" />
+                      <X size={16} className="text-gray-500 flex-shrink-0 mt-0.5" />
                     )}
                     <span
                       className={clsx(
+                        'text-sm',
                         feature.included ? 'text-gray-300' : 'text-gray-500'
                       )}
                     >

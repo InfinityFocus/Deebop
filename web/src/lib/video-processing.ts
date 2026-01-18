@@ -29,14 +29,20 @@ export const TIER_VIDEO_LIMITS: Record<string, TierLimits> = {
     maxHeight: 720,
     audioBitrate: '128k',
   },
-  standard: {
-    maxDuration: 60,
+  creator: {
+    maxDuration: 180, // 3 minutes
     maxWidth: 1920,
     maxHeight: 1080,
     audioBitrate: '192k',
   },
   pro: {
-    maxDuration: 300,
+    maxDuration: 600, // 10 minutes
+    maxWidth: 3840,
+    maxHeight: 2160,
+    audioBitrate: '256k',
+  },
+  teams: {
+    maxDuration: 600, // 10 minutes (same as pro)
     maxWidth: 3840,
     maxHeight: 2160,
     audioBitrate: '256k',

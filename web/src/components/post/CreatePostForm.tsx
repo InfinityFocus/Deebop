@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { clsx } from 'clsx';
 import * as tus from 'tus-js-client';
 import { useAuth } from '@/hooks/useAuth';
+import { useTierGate } from '@/hooks/useTierGate';
 import { getTierLimits } from '@/stores/authStore';
 import { UpgradePrompt } from '@/components/subscription/UpgradePrompt';
 import { PanoramaViewer } from '@/components/viewers/PanoramaViewer';
@@ -33,9 +34,17 @@ const provenanceOptions: { id: ProvenanceLabel; label: string }[] = [
   { id: 'composite', label: 'Composite/edited' },
 ];
 
+interface Profile {
+  id: string;
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+}
+
 export function CreatePostForm() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, identity } = useAuth();
+  const { isPro, isTeams } = useTierGate();
 
   const [selectedType, setSelectedType] = useState<ContentType | null>(null);
   const [textContent, setTextContent] = useState('');
@@ -75,6 +84,12 @@ export function CreatePostForm() {
 
   // Sensitive content state
   const [isSensitiveContent, setIsSensitiveContent] = useState(false);
+
+  // Multi-profile publishing state (Pro/Teams only)
+  const [enableMultiPublish, setEnableMultiPublish] = useState(false);
+  const [availableProfiles, setAvailableProfiles] = useState<Profile[]>([]);
+  const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
 
   // Video processing state
   const [videoJobId, setVideoJobId] = useState<string | null>(null);
@@ -158,6 +173,35 @@ export function CreatePostForm() {
       return () => clearTimeout(timeout);
     }
   }, [audioJobId, audioJobStatus, pollAudioJobStatus]);
+
+  // Fetch available profiles for multi-publish (Pro/Teams only)
+  const canMultiPublish = isPro || isTeams;
+
+  useEffect(() => {
+    if (canMultiPublish && enableMultiPublish && availableProfiles.length === 0) {
+      fetchProfiles();
+    }
+  }, [canMultiPublish, enableMultiPublish]);
+
+  const fetchProfiles = async () => {
+    if (loadingProfiles) return;
+    setLoadingProfiles(true);
+    try {
+      const res = await fetch('/api/profiles');
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableProfiles(data.profiles || []);
+        // Select current profile by default
+        if (user?.id && data.profiles?.length > 0) {
+          setSelectedProfileIds([user.id]);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch profiles:', err);
+    } finally {
+      setLoadingProfiles(false);
+    }
+  };
 
   // Upload audio file using presigned URL (bypasses serverless function body limit)
   const uploadAudioFile = async (file: File | Blob): Promise<string> => {
@@ -876,6 +920,11 @@ export function CreatePostForm() {
       // Add sensitive content declaration
       formData.append('is_sensitive_content', isSensitiveContent.toString());
 
+      // Add multi-profile publishing (Pro/Teams only)
+      if (canMultiPublish && enableMultiPublish && selectedProfileIds.length > 1) {
+        formData.append('profile_ids', JSON.stringify(selectedProfileIds));
+      }
+
       // Create post
       const res = await fetch('/api/posts', {
         method: 'POST',
@@ -1526,6 +1575,137 @@ export function CreatePostForm() {
                 )}
               </div>
             </div>
+
+            {/* Multi-Profile Publishing (Pro/Teams only) */}
+            {canMultiPublish && (
+              <div className="border border-gray-800 rounded-xl overflow-hidden">
+                <div className="flex items-center justify-between p-3 bg-gray-900/50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center">
+                      <UserPlus size={16} className="text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">Publish to multiple profiles</p>
+                      <p className="text-xs text-gray-500">Share this post across your profiles</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEnableMultiPublish(!enableMultiPublish);
+                      if (!enableMultiPublish && availableProfiles.length === 0) {
+                        fetchProfiles();
+                      }
+                    }}
+                    className={clsx(
+                      'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                      enableMultiPublish ? 'bg-emerald-500' : 'bg-gray-700'
+                    )}
+                  >
+                    <span
+                      className={clsx(
+                        'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
+                        enableMultiPublish ? 'translate-x-6' : 'translate-x-1'
+                      )}
+                    />
+                  </button>
+                </div>
+
+                {enableMultiPublish && (
+                  <div className="p-3 border-t border-gray-800 space-y-2">
+                    {loadingProfiles ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 size={20} className="animate-spin text-gray-400" />
+                      </div>
+                    ) : availableProfiles.length <= 1 ? (
+                      <p className="text-sm text-gray-400 text-center py-4">
+                        You need at least 2 profiles to use multi-publish.{' '}
+                        <Link href="/settings/profiles" className="text-emerald-400 hover:underline">
+                          Create another profile
+                        </Link>
+                      </p>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs text-gray-400">Select profiles to publish to:</p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (selectedProfileIds.length === availableProfiles.length) {
+                                // Deselect all except current
+                                setSelectedProfileIds(user?.id ? [user.id] : []);
+                              } else {
+                                // Select all
+                                setSelectedProfileIds(availableProfiles.map(p => p.id));
+                              }
+                            }}
+                            className="text-xs text-emerald-400 hover:text-emerald-300"
+                          >
+                            {selectedProfileIds.length === availableProfiles.length ? 'Deselect all' : 'Select all'}
+                          </button>
+                        </div>
+                        <div className="space-y-1">
+                          {availableProfiles.map((profile) => (
+                            <label
+                              key={profile.id}
+                              className={clsx(
+                                'flex items-center gap-3 p-2 rounded-lg cursor-pointer transition',
+                                selectedProfileIds.includes(profile.id)
+                                  ? 'bg-emerald-500/10 border border-emerald-500/30'
+                                  : 'hover:bg-gray-800'
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedProfileIds.includes(profile.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedProfileIds([...selectedProfileIds, profile.id]);
+                                  } else {
+                                    setSelectedProfileIds(selectedProfileIds.filter(id => id !== profile.id));
+                                  }
+                                }}
+                                className="sr-only"
+                              />
+                              {profile.avatarUrl ? (
+                                <img
+                                  src={profile.avatarUrl}
+                                  alt=""
+                                  className="w-8 h-8 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+                                  <span className="text-sm text-gray-400">
+                                    {(profile.displayName || profile.username)[0].toUpperCase()}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-white font-medium truncate">
+                                  {profile.displayName || profile.username}
+                                </p>
+                                <p className="text-xs text-gray-500">@{profile.username}</p>
+                              </div>
+                              {selectedProfileIds.includes(profile.id) && (
+                                <CheckCircle size={16} className="text-emerald-400 flex-shrink-0" />
+                              )}
+                              {profile.id === user?.id && (
+                                <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">Current</span>
+                              )}
+                            </label>
+                          ))}
+                        </div>
+                        {selectedProfileIds.length > 1 && (
+                          <p className="text-xs text-emerald-400 mt-2">
+                            Publishing to {selectedProfileIds.length} profiles
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Paid Promotion Declaration */}
             <div className="flex items-center gap-3 p-3 bg-gray-900/50 rounded-xl border border-gray-800">

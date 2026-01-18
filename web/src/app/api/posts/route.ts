@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { uploadToMinio, generateFileKey } from '@/lib/minio';
+import { getUploadLimits, type SubscriptionTier } from '@/lib/stripe';
 // Trending score imports removed - Discovery feed now uses pure chronological order
 // (feed-scoring.ts still used by /api/explore/trending/posts for Explore page)
 import { matchPostToInterests } from '@/lib/post-interest-matcher';
@@ -1303,6 +1304,30 @@ export async function POST(request: NextRequest) {
           { error: 'Scheduled time must be at least 5 minutes in the future' },
           { status: 400 }
         );
+      }
+
+      // Check free tier drops limit (3 max active scheduled posts)
+      const userTier = (user.tier || 'free') as SubscriptionTier;
+      const limits = getUploadLimits(userTier);
+
+      if (limits.maxActiveDrops !== null) {
+        const activeDropsCount = await prisma.post.count({
+          where: {
+            userId: user.id,
+            status: 'scheduled',
+          },
+        });
+
+        if (activeDropsCount >= limits.maxActiveDrops) {
+          return NextResponse.json(
+            {
+              error: `Free tier is limited to ${limits.maxActiveDrops} scheduled drops. Upgrade to Creator for unlimited drops.`,
+              code: 'DROPS_LIMIT_REACHED',
+              upgradeRequired: true,
+            },
+            { status: 403 }
+          );
+        }
       }
 
       status = 'scheduled';

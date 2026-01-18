@@ -10,7 +10,7 @@ import { StorageUsageBar } from '@/components/subscription/StorageUsageBar';
 import { SupportUsCard } from '@/components/subscription/SupportUsCard';
 
 interface SubscriptionStatus {
-  tier: 'free' | 'standard' | 'pro';
+  tier: 'free' | 'creator' | 'pro' | 'teams';
   subscription: {
     id: string;
     status: string;
@@ -33,15 +33,11 @@ const TIERS = {
     features: [
       '1 Profile',
       'Unlimited images',
-      'Videos up to 1min',
-      'Audio up to 1min',
+      'Videos up to 30s',
+      'Audio up to 1 min',
       'Unlimited shouts',
       'Collaborative Albums (2GB)',
-      'Scheduled Drops',
-      'Audience Groups',
-      'Events',
-      'Provenance Labels',
-      'Post Boosts',
+      '3 Scheduled Drops max',
       'Ads in feed',
     ],
     notIncluded: [
@@ -49,35 +45,32 @@ const TIERS = {
       '360 Panoramas',
       'Profile link',
       'Creator Page',
+      'Multi-profile publishing',
     ],
   },
-  standard: {
-    name: 'Standard',
+  creator: {
+    name: 'Creator',
     price: 399,
     description: 'For content creators',
     icon: Zap,
     features: [
       '2 Profiles',
       'Unlimited images',
-      'Videos up to 3min',
-      'Audio up to 3min',
+      'Videos up to 3 min',
+      'Audio up to 5 min',
       'Unlimited shouts',
       'Collaborative Albums (10GB)',
-      'Scheduled Drops',
-      'Audience Groups',
-      'Events',
-      'Provenance Labels',
-      'Post Boosts',
+      'Unlimited Scheduled Drops',
+      '360 Panoramas (100MB)',
       'Creator Page (basic)',
       'Profile link',
+      'Repost to own profiles',
       'Reduced ads',
     ],
     notIncluded: [
       '5 Profiles',
-      '360 Panoramas',
-      'Priority Post Boosts',
       'Creator Page (full)',
-      'Priority support',
+      'Multi-profile publishing',
       'No ads',
     ],
   },
@@ -90,19 +83,40 @@ const TIERS = {
     features: [
       '5 Profiles',
       'Unlimited images',
-      'Videos up to 10min',
-      'Audio up to 10min',
+      'Videos up to 10 min',
+      'Audio up to 30 min',
       'Unlimited shouts',
       'Collaborative Albums (50GB)',
-      'Scheduled Drops',
-      'Audience Groups',
-      'Events',
-      'Provenance Labels',
-      'Priority Post Boosts',
+      'Unlimited Scheduled Drops',
       '360 Panoramas (100MB)',
       'Creator Page (full)',
       'Profile link',
-      'Priority support',
+      'Multi-profile publishing',
+      'No ads',
+    ],
+    notIncluded: [
+      '30 Profiles',
+      'Workspace with drafts',
+      'Role-gated publishing',
+    ],
+  },
+  teams: {
+    name: 'Teams',
+    price: 2499,
+    description: 'For organizations',
+    icon: Crown,
+    features: [
+      '30 Profiles',
+      'Unlimited images',
+      'Videos up to 10 min',
+      'Audio up to 1 hour',
+      'Collaborative Albums (100GB)',
+      'Unlimited Scheduled Drops',
+      '360 Panoramas (100MB)',
+      'Creator Page (full)',
+      'Multi-profile publishing',
+      'Role-gated publishing',
+      'Workspace with drafts',
       'No ads',
     ],
     notIncluded: [],
@@ -140,7 +154,7 @@ export function SubscriptionContent() {
     }
   };
 
-  const handleCheckout = async (tier: 'standard' | 'pro') => {
+  const handleCheckout = async (tier: 'creator' | 'pro' | 'teams') => {
     setCheckoutLoading(tier);
     try {
       const res = await fetch('/api/subscriptions/checkout', {
@@ -259,7 +273,7 @@ export function SubscriptionContent() {
       )}
 
       {/* Pricing Cards */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         {(Object.entries(TIERS) as [keyof typeof TIERS, typeof TIERS[keyof typeof TIERS]][]).map(
           ([tierKey, tier]) => {
             const Icon = tier.icon;
@@ -270,7 +284,7 @@ export function SubscriptionContent() {
               <div
                 key={tierKey}
                 className={clsx(
-                  'relative rounded-2xl border p-6 transition',
+                  'relative rounded-2xl border p-5 transition flex flex-col',
                   isPopular
                     ? 'border-emerald-500 bg-emerald-500/10'
                     : 'border-gray-700 bg-gray-800/50',
@@ -283,44 +297,44 @@ export function SubscriptionContent() {
                   </div>
                 )}
 
-                <div className="text-center mb-6">
+                <div className="text-center mb-4">
                   <div
                     className={clsx(
-                      'w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-3',
-                      tierKey === 'pro'
+                      'w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-2',
+                      tierKey === 'pro' || tierKey === 'teams'
                         ? 'bg-gradient-to-r from-emerald-500 to-cyan-500'
-                        : tierKey === 'standard'
+                        : tierKey === 'creator'
                         ? 'bg-blue-500'
                         : 'bg-gray-600'
                     )}
                   >
-                    <Icon size={24} className="text-white" />
+                    <Icon size={20} className="text-white" />
                   </div>
-                  <h2 className="text-xl font-bold text-white">{tier.name}</h2>
-                  <p className="text-sm text-gray-300">{tier.description}</p>
-                  <div className="mt-4">
+                  <h2 className="text-lg font-bold text-white">{tier.name}</h2>
+                  <p className="text-xs text-gray-300">{tier.description}</p>
+                  <div className="mt-3">
                     {tier.price === 0 ? (
-                      <span className="text-3xl font-bold text-white">Free</span>
+                      <span className="text-2xl font-bold text-white">Free</span>
                     ) : (
                       <>
-                        <span className="text-3xl font-bold text-white">
+                        <span className="text-2xl font-bold text-white">
                           {formatPrice(tier.price)}
                         </span>
-                        <span className="text-gray-400">/month</span>
+                        <span className="text-gray-400 text-sm">/mo</span>
                       </>
                     )}
                   </div>
                 </div>
 
                 {/* Features */}
-                <ul className="space-y-3 mb-6">
+                <ul className="space-y-2 mb-4 flex-grow">
                   {tier.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-2">
                       <Check
-                        size={18}
+                        size={14}
                         className="text-green-400 flex-shrink-0 mt-0.5"
                       />
-                      <span className="text-gray-300 text-sm">{feature}</span>
+                      <span className="text-gray-300 text-xs">{feature}</span>
                     </li>
                   ))}
                   {tier.notIncluded.map((feature) => (
@@ -328,10 +342,10 @@ export function SubscriptionContent() {
                       key={feature}
                       className="flex items-start gap-2 opacity-50"
                     >
-                      <span className="w-[18px] h-[18px] flex items-center justify-center text-gray-500">
+                      <span className="w-[14px] h-[14px] flex items-center justify-center text-gray-500 text-xs">
                         -
                       </span>
-                      <span className="text-gray-500 text-sm line-through">
+                      <span className="text-gray-500 text-xs line-through">
                         {feature}
                       </span>
                     </li>
@@ -342,30 +356,30 @@ export function SubscriptionContent() {
                 {tierKey === 'free' ? (
                   <button
                     disabled
-                    className="w-full py-3 bg-gray-700 text-gray-300 rounded-lg cursor-not-allowed"
+                    className="w-full py-2 bg-gray-700 text-gray-300 rounded-lg cursor-not-allowed text-sm"
                   >
                     {isCurrentTier ? 'Current Plan' : 'Default Plan'}
                   </button>
                 ) : isCurrentTier ? (
                   <button
                     onClick={handleManageSubscription}
-                    className="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition"
+                    className="w-full py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition text-sm"
                   >
                     Manage Plan
                   </button>
                 ) : (
                   <button
-                    onClick={() => handleCheckout(tierKey as 'standard' | 'pro')}
+                    onClick={() => handleCheckout(tierKey as 'creator' | 'pro' | 'teams')}
                     disabled={checkoutLoading !== null}
                     className={clsx(
-                      'w-full py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2',
+                      'w-full py-2 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-sm',
                       isPopular
                         ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:opacity-90 text-white'
                         : 'bg-white hover:bg-gray-100 text-black'
                     )}
                   >
                     {checkoutLoading === tierKey ? (
-                      <Loader2 size={20} className="animate-spin" />
+                      <Loader2 size={16} className="animate-spin" />
                     ) : (
                       <>
                         {currentTier === 'free' ? 'Upgrade' : 'Switch'} to {tier.name}

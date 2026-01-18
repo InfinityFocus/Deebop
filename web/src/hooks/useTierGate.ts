@@ -8,17 +8,23 @@ export type Feature =
   | '4k_video'
   | 'long_video'
   | 'no_ads'
-  | 'reduced_ads';
+  | 'reduced_ads'
+  | 'creator_page'
+  | 'multi_publish'
+  | 'workspace';
 
 // Feature to tier mapping
 const FEATURE_REQUIREMENTS: Record<Feature, SubscriptionTier> = {
-  panorama_upload: 'pro',
-  profile_link: 'standard',
-  high_quality_images: 'standard',
+  panorama_upload: 'creator',
+  profile_link: 'creator',
+  high_quality_images: 'creator',
   '4k_video': 'pro',
-  long_video: 'standard',
+  long_video: 'creator',
   no_ads: 'pro',
-  reduced_ads: 'standard',
+  reduced_ads: 'creator',
+  creator_page: 'creator',
+  multi_publish: 'pro',
+  workspace: 'teams',
 };
 
 export function useTierGate() {
@@ -42,7 +48,10 @@ export function useTierGate() {
     getRequiredTier,
     limits,
     isPro: userTier === 'pro',
-    isStandard: userTier === 'standard',
+    isCreator: userTier === 'creator',
+    isTeams: userTier === 'teams',
     isFree: userTier === 'free',
+    // Legacy - kept for backward compatibility
+    isStandard: userTier === 'creator',
   };
 }

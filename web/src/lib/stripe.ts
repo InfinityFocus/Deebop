@@ -33,37 +33,69 @@ export const SUBSCRIPTION_TIERS = {
   free: {
     name: 'Free',
     price: 0,
+    tagline: 'Get started with the basics',
     features: [
-      'Unlimited images',
-      'Videos up to 30s @ 720p',
-      'Basic feed access',
+      '1 Profile',
+      'Videos up to 30s',
+      'Audio up to 1 min',
+      'Album storage (2GB)',
+      '3 scheduled drops max',
       'Full ads',
     ],
   },
-  standard: {
-    name: 'Standard',
+  creator: {
+    name: 'Creator',
     price: 399, // £3.99 in pence
-    priceId: process.env.STRIPE_STANDARD_PRICE_ID,
+    priceId: process.env.STRIPE_CREATOR_PRICE_ID,
+    tagline: 'Two profiles, post to one at a time. Repost across profiles when it makes sense.',
     features: [
-      'Unlimited images',
-      'Videos up to 1min @ 1080p',
-      'Album storage up to 10GB',
-      'Reduced ads',
+      '2 Profiles',
+      'Videos up to 3 min',
+      'Audio up to 5 min',
+      '360 Panoramas (100MB)',
+      'Album storage (10GB)',
+      'Creator Page (basic)',
       'Profile link',
+      'Unlimited scheduled drops',
+      'Reduced ads',
     ],
   },
   pro: {
     name: 'Pro',
     price: 999, // £9.99 in pence
     priceId: process.env.STRIPE_PRO_PRICE_ID,
+    tagline: 'Publish once, share across your profiles when it makes sense.',
     features: [
-      'Unlimited images',
-      'Videos up to 5min @ 4K',
-      '360 Panorama uploads (100MB)',
-      'Album storage up to 50GB',
-      'No ads',
+      '5 Profiles',
+      'Videos up to 10 min',
+      'Audio up to 30 min',
+      '360 Panoramas (100MB)',
+      'Album storage (50GB)',
+      'Creator Page (full)',
       'Profile link',
-      'Priority support',
+      'Multi-profile publishing',
+      'Unlimited scheduled drops',
+      'No ads',
+    ],
+  },
+  teams: {
+    name: 'Teams',
+    price: 2499, // £24.99 in pence
+    priceId: process.env.STRIPE_TEAMS_PRICE_ID,
+    tagline: 'One workspace, many profiles, with role-based publishing controls.',
+    features: [
+      '30 Profiles',
+      'Videos up to 10 min',
+      'Audio up to 1 hour',
+      '360 Panoramas (100MB)',
+      'Album storage (100GB)',
+      'Creator Page (full)',
+      'Profile link',
+      'Multi-profile publishing',
+      'Role-gated multi-publish',
+      'Workspace with drafts workflow',
+      'Unlimited scheduled drops',
+      'No ads',
     ],
   },
 } as const;
@@ -73,7 +105,8 @@ export type SubscriptionTier = keyof typeof SUBSCRIPTION_TIERS;
 // Get price ID for a tier
 export function getPriceIdForTier(tier: SubscriptionTier): string | null {
   if (tier === 'free') return null;
-  return SUBSCRIPTION_TIERS[tier].priceId || null;
+  const tierConfig = SUBSCRIPTION_TIERS[tier];
+  return 'priceId' in tierConfig ? tierConfig.priceId || null : null;
 }
 
 // Check if user can access a feature
@@ -81,7 +114,7 @@ export function canAccessFeature(
   userTier: SubscriptionTier,
   requiredTier: SubscriptionTier
 ): boolean {
-  const tierOrder: SubscriptionTier[] = ['free', 'standard', 'pro'];
+  const tierOrder: SubscriptionTier[] = ['free', 'creator', 'pro', 'teams'];
   return tierOrder.indexOf(userTier) >= tierOrder.indexOf(requiredTier);
 }
 
@@ -92,28 +125,53 @@ export function getUploadLimits(tier: SubscriptionTier) {
       maxImageSize: 50 * 1024 * 1024, // 50MB (images are resized/compressed server-side)
       maxVideoSize: 50 * 1024 * 1024, // 50MB
       maxVideoDuration: 30, // seconds
+      maxAudioDuration: 60, // 1 minute
       maxVideoResolution: 720,
       canUploadPanorama: false,
       maxPanoramaSize: 0,
       maxAlbumStorage: 2 * 1024 * 1024 * 1024, // 2GB
+      maxActiveDrops: 3, // max scheduled posts
+      canMultiPublish: false,
+      hasWorkspace: false,
     },
-    standard: {
+    creator: {
       maxImageSize: 50 * 1024 * 1024, // 50MB (images are resized/compressed server-side)
       maxVideoSize: 200 * 1024 * 1024, // 200MB
-      maxVideoDuration: 60, // seconds
+      maxVideoDuration: 180, // 3 minutes
+      maxAudioDuration: 300, // 5 minutes
       maxVideoResolution: 1080,
-      canUploadPanorama: false,
-      maxPanoramaSize: 0,
+      canUploadPanorama: true,
+      maxPanoramaSize: 100 * 1024 * 1024, // 100MB
       maxAlbumStorage: 10 * 1024 * 1024 * 1024, // 10GB
+      maxActiveDrops: null, // unlimited
+      canMultiPublish: false, // repost only
+      hasWorkspace: false,
     },
     pro: {
       maxImageSize: 50 * 1024 * 1024, // 50MB (images are resized/compressed server-side)
       maxVideoSize: 500 * 1024 * 1024, // 500MB
-      maxVideoDuration: 300, // 5 minutes
+      maxVideoDuration: 600, // 10 minutes
+      maxAudioDuration: 1800, // 30 minutes
       maxVideoResolution: 2160, // 4K
       canUploadPanorama: true,
       maxPanoramaSize: 100 * 1024 * 1024, // 100MB
       maxAlbumStorage: 50 * 1024 * 1024 * 1024, // 50GB
+      maxActiveDrops: null, // unlimited
+      canMultiPublish: true,
+      hasWorkspace: false,
+    },
+    teams: {
+      maxImageSize: 50 * 1024 * 1024, // 50MB (images are resized/compressed server-side)
+      maxVideoSize: 500 * 1024 * 1024, // 500MB
+      maxVideoDuration: 600, // 10 minutes
+      maxAudioDuration: 3600, // 1 hour
+      maxVideoResolution: 2160, // 4K
+      canUploadPanorama: true,
+      maxPanoramaSize: 100 * 1024 * 1024, // 100MB
+      maxAlbumStorage: 100 * 1024 * 1024 * 1024, // 100GB
+      maxActiveDrops: null, // unlimited
+      canMultiPublish: true,
+      hasWorkspace: true,
     },
   };
   return limits[tier];

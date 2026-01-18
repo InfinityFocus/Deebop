@@ -12,8 +12,8 @@ export interface CreatorPageLimits {
   themes: string[];
 }
 
-export const CREATOR_PAGE_LIMITS: Record<'standard' | 'pro', CreatorPageLimits> = {
-  standard: {
+export const CREATOR_PAGE_LIMITS: Record<'creator' | 'pro' | 'teams', CreatorPageLimits> = {
+  creator: {
     maxBlocks: 10,
     maxLinks: 20,
     analyticsRangeDays: 30,
@@ -33,6 +33,16 @@ export const CREATOR_PAGE_LIMITS: Record<'standard' | 'pro', CreatorPageLimits> 
     canViewCtr: true,
     themes: ['dark', 'light', 'gradient', 'custom'],
   },
+  teams: {
+    maxBlocks: 30,
+    maxLinks: 100,
+    analyticsRangeDays: 90,
+    canHideBranding: true,
+    canCustomizeTheme: true,
+    canViewReferrers: true,
+    canViewCtr: true,
+    themes: ['dark', 'light', 'gradient', 'custom'],
+  },
 };
 
 // Get limits for a user tier
@@ -40,12 +50,12 @@ export function getLimitsForTier(tier: string): CreatorPageLimits | null {
   if (tier === 'free') {
     return null; // Free users don't have Creator Page access
   }
-  return CREATOR_PAGE_LIMITS[tier as 'standard' | 'pro'] || CREATOR_PAGE_LIMITS.standard;
+  return CREATOR_PAGE_LIMITS[tier as 'creator' | 'pro' | 'teams'] || CREATOR_PAGE_LIMITS.creator;
 }
 
 // Check if user can access Creator Page
 export function canAccessCreatorPage(tier: string): boolean {
-  return tier === 'standard' || tier === 'pro';
+  return tier === 'creator' || tier === 'pro' || tier === 'teams';
 }
 
 // Count total links across all blocks

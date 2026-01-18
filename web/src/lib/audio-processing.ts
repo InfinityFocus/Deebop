@@ -22,11 +22,11 @@ export interface AudioTierLimits {
 // Tier-based audio limits
 export const TIER_AUDIO_LIMITS: Record<string, AudioTierLimits> = {
   free: {
-    maxDuration: 60,
+    maxDuration: 60, // 1 minute
     maxFileSizeMB: 10,
     outputBitrate: '128k',
   },
-  standard: {
+  creator: {
     maxDuration: 300, // 5 minutes
     maxFileSizeMB: 50,
     outputBitrate: '192k',
@@ -34,6 +34,11 @@ export const TIER_AUDIO_LIMITS: Record<string, AudioTierLimits> = {
   pro: {
     maxDuration: 1800, // 30 minutes
     maxFileSizeMB: 200,
+    outputBitrate: '256k',
+  },
+  teams: {
+    maxDuration: 3600, // 1 hour
+    maxFileSizeMB: 400,
     outputBitrate: '256k',
   },
 };

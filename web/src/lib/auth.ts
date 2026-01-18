@@ -13,8 +13,9 @@ const COOKIE_NAME = 'deebop-auth';
 // Profile limits by tier
 export const PROFILE_LIMITS = {
   free: 1,
-  standard: 2,
+  creator: 2,
   pro: 5,
+  teams: 30,
 } as const;
 
 /**
