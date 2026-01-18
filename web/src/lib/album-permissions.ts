@@ -115,6 +115,7 @@ export function canRemoveMember(
 // Album tier limits
 export const ALBUM_LIMITS = {
   free: 3,
-  standard: Infinity,
+  creator: Infinity,
   pro: Infinity,
+  teams: Infinity,
 } as const;

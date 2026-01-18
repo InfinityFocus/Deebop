@@ -10,7 +10,25 @@ export const metadata: Metadata = {
   description: 'Simple, transparent pricing for Deebop. Free tier available, upgrade anytime.',
 };
 
-const tiers = [
+interface Feature {
+  text: string;
+  included: boolean;
+  negative?: boolean;
+}
+
+interface Tier {
+  name: string;
+  price: string;
+  period: string;
+  description: string;
+  tagline: string | null;
+  features: Feature[];
+  cta: string;
+  href: string;
+  highlighted: boolean;
+}
+
+const tiers: Tier[] = [
   {
     name: 'Free',
     price: '£0',

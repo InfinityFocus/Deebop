@@ -56,18 +56,18 @@ export async function getIdentityStorageUsage(identityId: string): Promise<Stora
   }
 
   // Sum storage usage across all albums owned by any profile under this identity
-  const storageResult = await prisma.albumMedia.aggregate({
+  const storageResult = await prisma.albumItem.aggregate({
     where: {
       album: {
         ownerId: { in: profileIds }
       }
     },
     _sum: {
-      fileSizeBytes: true
+      fileSize: true
     }
   });
 
-  const usedBytes = storageResult._sum.fileSizeBytes || 0;
+  const usedBytes = storageResult._sum.fileSize || 0;
   const percentage = maxBytes > 0 ? Math.round((usedBytes / maxBytes) * 100) : 0;
 
   return {
@@ -83,18 +83,18 @@ export async function getIdentityStorageUsage(identityId: string): Promise<Stora
  * Get storage usage for a specific profile (useful for profile-level display)
  */
 export async function getProfileStorageUsage(profileId: string): Promise<number> {
-  const storageResult = await prisma.albumMedia.aggregate({
+  const storageResult = await prisma.albumItem.aggregate({
     where: {
       album: {
         ownerId: profileId
       }
     },
     _sum: {
-      fileSizeBytes: true
+      fileSize: true
     }
   });
 
-  return storageResult._sum.fileSizeBytes || 0;
+  return storageResult._sum.fileSize || 0;
 }
 
 /**

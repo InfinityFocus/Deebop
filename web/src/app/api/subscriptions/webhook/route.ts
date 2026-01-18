@@ -101,7 +101,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // Handle subscription payment
   const userId = session.metadata?.userId;
-  const tier = session.metadata?.tier as 'standard' | 'pro';
+  const tier = session.metadata?.tier as 'creator' | 'pro' | 'teams';
 
   if (!userId || !tier) {
     console.error('Missing metadata in checkout session');
@@ -119,7 +119,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const userId = subscription.metadata?.userId;
-  const tier = subscription.metadata?.tier as 'standard' | 'pro';
+  const tier = subscription.metadata?.tier as 'creator' | 'pro' | 'teams';
 
   if (!userId) {
     console.error('Missing userId in subscription metadata');
@@ -130,7 +130,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   if (subscription.status === 'active') {
     await prisma.user.update({
       where: { id: userId },
-      data: { tier: tier || 'standard' },
+      data: { tier: tier || 'free' },
     });
     console.log(`Subscription active for user ${userId}, tier: ${tier}`);
   } else if (['past_due', 'unpaid'].includes(subscription.status)) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getIdentityFromToken } from '@/lib/auth';
+import { getIdentity } from '@/lib/auth';
 import prisma from '@/lib/db';
 import type { ContentType, DraftStatus } from '@prisma/client';
 
@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const identity = await getIdentityFromToken();
+    const identity = await getIdentity();
     if (!identity) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -94,7 +94,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const identity = await getIdentityFromToken();
+    const identity = await getIdentity();
     if (!identity) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

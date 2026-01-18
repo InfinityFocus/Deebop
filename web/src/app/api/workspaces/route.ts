@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser, getIdentityFromToken } from '@/lib/auth';
+import { getCurrentUser, getIdentity } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { canAccessFeature, type SubscriptionTier } from '@/lib/stripe';
 
 // GET /api/workspaces - List workspaces for the current identity
 export async function GET() {
   try {
-    const identity = await getIdentityFromToken();
+    const identity = await getIdentity();
     if (!identity) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -139,7 +139,7 @@ export async function GET() {
 // POST /api/workspaces - Create a new workspace
 export async function POST(request: NextRequest) {
   try {
-    const identity = await getIdentityFromToken();
+    const identity = await getIdentity();
     if (!identity) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
