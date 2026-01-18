@@ -25,15 +25,29 @@ export function isTokenAuthEnabled(): boolean {
 }
 
 /**
- * Generate a signed token for Bunny Stream URL authentication
- * Format: SHA256(tokenKey + videoId + expiryTimestamp)
+ * Generate a signed token for Bunny CDN Token Authentication
+ * Format: Base64_URLSafe(SHA256_RAW(tokenKey + urlPath + expiryTimestamp))
+ *
+ * This is different from Embed Token Auth which uses:
+ * SHA256_HEX(tokenKey + videoId + expiry)
+ *
+ * CDN Token Auth is required for direct HLS/video URL access.
+ * @see https://docs.bunny.net/docs/cdn-token-authentication
  */
-function generateSignedToken(videoId: string, expiryTimestamp: number): string {
+function generateCdnToken(urlPath: string, expiryTimestamp: number): string {
   if (!BUNNY_STREAM_TOKEN_KEY) {
     throw new Error('BUNNY_STREAM_TOKEN_KEY is not configured');
   }
-  const stringToHash = BUNNY_STREAM_TOKEN_KEY + videoId + expiryTimestamp.toString();
-  return crypto.createHash('sha256').update(stringToHash).digest('hex');
+
+  // CDN Token format: Base64(SHA256_RAW(key + path + expiry))
+  const stringToHash = BUNNY_STREAM_TOKEN_KEY + urlPath + expiryTimestamp.toString();
+  const hash = crypto.createHash('sha256').update(stringToHash).digest('base64');
+
+  // URL-safe Base64: replace + with -, / with _, remove = and newlines
+  return hash
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
 }
 
 export function getBunnyConfig() {
@@ -171,8 +185,9 @@ export async function deleteBunnyVideo(videoGuid: string): Promise<void> {
 /**
  * Get the HLS playlist URL for a video
  * This is the main playback URL for adaptive streaming
- * If token auth is enabled, returns a signed URL using query parameters
- * (Bunny Stream Embed Token Authentication format)
+ * If token auth is enabled, returns a signed URL using CDN Token Authentication
+ * Uses token_path to sign the entire video directory (so .ts segments also work)
+ * @see https://docs.bunny.net/docs/cdn-token-authentication
  * @param expiryHours - How long the signed URL should be valid (default 24 hours)
  */
 export function getBunnyPlaybackUrl(videoGuid: string, expiryHours: number = 24): string {
@@ -181,8 +196,12 @@ export function getBunnyPlaybackUrl(videoGuid: string, expiryHours: number = 24)
 
   if (isTokenAuthEnabled()) {
     const expiryTimestamp = Math.floor(Date.now() / 1000) + (expiryHours * 3600);
-    const token = generateSignedToken(videoGuid, expiryTimestamp);
-    return `${baseUrl}?token=${token}&expires=${expiryTimestamp}`;
+    // Use token_path to sign the entire video directory (so .ts segments also work)
+    const tokenPath = `/${videoGuid}/`;
+    const token = generateCdnToken(tokenPath, expiryTimestamp);
+    // token_path must be URL encoded
+    const encodedTokenPath = encodeURIComponent(tokenPath);
+    return `${baseUrl}?token=${token}&expires=${expiryTimestamp}&token_path=${encodedTokenPath}`;
   }
 
   return baseUrl;
@@ -191,15 +210,16 @@ export function getBunnyPlaybackUrl(videoGuid: string, expiryHours: number = 24)
 /**
  * Get the direct MP4 URL for a specific resolution
  * Resolutions available: 240, 360, 480, 720, 1080
- * If token auth is enabled, returns a signed URL using query parameters
+ * If token auth is enabled, returns a signed URL using CDN Token Authentication
  */
 export function getBunnyDirectUrl(videoGuid: string, resolution: number = 720, expiryHours: number = 24): string {
   const { cdnHostname } = getBunnyConfig();
-  const baseUrl = `https://${cdnHostname}/${videoGuid}/play_${resolution}p.mp4`;
+  const urlPath = `/${videoGuid}/play_${resolution}p.mp4`;
+  const baseUrl = `https://${cdnHostname}${urlPath}`;
 
   if (isTokenAuthEnabled()) {
     const expiryTimestamp = Math.floor(Date.now() / 1000) + (expiryHours * 3600);
-    const token = generateSignedToken(videoGuid, expiryTimestamp);
+    const token = generateCdnToken(urlPath, expiryTimestamp);
     return `${baseUrl}?token=${token}&expires=${expiryTimestamp}`;
   }
 
@@ -208,15 +228,16 @@ export function getBunnyDirectUrl(videoGuid: string, resolution: number = 720, e
 
 /**
  * Get the thumbnail URL for a video
- * If token auth is enabled, returns a signed URL using query parameters
+ * If token auth is enabled, returns a signed URL using CDN Token Authentication
  */
 export function getBunnyThumbnailUrl(videoGuid: string, expiryHours: number = 24): string {
   const { cdnHostname } = getBunnyConfig();
-  const baseUrl = `https://${cdnHostname}/${videoGuid}/thumbnail.jpg`;
+  const urlPath = `/${videoGuid}/thumbnail.jpg`;
+  const baseUrl = `https://${cdnHostname}${urlPath}`;
 
   if (isTokenAuthEnabled()) {
     const expiryTimestamp = Math.floor(Date.now() / 1000) + (expiryHours * 3600);
-    const token = generateSignedToken(videoGuid, expiryTimestamp);
+    const token = generateCdnToken(urlPath, expiryTimestamp);
     return `${baseUrl}?token=${token}&expires=${expiryTimestamp}`;
   }
 
@@ -225,15 +246,16 @@ export function getBunnyThumbnailUrl(videoGuid: string, expiryHours: number = 24
 
 /**
  * Get animated preview/gif URL
- * If token auth is enabled, returns a signed URL using query parameters
+ * If token auth is enabled, returns a signed URL using CDN Token Authentication
  */
 export function getBunnyPreviewUrl(videoGuid: string, expiryHours: number = 24): string {
   const { cdnHostname } = getBunnyConfig();
-  const baseUrl = `https://${cdnHostname}/${videoGuid}/preview.webp`;
+  const urlPath = `/${videoGuid}/preview.webp`;
+  const baseUrl = `https://${cdnHostname}${urlPath}`;
 
   if (isTokenAuthEnabled()) {
     const expiryTimestamp = Math.floor(Date.now() / 1000) + (expiryHours * 3600);
-    const token = generateSignedToken(videoGuid, expiryTimestamp);
+    const token = generateCdnToken(urlPath, expiryTimestamp);
     return `${baseUrl}?token=${token}&expires=${expiryTimestamp}`;
   }
 
