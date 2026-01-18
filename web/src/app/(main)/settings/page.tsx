@@ -107,14 +107,16 @@ const settingsGroups: SettingsGroup[] = [
 
 const tierIcons = {
   free: Sparkles,
-  standard: Zap,
+  creator: Zap,
   pro: Crown,
+  teams: Users,
 };
 
 const tierColors = {
   free: 'text-gray-400',
-  standard: 'text-blue-400',
-  pro: 'text-purple-400',
+  creator: 'text-blue-400',
+  pro: 'text-emerald-400',
+  teams: 'text-purple-400',
 };
 
 export default function SettingsPage() {
