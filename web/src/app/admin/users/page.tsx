@@ -26,7 +26,7 @@ interface User {
   username: string;
   display_name: string | null;
   avatar_url: string | null;
-  tier: 'free' | 'standard' | 'pro';
+  tier: 'free' | 'creator' | 'pro' | 'teams';
   is_suspended: boolean;
   suspended_at: string | null;
   suspended_reason: string | null;
@@ -74,7 +74,7 @@ export default function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [actionModal, setActionModal] = useState<'suspend' | 'tier' | 'delete' | null>(null);
   const [suspendReason, setSuspendReason] = useState('');
-  const [newTier, setNewTier] = useState<'free' | 'standard' | 'pro'>('free');
+  const [newTier, setNewTier] = useState<'free' | 'creator' | 'pro' | 'teams'>('free');
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['admin-users', search, tierFilter, statusFilter, page],
@@ -133,9 +133,11 @@ export default function AdminUsersPage() {
 
   const getTierBadge = (tier: string) => {
     switch (tier) {
+      case 'teams':
+        return 'bg-gradient-to-r from-purple-500 to-pink-500 text-white';
       case 'pro':
         return 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white';
-      case 'standard':
+      case 'creator':
         return 'bg-blue-500/20 text-blue-400';
       default:
         return 'bg-gray-500/20 text-gray-400';
@@ -205,8 +207,9 @@ export default function AdminUsersPage() {
         >
           <option value="all">All Tiers</option>
           <option value="free">Free</option>
-          <option value="standard">Standard</option>
+          <option value="creator">Creator</option>
           <option value="pro">Pro</option>
+          <option value="teams">Teams</option>
         </select>
 
         {/* Status Filter */}
@@ -470,8 +473,8 @@ export default function AdminUsersPage() {
               <p className="text-gray-300">
                 Change tier for <span className="font-semibold text-white">@{selectedUser.username}</span>
               </p>
-              <div className="grid grid-cols-3 gap-2">
-                {(['free', 'standard', 'pro'] as const).map((tier) => (
+              <div className="grid grid-cols-4 gap-2">
+                {(['free', 'creator', 'pro', 'teams'] as const).map((tier) => (
                   <button
                     key={tier}
                     onClick={() => setNewTier(tier)}

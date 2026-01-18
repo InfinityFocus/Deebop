@@ -162,7 +162,7 @@ export async function PATCH(
         break;
 
       case 'change_tier':
-        if (!['free', 'standard', 'pro'].includes(tier)) {
+        if (!['free', 'creator', 'pro', 'teams'].includes(tier)) {
           return NextResponse.json(
             { error: 'Invalid tier' },
             { status: 400 }
