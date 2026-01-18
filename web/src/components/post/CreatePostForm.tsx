@@ -1457,8 +1457,10 @@ export function CreatePostForm() {
                         <p className="text-sm text-gray-500 text-center mt-2">
                           {user.tier === 'free'
                             ? 'Free tier: up to 1 minute, 10MB max'
-                            : user.tier === 'standard'
-                            ? 'Standard tier: up to 5 minutes, 50MB max'
+                            : user.tier === 'creator'
+                            ? 'Creator tier: up to 5 minutes, 50MB max'
+                            : user.tier === 'teams'
+                            ? 'Teams tier: up to 1 hour, 200MB max'
                             : 'Pro tier: up to 30 minutes, 200MB max'}
                         </p>
                       </div>
