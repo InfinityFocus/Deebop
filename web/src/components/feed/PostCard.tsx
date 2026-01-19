@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Heart, Bookmark, Share2, MoreHorizontal, Sparkles, Crown, Rocket, Flag, Pencil, Loader2, Podcast, Trash2, Repeat, Code } from 'lucide-react';
 import { PanoramaViewer } from '@/components/viewers/PanoramaViewer';
-import { HLSVideoPlayer } from '@/components/viewers/HLSVideoPlayer';
+import { HLSVideoPlayer, type HLSVideoPlayerHandle } from '@/components/viewers/HLSVideoPlayer';
 import { AudioPlayer } from '@/components/audio';
 import { ImageCarousel } from '@/components/post/ImageCarousel';
 import { BoostPostModal } from '@/components/ads';
@@ -30,7 +30,7 @@ const preventContextMenu = (e: React.MouseEvent) => {
 // Video player component that autoplays when in view (supports HLS streams)
 function VideoPlayer({ src, poster }: { src: string; poster?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<{ play: () => Promise<void>; pause: () => void; setMuted: (m: boolean) => void } | null>(null);
+  const playerRef = useRef<HLSVideoPlayerHandle | null>(null);
   const [isMuted, setIsMuted] = useState(true);
   const [isInView, setIsInView] = useState(false);
 
