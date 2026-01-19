@@ -48,6 +48,7 @@ interface Drop {
   created_at: string;
   creator: Creator;
   is_own: boolean;
+  redirect_to?: string;
 }
 
 const contentTypeIcons: Record<string, typeof ImageIcon> = {
@@ -104,15 +105,38 @@ export function DropContent() {
 
   // If the drop has been published, redirect to the actual content
   useEffect(() => {
-    if (drop?.status === 'published') {
+    if (drop?.redirect_to) {
+      router.replace(drop.redirect_to);
+    } else if (drop?.status === 'published') {
       if (drop.type === 'album') {
-        router.replace(`/(main)/albums/${drop.id}`);
+        router.replace(`/albums/${drop.id}`);
       } else {
-        // For posts, redirect to home or the post view
-        router.replace('/(main)/home');
+        router.replace(`/p/${drop.id}`);
       }
     }
   }, [drop, router]);
+
+  // Poll for status change when countdown expires
+  useEffect(() => {
+    if (!countdown.isExpired || !drop || drop.status === 'published') return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/drops/${id}?type=${type}`);
+        if (res.ok) {
+          const data = await res.json();
+          // If drop is now published, update state (which triggers redirect effect)
+          if (data.drop?.status === 'published' || data.drop?.redirect_to) {
+            setDrop(data.drop);
+          }
+        }
+      } catch {
+        // Ignore errors, keep polling
+      }
+    }, 3000); // Poll every 3 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [countdown.isExpired, drop, id, type]);
 
   const handleShare = async () => {
     const shareUrl = `${window.location.origin}/drops/${id}?type=${type}`;
@@ -302,7 +326,7 @@ export function DropContent() {
         {drop.title && (
           <h2 className="text-2xl font-bold text-white mb-3">{drop.title}</h2>
         )}
-        {drop.description && (
+        {drop.status !== 'scheduled' && drop.description && (
           <p className="text-zinc-300 mb-6 whitespace-pre-wrap">{drop.description}</p>
         )}
 

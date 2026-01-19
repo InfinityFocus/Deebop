@@ -77,6 +77,8 @@ export async function GET(
             avatar_url: album.owner.avatarUrl,
           },
           is_own: album.ownerId === user.id,
+          // If album is published, provide redirect URL to actual content
+          redirect_to: album.status === 'published' ? `/albums/${album.id}` : undefined,
         },
       });
     }
@@ -131,6 +133,8 @@ export async function GET(
           tier: post.user.tier,
         },
         is_own: post.userId === user.id,
+        // If post is published, provide redirect URL to actual content
+        redirect_to: post.status === 'published' ? `/p/${post.id}` : undefined,
       },
     });
   } catch (error) {

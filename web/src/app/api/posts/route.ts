@@ -434,7 +434,7 @@ async function fetchFollowingFeed(
   const feedItems: FeedItem[] = [
     ...posts.map((post) => ({
       type: 'post' as const,
-      timestamp: post.createdAt,
+      timestamp: post.droppedAt || post.createdAt,
       data: post,
     })),
     ...reposts
@@ -446,7 +446,7 @@ async function fetchFollowingFeed(
       })),
   ];
 
-  // Sort by timestamp descending
+  // Sort by timestamp descending (drop time for scheduled posts, creation time for immediate posts)
   feedItems.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
   // Deduplicate - if we have both a post and reposts of that post, keep only the post
@@ -693,7 +693,7 @@ async function fetchFavouritesFeed(
   const feedItems: FeedItem[] = [
     ...posts.map((post) => ({
       type: 'post' as const,
-      timestamp: post.createdAt,
+      timestamp: post.droppedAt || post.createdAt,
       data: post,
     })),
     ...reposts
@@ -705,7 +705,7 @@ async function fetchFavouritesFeed(
       })),
   ];
 
-  // Sort by timestamp descending (chronological)
+  // Sort by timestamp descending (drop time for scheduled posts, creation time for immediate posts)
   feedItems.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
   // Deduplicate - if we have both a post and reposts of that post, keep only the post
@@ -943,7 +943,7 @@ async function fetchDiscoveryFeed(
   const feedItems: FeedItem[] = [
     ...posts.map((post) => ({
       type: 'post' as const,
-      timestamp: post.createdAt,
+      timestamp: post.droppedAt || post.createdAt,
       data: post,
       isFollowed: followingSet.has(post.userId),
     })),
@@ -957,7 +957,7 @@ async function fetchDiscoveryFeed(
       })),
   ];
 
-  // Sort by timestamp descending (newest first) - pure chronological order
+  // Sort by timestamp descending (drop time for scheduled posts, creation time for immediate posts)
   feedItems.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
   // Simple deduplication - first occurrence wins (most recent in chronological order)
