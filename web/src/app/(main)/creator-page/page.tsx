@@ -402,7 +402,7 @@ export default function CreatorPageBuilder() {
         </div>
 
         {/* Preview Frame */}
-        <div className="flex-1 overflow-y-auto flex items-start justify-center p-4 md:p-8">
+        <div className="flex-1 overflow-y-auto flex items-start justify-center p-0 md:p-8">
           <PreviewFrame
             mode={previewMode}
             user={pageData?.user || null}

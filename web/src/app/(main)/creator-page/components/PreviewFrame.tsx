@@ -66,12 +66,12 @@ export function PreviewFrame({
   // On desktop, show the selected preview mode (mobile with bezel or desktop full-width)
   const containerClass =
     mode === 'mobile'
-      ? 'w-full md:w-[375px] min-h-[500px] md:min-h-[667px] md:rounded-[3rem] md:border-8 md:border-gray-700 rounded-xl border border-gray-800'
+      ? 'w-full md:w-[375px] md:min-h-[667px] md:rounded-[3rem] md:border-8 md:border-gray-700'
       : 'w-full max-w-2xl min-h-[500px] rounded-xl border border-gray-700';
 
   return (
     <div className={`${containerClass} bg-gray-950 overflow-hidden`}>
-      <div className="p-4 space-y-4 overflow-y-auto max-h-[80vh] md:max-h-[80vh]">
+      <div className="px-3 py-4 md:p-4 space-y-4 overflow-y-auto max-h-[calc(100vh-180px)] md:max-h-[80vh]">
         {blocks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <p className="text-gray-500 mb-2">Your page is empty</p>
@@ -501,7 +501,7 @@ function BlockPreview({
           {data.heading && (
             <h3 className="text-lg font-semibold text-white text-center">{String(data.heading)}</h3>
           )}
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-3 px-3 md:-mx-4 md:px-4">
             {items.slice(0, 3).map((item, i) => (
               <div key={i} className="flex-shrink-0 w-[70vw] max-w-[256px] bg-gray-800 border border-gray-700 rounded-xl p-4 text-center">
                 <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
