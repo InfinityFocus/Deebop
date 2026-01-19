@@ -2,24 +2,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { generateUploadUrl, generateFileKey, getPublicUrl } from '@/lib/minio';
 
-// Tier-based file size limits
+// Tier-based file size limits (must match tiers in stripe.ts: free, creator, pro, teams)
 const FILE_LIMITS = {
   free: {
-    image: 500 * 1024, // 500KB
-    video: 10 * 1024 * 1024, // 10MB
-    audio: 10 * 1024 * 1024, // 10MB
-    panorama360: 0, // Not allowed
-  },
-  standard: {
-    image: 10 * 1024 * 1024, // 10MB
-    video: 50 * 1024 * 1024, // 50MB
+    image: 50 * 1024 * 1024, // 50MB
+    video: 500 * 1024 * 1024, // 500MB
     audio: 50 * 1024 * 1024, // 50MB
     panorama360: 0, // Not allowed
   },
+  creator: {
+    image: 50 * 1024 * 1024, // 50MB
+    video: 2 * 1024 * 1024 * 1024, // 2GB
+    audio: 100 * 1024 * 1024, // 100MB
+    panorama360: 100 * 1024 * 1024, // 100MB
+  },
   pro: {
     image: 50 * 1024 * 1024, // 50MB
-    video: 500 * 1024 * 1024, // 500MB
+    video: 5 * 1024 * 1024 * 1024, // 5GB
     audio: 200 * 1024 * 1024, // 200MB
+    panorama360: 100 * 1024 * 1024, // 100MB
+  },
+  teams: {
+    image: 50 * 1024 * 1024, // 50MB
+    video: 5 * 1024 * 1024 * 1024, // 5GB
+    audio: 500 * 1024 * 1024, // 500MB
     panorama360: 100 * 1024 * 1024, // 100MB
   },
 };
@@ -47,16 +53,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid media type' }, { status: 400 });
     }
 
-    // Check panorama permission
-    if (mediaType === 'panorama360' && user.tier !== 'pro') {
+    // Check panorama permission (creator, pro, and teams can upload panoramas)
+    const panoramaTiers = ['creator', 'pro', 'teams'];
+    if (mediaType === 'panorama360' && !panoramaTiers.includes(user.tier || '')) {
       return NextResponse.json(
-        { error: '360 panoramas require Pro tier' },
+        { error: '360 panoramas require Creator tier or higher' },
         { status: 403 }
       );
     }
 
-    // Check file size limit
-    const limits = FILE_LIMITS[user.tier as keyof typeof FILE_LIMITS];
+    // Check file size limit (fallback to 'free' if tier is undefined or invalid)
+    const userTier = (user.tier && user.tier in FILE_LIMITS) ? user.tier as keyof typeof FILE_LIMITS : 'free';
+    const limits = FILE_LIMITS[userTier];
     const maxSize = limits[mediaType as keyof typeof limits];
 
     if (maxSize === 0) {
