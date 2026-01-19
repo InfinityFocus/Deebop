@@ -99,6 +99,30 @@ export const HLSVideoPlayer = forwardRef<HLSVideoPlayerHandle, HLSVideoPlayerPro
     const [isLoading, setIsLoading] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
 
+    // Use refs for callbacks to avoid re-running HLS setup effect when callbacks change
+    const callbacksRef = useRef({
+      onPlay,
+      onPause,
+      onTimeUpdate,
+      onEnded,
+      onError,
+      onLoadedMetadata,
+      onProcessing,
+    });
+
+    // Keep refs updated with latest callbacks
+    useEffect(() => {
+      callbacksRef.current = {
+        onPlay,
+        onPause,
+        onTimeUpdate,
+        onEnded,
+        onError,
+        onLoadedMetadata,
+        onProcessing,
+      };
+    });
+
     // Expose video methods via ref
     useImperativeHandle(ref, () => ({
       play: async () => {
@@ -139,13 +163,13 @@ export const HLSVideoPlayer = forwardRef<HLSVideoPlayerHandle, HLSVideoPlayerPro
           .then((data) => {
             if (data.error) {
               console.error('[HLSVideoPlayer] API error:', data.error);
-              onError?.(new Error(data.error));
+              callbacksRef.current.onError?.(new Error(data.error));
               setSignedSrc(src); // Fall back to original URL
             } else if (!data.isReady) {
               // Video is still processing
               console.log('[HLSVideoPlayer] Video still processing:', data.statusLabel);
               setIsProcessing(true);
-              onProcessing?.();
+              callbacksRef.current.onProcessing?.();
               setSignedSrc(null);
             } else {
               setSignedSrc(data.playbackUrl);
@@ -166,7 +190,7 @@ export const HLSVideoPlayer = forwardRef<HLSVideoPlayerHandle, HLSVideoPlayerPro
         setSignedSrc(src);
         setSignedPoster(poster);
       }
-    }, [src, poster, onError, onProcessing]);
+    }, [src, poster]);
 
     // The actual source to use for playback
     const actualSrc = signedSrc || '';
@@ -212,7 +236,7 @@ export const HLSVideoPlayer = forwardRef<HLSVideoPlayerHandle, HLSVideoPlayerPro
           hls.on(Hls.Events.ERROR, (_, data) => {
             if (data.fatal) {
               console.error('[HLSVideoPlayer] Fatal error:', data.type, data.details);
-              onError?.(new Error(`HLS error: ${data.details}`));
+              callbacksRef.current.onError?.(new Error(`HLS error: ${data.details}`));
 
               // Try to recover
               switch (data.type) {
@@ -241,18 +265,18 @@ export const HLSVideoPlayer = forwardRef<HLSVideoPlayerHandle, HLSVideoPlayerPro
         video.src = actualSrc;
       }
 
-      // Event handlers
-      const handlePlay = () => onPlay?.();
-      const handlePause = () => onPause?.();
+      // Event handlers - use refs to avoid re-running this effect when callbacks change
+      const handlePlay = () => callbacksRef.current.onPlay?.();
+      const handlePause = () => callbacksRef.current.onPause?.();
       const handleTimeUpdate = () => {
-        onTimeUpdate?.(video.currentTime, video.duration);
+        callbacksRef.current.onTimeUpdate?.(video.currentTime, video.duration);
       };
-      const handleEnded = () => onEnded?.();
+      const handleEnded = () => callbacksRef.current.onEnded?.();
       const handleLoadedMetadata = () => {
-        onLoadedMetadata?.(video.duration);
+        callbacksRef.current.onLoadedMetadata?.(video.duration);
       };
       const handleError = () => {
-        onError?.(new Error('Video playback error'));
+        callbacksRef.current.onError?.(new Error('Video playback error'));
       };
 
       video.addEventListener('play', handlePlay);
@@ -276,7 +300,7 @@ export const HLSVideoPlayer = forwardRef<HLSVideoPlayerHandle, HLSVideoPlayerPro
           hlsRef.current = null;
         }
       };
-    }, [actualSrc, isHLS, isLoading, isProcessing, autoPlay, onPlay, onPause, onTimeUpdate, onEnded, onError, onLoadedMetadata]);
+    }, [actualSrc, isHLS, isLoading, isProcessing, autoPlay]);
 
     // Update muted state
     useEffect(() => {
