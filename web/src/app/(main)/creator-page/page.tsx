@@ -234,12 +234,12 @@ export default function CreatorPageBuilder() {
   const selectedBlock = blocks.find((b) => b.id === selectedBlockId);
 
   return (
-    <div className="flex h-screen bg-gray-950 pb-32 md:pb-0">
+    <div className="h-screen bg-gray-950 pb-32 md:pb-0 md:flex overflow-x-hidden">
       {/* Left Panel - Block List */}
       <div className={clsx(
-        "md:w-80 md:border-r border-gray-800 flex flex-col",
-        "w-full",
-        mobileView !== 'blocks' && 'hidden md:flex'
+        "h-full flex-col bg-gray-950",
+        "md:w-80 md:border-r md:flex border-gray-800",
+        mobileView === 'blocks' ? 'flex' : 'hidden'
       )}>
         {/* Header */}
         <div className="p-4 border-b border-gray-800">
@@ -374,9 +374,9 @@ export default function CreatorPageBuilder() {
 
       {/* Center - Preview */}
       <div className={clsx(
-        "md:flex-1 flex flex-col bg-gray-900",
-        "flex-1",
-        mobileView !== 'preview' && 'hidden md:flex'
+        "h-full flex-col bg-gray-900",
+        "md:flex-1 md:flex",
+        mobileView === 'preview' ? 'flex' : 'hidden'
       )}>
         {/* Preview Controls - hidden on mobile */}
         <div className="hidden md:flex p-4 border-b border-gray-800 items-center justify-between">
@@ -402,7 +402,7 @@ export default function CreatorPageBuilder() {
         </div>
 
         {/* Preview Frame */}
-        <div className="flex-1 overflow-y-auto flex items-start justify-center p-0 md:p-8">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden flex items-start justify-center p-0 md:p-8">
           <PreviewFrame
             mode={previewMode}
             user={pageData?.user || null}
@@ -416,9 +416,9 @@ export default function CreatorPageBuilder() {
       {/* Right Panel - Block Editor */}
       {selectedBlock && (
         <div className={clsx(
-          "md:w-96 md:border-l border-gray-800 flex flex-col",
-          "w-full",
-          mobileView !== 'editor' && 'hidden md:flex'
+          "h-full flex-col bg-gray-950",
+          "md:w-96 md:border-l md:flex border-gray-800",
+          mobileView === 'editor' ? 'flex' : 'hidden'
         )}>
           <div className="p-4 border-b border-gray-800 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-white capitalize">
