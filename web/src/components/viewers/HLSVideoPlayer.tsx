@@ -285,37 +285,38 @@ export const HLSVideoPlayer = forwardRef<HLSVideoPlayerHandle, HLSVideoPlayerPro
       }
     }, [muted]);
 
-    // Show loading or processing state
-    if (isLoading) {
-      return (
-        <div className={`flex items-center justify-center bg-gray-900 ${className}`}>
-          <div className="animate-pulse text-gray-400 text-sm">Loading video...</div>
-        </div>
-      );
-    }
-
-    if (isProcessing) {
-      return (
-        <div className={`flex flex-col items-center justify-center bg-gray-900 gap-2 ${className}`}>
-          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          <div className="text-gray-400 text-sm">Video processing...</div>
-          <div className="text-gray-500 text-xs">This may take a few minutes</div>
-        </div>
-      );
-    }
-
+    // Always render video element so ref is available for play/pause commands
+    // Show loading/processing overlay on top when needed
     return (
-      <video
-        ref={videoRef}
-        poster={actualPoster}
-        muted={muted}
-        loop={loop}
-        playsInline={playsInline}
-        className={className}
-        onClick={onClick}
-        onDoubleClick={onDoubleClick}
-        onContextMenu={onContextMenu}
-      />
+      <div className={`relative ${className}`}>
+        <video
+          ref={videoRef}
+          poster={actualPoster}
+          muted={muted}
+          loop={loop}
+          playsInline={playsInline}
+          className="w-full h-full object-contain"
+          onClick={onClick}
+          onDoubleClick={onDoubleClick}
+          onContextMenu={onContextMenu}
+        />
+
+        {/* Loading overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80">
+            <div className="animate-pulse text-gray-400 text-sm">Loading video...</div>
+          </div>
+        )}
+
+        {/* Processing overlay */}
+        {isProcessing && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/80 gap-2">
+            <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            <div className="text-gray-400 text-sm">Video processing...</div>
+            <div className="text-gray-500 text-xs">This may take a few minutes</div>
+          </div>
+        )}
+      </div>
     );
   }
 );
