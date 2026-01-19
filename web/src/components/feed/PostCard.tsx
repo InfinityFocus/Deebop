@@ -133,6 +133,7 @@ interface Post {
   media_height: number | null;
   media_duration_seconds: number | null;
   provenance: string;
+  dropped_at?: string | null;
   is_flagged?: boolean;
   likes_count: number;
   saves_count: number;
@@ -322,7 +323,9 @@ export function PostCard({ post, originalPostId }: PostCardProps) {
 
   const canRepost = post.can_repost !== false && user?.id !== post.user_id;
 
-  const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
+  // Use dropped_at for scheduled posts, otherwise use created_at
+  const displayTime = post.dropped_at || post.created_at;
+  const timeAgo = formatDistanceToNow(new Date(displayTime), { addSuffix: true });
 
   return (
     <article id={`post-${post.id}`} className="bg-gray-900 border border-gray-800 rounded-xl transition-shadow">
